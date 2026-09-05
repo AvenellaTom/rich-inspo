@@ -75,12 +75,12 @@
   #coverFile{display:none}
   .save-row{display:flex;gap:10px;margin-top:18px}
 
-  /* SECONDARY: search */
-  .searchsec{margin-top:26px;position:relative;max-width:520px;margin-left:auto;margin-right:auto}
-  .searchsec svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.45}
-  #search{width:100%;background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);border-radius:11px;padding:11px 14px 11px 40px;font-size:14px;font-family:inherit}
+  /* SECONDARY: search sits inline with the filters */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin:24px auto 0;max-width:840px}
+  .searchbox{position:relative;flex:1;min-width:170px;max-width:320px}
+  .searchbox svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.45;width:16px;height:16px}
+  #search{width:100%;background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);border-radius:9px;padding:9px 12px 9px 34px;font-size:13px;font-family:inherit}
   #search:focus{outline:none;border-color:var(--blue-2)}
-  .filters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin:12px auto 0;max-width:720px}
   select{background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);border-radius:9px;padding:9px 12px;font-family:inherit;font-size:13px;max-width:100%}
   .sizer{display:flex;border:1px solid var(--border-2);border-radius:9px;overflow:hidden}
   .sizer button{background:var(--surface-2);border:none;color:var(--muted);padding:9px 11px;font-size:13px}
@@ -185,12 +185,8 @@
     <div class="save-row"><button class="btn wide" id="saveBtn">Save to library</button><button class="btn ghost" id="cancelBtn">Cancel</button></div>
   </div>
 
-  <!-- SECONDARY: search -->
-  <div class="searchsec">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-    <input type="text" id="search" placeholder="Search the library: try 'car', a client, or a note">
-  </div>
   <div class="filters">
+    <div class="searchbox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><input type="text" id="search" placeholder="Search"></div>
     <select id="fClient"></select>
     <select id="fType"><option value="">Any type</option></select>
     <select id="fCat"></select>
@@ -214,22 +210,25 @@ const DEFAULT_CLIENTS=['Atomos Wealth','DHL Supply Chain MEA','KKM (BAIC / Arcfo
 const DEFAULT_CATS=['Automotive','E-commerce','Financial services','Healthcare','Logistics','Food & beverage','Influencer-led','UGC','Product demo','Storytelling','Behind the scenes','Educational','Promo / Offer','Hook / Opener','Editing style'];
 const MTYPES=['Still','Carousel','Reel','Short','Video','Other'];
 const PROTECTED_CLIENT='General / Unassigned';
-// search synonyms: typing the key also matches the values
+// search synonyms: typing the key also matches these
 const SYN={
- car:['automotive'],cars:['automotive'],vehicle:['automotive'],vehicles:['automotive'],auto:['automotive'],suv:['automotive'],motor:['automotive'],driving:['automotive'],baic:['kkm','automotive'],arcfox:['kkm','automotive'],
- food:['food & beverage'],drink:['food & beverage'],beverage:['food & beverage'],restaurant:['food & beverage'],coffee:['food & beverage'],
- shop:['e-commerce'],shopping:['e-commerce'],store:['e-commerce'],ecommerce:['e-commerce'],retail:['e-commerce'],
- health:['healthcare'],medical:['healthcare'],medicine:['healthcare'],wellness:['healthcare'],pharma:['healthcare'],
- money:['financial services'],finance:['financial services'],bank:['financial services'],wealth:['financial services','atomos'],invest:['financial services'],pension:['financial services'],
- shipping:['logistics'],freight:['logistics'],supply:['logistics'],warehouse:['logistics'],dhl:['logistics'],
- influencer:['influencer-led'],creator:['influencer-led'],
- story:['storytelling'],narrative:['storytelling'],
- transition:['editing style'],edit:['editing style'],hook:['hook / opener'],opener:['hook / opener'],intro:['hook / opener'],
+ car:['automotive'],cars:['automotive'],vehicle:['automotive'],vehicles:['automotive'],auto:['automotive'],suv:['automotive'],motor:['automotive'],driving:['automotive'],drive:['automotive'],ev:['automotive'],baic:['kkm','automotive'],arcfox:['kkm','automotive'],
+ food:['food & beverage'],eat:['food & beverage'],eating:['food & beverage'],hungry:['food & beverage'],meal:['food & beverage'],lunch:['food & beverage'],dinner:['food & beverage'],snack:['food & beverage'],drink:['food & beverage'],beverage:['food & beverage'],restaurant:['food & beverage'],cafe:['food & beverage'],coffee:['food & beverage'],recipe:['food & beverage'],cooking:['food & beverage'],fmcg:['food & beverage'],
+ shop:['e-commerce'],shopping:['e-commerce'],store:['e-commerce'],ecommerce:['e-commerce'],retail:['e-commerce'],product:['product demo','e-commerce'],unboxing:['product demo'],
+ health:['healthcare'],healthy:['healthcare'],medical:['healthcare'],medicine:['healthcare'],wellness:['healthcare'],pharma:['healthcare'],fitness:['healthcare'],
+ money:['financial services'],finance:['financial services'],financial:['financial services'],bank:['financial services'],banking:['financial services'],wealth:['financial services','atomos'],invest:['financial services'],investing:['financial services'],pension:['financial services'],tax:['financial services'],
+ logistics:['logistics'],shipping:['logistics'],freight:['logistics'],supply:['logistics'],warehouse:['logistics'],delivery:['logistics'],dhl:['logistics'],cargo:['logistics'],
+ influencer:['influencer-led'],influencers:['influencer-led'],creator:['influencer-led'],creators:['influencer-led'],ambassador:['influencer-led'],
+ story:['storytelling'],stories:['storytelling'],narrative:['storytelling'],emotional:['storytelling'],
+ transition:['editing style'],transitions:['editing style'],edit:['editing style'],editing:['editing style'],cut:['editing style'],
+ hook:['hook / opener'],hooks:['hook / opener'],opener:['hook / opener'],intro:['hook / opener'],opening:['hook / opener'],
  bts:['behind the scenes'],behind:['behind the scenes'],
- teach:['educational'],learn:['educational'],tutorial:['educational'],explainer:['educational'],
- sale:['promo / offer'],offer:['promo / offer'],discount:['promo / offer'],deal:['promo / offer'],promo:['promo / offer'],
- photo:['still'],image:['still'],picture:['still'],
- camel:['al haboob'],racing:['al haboob']
+ teach:['educational'],teaching:['educational'],learn:['educational'],learning:['educational'],tutorial:['educational'],explainer:['educational'],howto:['educational'],tips:['educational'],
+ sale:['promo / offer'],sales:['promo / offer'],offer:['promo / offer'],discount:['promo / offer'],deal:['promo / offer'],deals:['promo / offer'],promo:['promo / offer'],promotion:['promo / offer'],
+ photo:['still'],photos:['still'],image:['still'],images:['still'],picture:['still'],
+ ugc:['user generated','ugc'],
+ camel:['al haboob'],racing:['al haboob'],race:['al haboob'],sport:['al haboob'],
+ rescue:['peekabox'],waste:['peekabox']
 };
 
 const memMap={};
@@ -350,13 +349,17 @@ function queryGroups(q){return q.toLowerCase().split(/[^a-z0-9]+/).filter(Boolea
 function render(){
   const q=$('search').value,fc=$('fClient').value,fcat=$('fCat').value,ftp=$('fType').value,fu=$('fUsed').value;
   const groups=queryGroups(q);
-  const list=items.filter(it=>{
+  const base=items.filter(it=>{
     if(fc&&it.client!==fc)return false;if(fcat&&!(it.categories||[]).includes(fcat))return false;
     if(ftp&&it.mtype!==ftp)return false;if(fu==='yes'&&!it.used)return false;if(fu==='no'&&it.used)return false;
-    if(groups.length){const hay=(it.note+' '+it.url+' '+it.client+' '+(it.categories||[]).join(' ')+' '+it.mtype+' '+it.platform+' '+(it.by||'')).toLowerCase();
-      if(!groups.every(g=>g.some(t=>hay.includes(t))))return false;}
     return true;});
-  $('count').innerHTML=`<b>${list.length}</b> of ${items.length} ideas`;
+  let list=base,loose=false;
+  if(groups.length){
+    list=base.filter(it=>{const hay=(it.note+' '+it.url+' '+it.client+' '+(it.categories||[]).join(' ')+' '+it.mtype+' '+it.platform+' '+(it.by||'')).toLowerCase();
+      return groups.every(g=>g.some(t=>hay.includes(t)));});
+    if(list.length===0){list=base;loose=true;}
+  }
+  $('count').innerHTML= loose ? `No exact match, showing all <b>${list.length}</b>` : `<b>${list.length}</b> of ${items.length} ideas`;
   const grid=$('grid');
   if(!list.length){grid.innerHTML=`<div class="empty"><div class="display">${items.length?'No matches':'Your library is empty'}</div><div>${items.length?'Try a broader word or clear a filter.':'Paste a link above to save your first idea.'}</div></div>`;return;}
   grid.innerHTML=list.map(it=>{const cover=bestCover(it);
