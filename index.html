@@ -120,8 +120,8 @@
   .note{font-size:13px;color:var(--text);line-height:1.4}
   .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto}
   .tag{background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-size:10px;padding:2px 7px;border-radius:6px}
-  .meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted-2);border-top:1px solid var(--border);padding:8px 12px;gap:8px}
-  .meta .acts{display:flex;gap:11px}
+  .meta{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted-2);border-top:1px solid var(--border);padding:8px 12px;gap:6px}
+  .meta .acts{display:flex;flex-wrap:wrap;gap:10px}
   .meta button{background:none;border:none;color:var(--muted-2);font-size:12px;padding:0}
   .meta button:hover{color:var(--coral)}
   .used-btn.on{color:var(--coral)}
@@ -145,6 +145,11 @@
   .mrow span{flex:1}.mrow button{background:none;border:none;color:var(--muted-2);font-size:12px}.mrow button:hover{color:var(--blue)}
   .madd{display:flex;gap:8px;margin-top:12px}
   .mcol h4{font-family:'Barlow Condensed';text-transform:uppercase;font-size:15px;color:var(--muted);margin:18px 0 4px}
+  #notesList{max-height:42vh;overflow:auto;margin:4px 0 6px}
+  .noteitem{padding:10px 0;border-bottom:1px solid var(--border)}
+  .noteitem .t{font-size:14px;color:var(--text);line-height:1.45;white-space:pre-wrap}
+  .noteitem .m{font-size:11px;color:var(--muted-2);margin-top:4px}
+  .noteempty{color:var(--muted-2);font-size:13px;padding:8px 0}
 
   @media(max-width:560px){
     .hero{padding:24px 16px 14px}.hero h1{font-size:23px;margin-bottom:16px}
@@ -214,6 +219,12 @@
 <div class="modal" id="manage"><div class="modal-inner"><button class="close" id="manageClose">&times;</button><h3>Clients &amp; categories</h3>
   <div class="mcol"><h4>Clients</h4><div id="clientRows"></div><div class="madd"><input type="text" id="newClient" placeholder="Add a client"><button class="btn sm" id="addClientBtn">Add</button></div></div>
   <div class="mcol"><h4>Categories</h4><div id="catRows"></div><div class="madd"><input type="text" id="newCat" placeholder="Add a category"><button class="btn sm" id="addCatBtn">Add</button></div></div>
+</div></div>
+
+<div class="modal" id="notesModal"><div class="modal-inner"><button class="close" id="notesClose">&times;</button><h3>Notes</h3>
+  <div id="notesList"></div>
+  <div class="fld"><textarea id="noteAdd" placeholder="Add a note against this piece..."></textarea></div>
+  <div class="save-row"><input type="text" id="noteBy" placeholder="Your name" style="max-width:170px"><button class="btn sm" id="noteAddBtn">Add note</button></div>
 </div></div>
 
 <script>
@@ -378,16 +389,31 @@ function render(){
     const phInner=`<div class="plabel">${it.client&&it.client!==PROTECTED_CLIENT?it.client:'Idea'}</div><div style="font-size:12px">tap to ${['Reel','Short','Video'].includes(it.mtype)?'play':'view'}</div>`;
     const media=cover?`<img alt="" src="${cover}" onerror="this.style.display='none';this.parentNode.querySelector('.ph').style.display='flex'"><div class="ph" style="display:none">${phInner}</div>`:ig?`<iframe class="igframe" loading="lazy" scrolling="no" src="https://www.instagram.com/p/${it.shortcode}/embed"></iframe><div class="tapcatch"></div>`:`<div class="ph" style="display:flex">${phInner}</div>`;
     const cats=(it.categories||[]).map(c=>`<span class="tag">${c}</span>`).join('');
-    const date=new Date(it.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    const date=new Date(it.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'});const ncnt=(it.note?1:0)+((it.notes||[]).length);
     return `<div class="card"><div class="thumb${ig?' ig':''}" onclick="play('${it.id}')">${it.mtype?`<span class="pill">${it.mtype}</span>`:''}${media}<div class="play"><span>${['Reel','Short','Video'].includes(it.mtype)?'Play':'View'}</span></div></div>
       <div class="body"><div class="client">${it.client}</div>${it.note?`<div class="note">${it.note}</div>`:''}${cats?`<div class="tags">${cats}</div>`:''}</div>
       <div class="meta"><span>${it.by||'Team'} &middot; ${date}</span><span class="acts">
         <button class="used-btn ${it.used?'on':''}" onclick="event.stopPropagation();toggleUsed('${it.id}')">${it.used?'Used':'Mark used'}</button>
+        <button onclick="event.stopPropagation();openNotes('${it.id}')">Notes${ncnt?' '+ncnt:''}</button>
         <button onclick="event.stopPropagation();editItem('${it.id}')">Edit</button>
         <button onclick="event.stopPropagation();removeItem('${it.id}')">Remove</button></span></div></div>`;}).join('');
 }
 async function toggleUsed(id){const it=items.find(x=>x.id===id);if(it){it.used=!it.used;await saveItems();render();}}
 async function removeItem(id){if(!confirm('Remove this idea?'))return;items=items.filter(x=>x.id!==id);await saveItems();render();}
+
+/* ---------- Dated notes per item ---------- */
+let notesItemId=null;
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtDate(d){try{return new Date(d).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+async function openNotes(id){notesItemId=id;$('noteBy').value=await local.get('rich_me','');renderNotes();$('notesModal').classList.add('show');}
+function renderNotes(){const it=items.find(x=>x.id===notesItemId);if(!it)return;const box=$('notesList');
+  const parts=[];if(it.note)parts.push({t:it.note,by:it.by,d:it.created,origin:true});(it.notes||[]).forEach(n=>parts.push(n));
+  box.innerHTML=parts.length?parts.map(n=>`<div class="noteitem"><div class="t">${esc(n.t)}</div><div class="m">${n.origin?'Why saved &middot; ':''}${n.by?esc(n.by)+' &middot; ':''}${fmtDate(n.d)}</div></div>`).join(''):'<div class="noteempty">No notes yet. Add the first one below.</div>';}
+$('noteAddBtn').onclick=async()=>{const it=items.find(x=>x.id===notesItemId);if(!it)return;const t=$('noteAdd').value.trim();if(!t)return;
+  const by=$('noteBy').value.trim();it.notes=it.notes||[];it.notes.push({t,by,d:new Date().toISOString()});
+  if(by)await local.set('rich_me',by);await saveItems();$('noteAdd').value='';renderNotes();render();};
+$('notesClose').onclick=()=>$('notesModal').classList.remove('show');
+$('notesModal').onclick=e=>{if(e.target.id==='notesModal')$('notesModal').classList.remove('show');};
 
 /* ---------- Player (self-contained iframes, no external scripts) ---------- */
 function play(id){const it=items.find(x=>x.id===id);if(!it)return;const body=$('modalBody');
