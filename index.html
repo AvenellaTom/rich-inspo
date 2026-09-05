@@ -110,6 +110,10 @@
   .thumb .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.28);opacity:0;transition:opacity .15s}
   .thumb:hover .play{opacity:1}
   .thumb .play span{background:var(--grad);color:#fff;border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,131,190,.4)}
+  .thumb.ig{overflow:hidden}
+  .thumb.ig .igframe{position:absolute;top:-52px;left:50%;transform:translateX(-50%);width:100%;min-width:320px;height:calc(100% + 150px);border:0;background:#000;pointer-events:none}
+  .thumb .tapcatch{position:absolute;inset:0;z-index:1}
+  .thumb .pill,.thumb .play{z-index:4}
   .pill{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.66);border:1px solid var(--border-2);color:#fff;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:6px;backdrop-filter:blur(4px)}
   .body{padding:11px 12px;display:flex;flex-direction:column;gap:7px;flex:1}
   .client{font-family:'Barlow Condensed';font-weight:600;text-transform:uppercase;font-size:15px;letter-spacing:.03em;color:var(--blue);line-height:1.15}
@@ -288,6 +292,7 @@ async function autoPreview(){
 }
 function renderPreview(loading){const box=$('prevBox');
   if(stagedCover){box.innerHTML=`<img src="${stagedCover}" alt="" onerror="this.parentNode.innerHTML='<div class=&quot;plabel&quot;>No preview available, it still saves fine</div>'">`;return;}
+  if(staged&&staged.platform==='Instagram'&&staged.shortcode){box.innerHTML=`<iframe src="https://www.instagram.com/p/${staged.shortcode}/embed" style="width:100%;height:460px;border:0;background:#000" scrolling="no" loading="lazy"></iframe>`;return;}
   box.innerHTML=`<div class="plabel">${loading?'Finding preview...':(staged?'No preview available, it still saves fine':'Preview appears here')}</div>`;}
 coverUrl.addEventListener('input',e=>{stagedCover=e.target.value.trim();renderPreview();});
 $('coverFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
@@ -369,11 +374,12 @@ function render(){
   const grid=$('grid');
   if(!list.length){grid.innerHTML=`<div class="empty"><div class="display">${items.length?'No matches':'Your library is empty'}</div><div>${items.length?'Try a broader word or clear a filter.':'Paste a link above to save your first idea.'}</div></div>`;return;}
   grid.innerHTML=list.map(it=>{const cover=bestCover(it);
-    const thumb=cover?`<img alt="" src="${cover}" onerror="this.style.display='none';this.parentNode.querySelector('.ph').style.display='flex'">`:'';
-    const ph=`<div class="ph" style="display:${cover?'none':'flex'}"><div class="plabel">${it.client&&it.client!==PROTECTED_CLIENT?it.client:'Idea'}</div><div style="font-size:12px">tap to ${['Reel','Short','Video'].includes(it.mtype)?'play':'view'}</div></div>`;
+    const ig=!cover&&it.platform==='Instagram'&&it.shortcode;
+    const phInner=`<div class="plabel">${it.client&&it.client!==PROTECTED_CLIENT?it.client:'Idea'}</div><div style="font-size:12px">tap to ${['Reel','Short','Video'].includes(it.mtype)?'play':'view'}</div>`;
+    const media=cover?`<img alt="" src="${cover}" onerror="this.style.display='none';this.parentNode.querySelector('.ph').style.display='flex'"><div class="ph" style="display:none">${phInner}</div>`:ig?`<iframe class="igframe" loading="lazy" scrolling="no" src="https://www.instagram.com/p/${it.shortcode}/embed"></iframe><div class="tapcatch"></div>`:`<div class="ph" style="display:flex">${phInner}</div>`;
     const cats=(it.categories||[]).map(c=>`<span class="tag">${c}</span>`).join('');
     const date=new Date(it.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-    return `<div class="card"><div class="thumb" onclick="play('${it.id}')">${it.mtype?`<span class="pill">${it.mtype}</span>`:''}${thumb}${ph}<div class="play"><span>${['Reel','Short','Video'].includes(it.mtype)?'Play':'View'}</span></div></div>
+    return `<div class="card"><div class="thumb${ig?' ig':''}" onclick="play('${it.id}')">${it.mtype?`<span class="pill">${it.mtype}</span>`:''}${media}<div class="play"><span>${['Reel','Short','Video'].includes(it.mtype)?'Play':'View'}</span></div></div>
       <div class="body"><div class="client">${it.client}</div>${it.note?`<div class="note">${it.note}</div>`:''}${cats?`<div class="tags">${cats}</div>`:''}</div>
       <div class="meta"><span>${it.by||'Team'} &middot; ${date}</span><span class="acts">
         <button class="used-btn ${it.used?'on':''}" onclick="event.stopPropagation();toggleUsed('${it.id}')">${it.used?'Used':'Mark used'}</button>
