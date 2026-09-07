@@ -125,6 +125,16 @@
   .meta button{background:none;border:none;color:var(--muted-2);font-size:12px;padding:0}
   .meta button:hover{color:var(--coral)}
   .used-btn.on{color:var(--coral)}
+  .usedtag{position:absolute;top:8px;left:8px;background:var(--coral);color:#111;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:6px;z-index:4}
+  .kb{background:none;border:none;color:var(--muted-2);font-size:17px;line-height:1;padding:0 4px}
+  .kb:hover{color:var(--text)}
+  .kmenu{display:none;position:fixed;background:var(--surface-2);border:1px solid var(--border-2);border-radius:10px;padding:4px;min-width:118px;z-index:80;box-shadow:0 10px 26px rgba(0,0,0,.6)}
+  .kmenu.show{display:block}
+  .kmenu button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text);padding:9px 11px;font-size:13px;border-radius:7px;cursor:pointer}
+  .kmenu button:hover{background:var(--surface)}
+  .kmenu #kmRemove:hover{color:var(--coral)}
+  .dupwarn{display:none;margin:8px 0 0;font-size:13px;color:var(--coral)}
+  .dupwarn.show{display:block}
   /* small tiles: stop the squash */
   .grid.s .note{display:none}
   .grid.s .tags{display:none}
@@ -195,6 +205,7 @@
   <div class="addpanel" id="addPanel">
     <div class="prev" id="prevBox"><div class="plabel">Preview appears here</div></div>
     <div class="detected" id="detected"></div>
+    <div class="dupwarn" id="dupWarn"></div>
     <div class="row2">
       <div class="fld"><div class="lbl">Client</div><select id="clientSel" class="full"></select></div>
       <div class="fld"><div class="lbl">Added by</div><input type="text" id="byInput" placeholder="Your name"></div>
@@ -244,6 +255,7 @@
     <div class="tour-btns"><button class="btn ghost sm" id="tourBack">Back</button><button class="btn sm" id="tourNext">Next</button></div>
   </div>
 </div></div>
+<div class="kmenu" id="kmenu"><button id="kmEdit">Edit</button><button id="kmRemove">Remove</button></div>
 
 <script>
 const DEFAULT_CLIENTS=['Atomos Wealth','DHL Supply Chain MEA','KKM (BAIC / Arcfox)','Peekabox','Al Haboob','Al Khalil Motors','General / Unassigned'];
@@ -311,7 +323,7 @@ function bestCover(it){ return it.cover || autoCover(it) || ''; }
 const $=id=>document.getElementById(id);
 const clientSel=$('clientSel'),typeSel=$('typeSel'),noteInput=$('noteInput'),byInput=$('byInput'),urlInput=$('urlInput'),coverUrl=$('coverUrl'),catChips=$('catChips');
 MTYPES.forEach(t=>typeSel.add(new Option(t,t)));
-let clients=[],cats=[],items=[],tileSize='m',editingId=null,staged=null,stagedCats=new Set(),stagedCover='';
+let clients=[],cats=[],items=[],tileSize='m',editingId=null,staged=null,stagedCats=new Set(),stagedCover='',dupOf=null,kmId=null;
 
 /* ---------- Add / edit (inline in hero) ---------- */
 $('cancelBtn').onclick=resetForm;
@@ -322,6 +334,8 @@ async function autoPreview(){
   if(!p){$('addPanel').classList.remove('show');staged=null;return;}
   staged=p;typeSel.value=p.mtype;editingId=editingId; // keep edit context if any
   $('detected').innerHTML=`Detected type: <b>${p.mtype}</b>`;
+  const dup=items.find(x=>x.id!==editingId&&((p.shortcode&&x.shortcode===p.shortcode)||x.url===p.url));dupOf=dup||null;
+  if(dup){$('dupWarn').innerHTML=`Already in the library, saved by <b>${esc(dup.by||'someone')}</b> on ${new Date(dup.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}.`;$('dupWarn').classList.add('show');}else{$('dupWarn').classList.remove('show');}
   $('addPanel').classList.add('show');
   if(!stagedCover) stagedCover=autoCover(p);
   renderPreview();
@@ -339,6 +353,7 @@ $('coverFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)ret
 
 $('saveBtn').onclick=async()=>{
   if(!staged){alert('Paste a link first.');return;}
+  if(dupOf&&!editingId){$('dupWarn').classList.add('show');$('dupWarn').scrollIntoView({block:'center'});return;}
   const btn=$('saveBtn');btn.textContent='Saving...';btn.disabled=true;
   const data={platform:staged.platform,embedId:staged.embedId,shortcode:staged.shortcode||'',url:staged.url,short:!!staged.short,
     client:clientSel.value,mtype:typeSel.value,categories:[...stagedCats],note:noteInput.value.trim(),cover:stagedCover,by:byInput.value.trim()||'Team'};
@@ -348,7 +363,7 @@ $('saveBtn').onclick=async()=>{
 };
 function resetForm(){staged=null;editingId=null;stagedCats.clear();stagedCover='';
   urlInput.value='';noteInput.value='';coverUrl.value='';byInput.value='';typeSel.value='Reel';clientSel.value=PROTECTED_CLIENT;
-  $('addPanel').classList.remove('show');$('detected').innerHTML='';$('saveBtn').textContent='Save to library';
+  $('addPanel').classList.remove('show');$('detected').innerHTML='';dupOf=null;$('dupWarn').classList.remove('show');$('saveBtn').textContent='Save to library';
   $('prevBox').innerHTML='<div class="plabel">Preview appears here</div>';
   $('more').classList.remove('show');$('moreToggle').textContent='Add categories, type or a cover';
   [...catChips.children].forEach(c=>c.classList.remove('on'));}
@@ -358,7 +373,7 @@ function editItem(id){const it=items.find(x=>x.id===id);if(!it)return;
   urlInput.value=it.url;clientSel.value=it.client;typeSel.value=it.mtype||'Reel';noteInput.value=it.note||'';byInput.value=it.by||'';
   coverUrl.value=(it.cover&&it.cover.indexOf('data:')!==0)?it.cover:'';
   stagedCats=new Set(it.categories||[]);[...catChips.children].forEach(c=>c.classList.toggle('on',stagedCats.has(c.textContent)));
-  $('detected').innerHTML=`Detected type: <b>${it.mtype}</b>`;$('saveBtn').textContent='Update idea';
+  $('detected').innerHTML=`Detected type: <b>${it.mtype}</b>`;dupOf=null;$('dupWarn').classList.remove('show');$('saveBtn').textContent='Update idea';
   $('addPanel').classList.add('show');$('more').classList.add('show');$('moreToggle').textContent='Hide extra options';
   renderPreview();window.scrollTo({top:0,behavior:'smooth'});}
 
@@ -416,13 +431,12 @@ function render(){
     const media=cover?`<img alt="" src="${cover}" onerror="this.style.display='none';this.parentNode.querySelector('.ph').style.display='flex'"><div class="ph" style="display:none">${phInner}</div>`:ig?`<iframe class="igframe" loading="lazy" scrolling="no" src="https://www.instagram.com/p/${it.shortcode}/embed"></iframe><div class="tapcatch"></div>`:`<div class="ph" style="display:flex">${phInner}</div>`;
     const cats=(it.categories||[]).map(c=>`<span class="tag">${c}</span>`).join('');
     const date=new Date(it.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'});const ncnt=(it.note?1:0)+((it.notes||[]).length);
-    return `<div class="card"><div class="thumb${ig?' ig':''}" onclick="play('${it.id}')">${it.mtype?`<span class="pill">${it.mtype}</span>`:''}${media}<div class="play"><span>${['Reel','Short','Video'].includes(it.mtype)?'Play':'View'}</span></div></div>
+    return `<div class="card"><div class="thumb${ig?' ig':''}" onclick="play('${it.id}')">${it.used?`<span class="usedtag">Used</span>`:''}${it.mtype?`<span class="pill">${it.mtype}</span>`:''}${media}<div class="play"><span>${['Reel','Short','Video'].includes(it.mtype)?'Play':'View'}</span></div></div>
       <div class="body"><div class="client">${it.client}</div>${it.note?`<div class="note">${it.note}</div>`:''}${cats?`<div class="tags">${cats}</div>`:''}</div>
       <div class="meta"><span>${it.by||'Team'} &middot; ${date}</span><span class="acts">
         <button class="used-btn ${it.used?'on':''}" onclick="event.stopPropagation();toggleUsed('${it.id}')">${it.used?'Used':'Mark used'}</button>
         <button onclick="event.stopPropagation();openNotes('${it.id}')">Notes${ncnt?' '+ncnt:''}</button>
-        <button onclick="event.stopPropagation();editItem('${it.id}')">Edit</button>
-        <button onclick="event.stopPropagation();removeItem('${it.id}')">Remove</button></span></div></div>`;}).join('');
+        <button class="kb" onclick="toggleMenu(event,'${it.id}')" aria-label="More">&#8943;</button></span></div></div>`;}).join('');
 }
 async function toggleUsed(id){const it=items.find(x=>x.id===id);if(it){it.used=!it.used;await saveItems();render();}}
 async function removeItem(id){if(!confirm('Remove this idea?'))return;items=items.filter(x=>x.id!==id);await saveItems();render();}
@@ -451,6 +465,15 @@ function play(id){const it=items.find(x=>x.id===id);if(!it)return;const body=$('
 function openM(){$('modal').classList.add('show');}
 $('modalClose').onclick=closeM;$('modal').onclick=e=>{if(e.target.id==='modal')closeM();};
 function closeM(){$('modal').classList.remove('show');$('modalBody').innerHTML='';}
+
+/* ---------- Card kebab menu (Edit / Remove) ---------- */
+function toggleMenu(e,id){e.stopPropagation();const m=$('kmenu');if(m.classList.contains('show')&&kmId===id){m.classList.remove('show');kmId=null;return;}
+  kmId=id;const r=e.currentTarget.getBoundingClientRect();m.classList.add('show');
+  let left=r.right-118;if(left<8)left=8;let top=r.bottom+6;if(top+96>window.innerHeight)top=r.top-96;
+  m.style.left=left+'px';m.style.top=top+'px';}
+$('kmEdit').onclick=e=>{e.stopPropagation();const id=kmId;$('kmenu').classList.remove('show');kmId=null;if(id)editItem(id);};
+$('kmRemove').onclick=e=>{e.stopPropagation();const id=kmId;$('kmenu').classList.remove('show');kmId=null;if(id)removeItem(id);};
+document.addEventListener('click',()=>{const m=$('kmenu');if(m){m.classList.remove('show');kmId=null;}});
 
 /* ---------- First-run tutorial ---------- */
 const TOUR=[
