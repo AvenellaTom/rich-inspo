@@ -541,7 +541,7 @@ async function saveAlbums(){ if(api.on){try{await fetch('/api/albums',{method:'P
 function albumLink(id){return location.origin+location.pathname+'?album='+id;}
 function ytThumb(it){return (it.platform==='YouTube'&&it.embedId)?'https://img.youtube.com/vi/'+it.embedId+'/hqdefault.jpg':'';}
 
-$('albumsBtn').onclick=()=>{local.set('rich_albums_seen',true);const np=$('albumsNew');if(np)np.style.display='none';renderAlbums();$('albumsModal').classList.add('show');};
+$('albumsBtn').onclick=()=>{renderAlbums();$('albumsModal').classList.add('show');};
 $('albumsClose').onclick=()=>$('albumsModal').classList.remove('show');
 function renderAlbums(){$('albumsList').innerHTML=albums.length?albums.map(a=>`<div class="albumrow"><div><div class="an">${esc(a.name)}</div><div class="am">${(a.entries||[]).length} ideas &middot; PIN ${esc(a.pin||'')}</div></div><button class="btn sm" onclick="openAlbumManage('${a.id}')">Open</button></div>`).join(''):'<div class="noteempty">No client albums yet. Create one below to share ideas with a client.</div>';}
 $('newAlbumBtn').onclick=async()=>{const n=$('newAlbum').value.trim();if(!n)return;const a={id:'al'+Date.now().toString(36),name:n,intro:'',pin:String(Math.floor(1000+Math.random()*9000)),by:'',created:new Date().toISOString(),entries:[],feedback:{}};albums.unshift(a);await saveAlbums();$('newAlbum').value='';renderAlbums();openAlbumManage(a.id);};
@@ -652,7 +652,6 @@ $('helpBtn').onclick=openTour;
   const d=await loadData();clients=d.clients;cats=d.cats;items=d.items;tileSize=await local.get(K.size,'m');
   albums=await loadAlbums();
   buildClientUI();buildCatUI();buildTypeFilter();[...$('sizer').children].forEach(b=>b.classList.toggle('on',b.dataset.size===tileSize));applySize();render();
-  if(await local.get('rich_albums_seen',false)){const np=$('albumsNew');if(np)np.style.display='none';}
   if(!(await local.get('rich_tour_seen_v2',false)))openTour();
 })();
 </script>
