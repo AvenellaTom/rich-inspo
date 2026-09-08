@@ -187,6 +187,9 @@
   .entryrow .ethumb{width:60px;height:76px;border-radius:8px;background:var(--surface-2);flex:none;overflow:hidden}
   .entryrow .ethumb img{width:100%;height:100%;object-fit:cover}
   .entryrow .ed{flex:1;min-width:0}
+  .emini{position:relative;width:120px;aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:#000;flex:none}
+  .emini iframe{position:absolute;top:0;left:0;width:320px;height:400px;border:0;transform:scale(0.375);transform-origin:top left;pointer-events:none}
+  .emini.emini-ph{display:flex;align-items:center;justify-content:center;color:var(--muted-2);font-size:10px;text-align:center;padding:4px}
   .fbstat{font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:6px;margin-left:6px}
   .fbstat.approved{background:rgba(46,160,67,.18);color:#57c26f;border:1px solid #2f7d43}
   .fbstat.declined{background:rgba(255,106,61,.15);color:var(--coral);border:1px solid var(--coral)}
@@ -548,11 +551,11 @@ $('newAlbumBtn').onclick=async()=>{const n=$('newAlbum').value.trim();if(!n)retu
 
 function openAlbumManage(id){manageAlbumId=id;const a=albums.find(x=>x.id===id);if(!a)return;$('albumsModal').classList.remove('show');
   $('albumTitle').textContent=a.name;const link=albumLink(id);
-  const entries=(a.entries||[]).map(e=>{const it=items.find(x=>x.id===e.itemId)||{};const cover=it.cover||ytThumb(it);
+  const entries=(a.entries||[]).map(e=>{const it=items.find(x=>x.id===e.itemId)||{};const cover=it.cover||ytThumb(it);const emini=cover?`<div class="emini"><img src="${cover}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"></div>`:(it.platform==='Instagram'&&it.shortcode)?`<div class="emini"><iframe scrolling="no" loading="lazy" src="https://www.instagram.com/p/${it.shortcode}/embed"></iframe></div>`:`<div class="emini emini-ph">${esc(it.platform||'Idea')}</div>`;
     const fb=(a.feedback&&a.feedback[e.itemId])||{status:'',comments:[]};
     const stat=fb.status==='approved'?'<span class="fbstat approved">Approved</span>':fb.status==='declined'?'<span class="fbstat declined">Not for us</span>':'<span class="fbstat pending">No response</span>';
     const comments=(fb.comments||[]).map(c=>`<div class="cc">${esc(c.t)} <span style="color:var(--muted-2)">&mdash; ${esc(c.by||'Client')}</span></div>`).join('');
-    return `<div class="entryrow"><div class="ethumb">${cover?`<img src="${cover}">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted-2);font-size:10px;text-align:center;padding:2px">${esc(it.platform||'')}</div>`}</div><div class="ed"><div style="font-family:'Barlow Condensed';text-transform:uppercase;color:var(--blue);font-size:14px">${esc(it.client||'Idea')}${stat}</div>
+    return `<div class="entryrow">${emini}<div class="ed"><div style="font-family:'Barlow Condensed';text-transform:uppercase;color:var(--blue);font-size:14px">${esc(it.client||'Idea')}${stat}</div>
       <div class="lbl" style="margin-top:8px">Client note</div><textarea data-entry="${e.itemId}" placeholder="What the client should read about this idea">${esc(e.clientNote||'')}</textarea>
       ${comments?`<div class="ccomments">${comments}</div>`:''}
       <button class="kb" style="color:var(--coral);font-size:12px;margin-top:6px;padding:0" onclick="removeFromAlbum('${id}','${e.itemId}')">Remove from album</button></div></div>`;}).join('');
