@@ -66,6 +66,10 @@ export async function onRequest(context) {
       await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
     }
 
+    // Suggestions (team box; admin gate is client-side PIN)
+    if (path === 'suggestions' && request.method === 'GET') return json({ suggestions: (await kv.get('suggestions','json'))||[] });
+    if (path === 'suggestions' && request.method === 'PUT') { await kv.put('suggestions', JSON.stringify(await request.json())); return json({ ok:true }); }
+
     // Link preview
     if (path === 'preview' && request.method === 'GET') {
       const target = url.searchParams.get('url'); if (!target) return json({ image:'' });
