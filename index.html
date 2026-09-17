@@ -265,6 +265,22 @@
   .pcaption{font-size:14px;line-height:1.5;margin-top:8px}
   .passet{display:inline-block;margin-top:10px;font-size:13px;color:var(--blue)}
   @media(max-width:560px){ .mgrid{gap:3px} .mcell{min-height:54px;padding:3px} .mchip{font-size:9px} .pcard .pprev{width:90px} .pcard .ptop{flex-direction:column} }
+
+  /* Suggestion box */
+  .sugform{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px}
+  .sugcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+  .sugtop{display:flex;gap:12px}
+  .sugthumb{width:90px;aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:var(--surface-2);flex:none}
+  .sugthumb img{width:100%;height:100%;object-fit:cover}
+  .sugbody{flex:1;min-width:0}
+  .sugtitle{font-weight:600;font-size:15px}
+  .sugmeta{font-size:11px;color:var(--muted-2);margin-top:3px}
+  .sugdesc{font-size:14px;line-height:1.5;margin-top:8px;white-space:pre-wrap}
+  .upvote{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer}
+  .upvote.on{border-color:var(--blue);background:var(--blue-soft);color:#fff}
+  .sugadmin{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border-2);display:flex;flex-direction:column;gap:8px}
+  .sugadmin .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  @media(max-width:560px){ .sugtop{flex-direction:column} .sugthumb{width:100%;aspect-ratio:16/9} }
 </style>
 </head>
 <body>
@@ -276,6 +292,7 @@
       <button class="icon-btn" id="helpBtn" title="How to use" aria-label="How to use"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg></button>
       <button class="btn ghost" id="albumsBtn" title="Create a client album to share ideas">Albums<span class="newpill" id="albumsNew">New</span></button>
       <button class="btn ghost" id="calBtn" title="Create a shareable content calendar">Calendars<span class="newpill">New</span></button>
+      <button class="btn ghost" id="sugBtn" title="Suggestion box for the team">Suggestions<span class="newpill">New</span></button>
       <button class="btn ghost" id="manageBtn" title="Edit clients and categories">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:-2px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Admin</button>
     </div>
@@ -374,6 +391,20 @@
 <div class="modal" id="postModal"><div class="modal-inner"><button class="close" id="postClose">&times;</button><h3>Post</h3><div id="postEditor"></div></div></div>
 
 <div class="modal" id="calPickModal"><div class="modal-inner"><button class="close" id="calPickClose">&times;</button><h3>Add to calendar</h3><div id="calPickList"></div><div class="madd"><input type="text" id="calPickNew" placeholder="New calendar name"><button class="btn sm" id="calPickNewBtn">Create and add</button></div></div></div>
+
+<div class="modal" id="sugModal"><div class="modal-inner"><button class="close" id="sugClose">&times;</button><h3>Suggestion box</h3>
+  <p class="modaldesc">Got an idea for the business? Describe it, add a screenshot, and the team can upvote and comment. Mike reviews and turns the best into briefs.</p>
+  <div class="sugform">
+    <input type="text" id="sugTitle" placeholder="Suggestion title">
+    <textarea id="sugDesc" placeholder="Describe the idea"></textarea>
+    <div class="row2"><select id="sugTeam" class="full"></select><input type="text" id="sugBy" placeholder="Your name"></div>
+    <div class="cover-row"><input type="text" id="sugLink" placeholder="Link (optional)"><label class="file-lbl" for="sugFile">Add screenshot</label><input type="file" id="sugFile" accept="image/*"></div>
+    <div class="prev" id="sugPrev" style="display:none;min-height:0;margin-top:0"></div>
+    <div class="save-row"><button class="btn" id="sugSubmit">Submit suggestion</button><button class="btn ghost sm" id="sugAdminBtn">Admin</button></div>
+  </div>
+  <div class="lbl">The box</div>
+  <div id="sugList"></div>
+</div></div>
 
 <div class="kmenu" id="kmenu"><button id="kmAlbum">Add to album</button><button id="kmCal">Add to calendar</button><button id="kmEdit">Edit</button><button id="kmRemove">Remove</button></div>
 
@@ -797,6 +828,57 @@ async function clientFb(itemId,status){const e=clientData.entries.find(x=>x.item
 async function clientComment(itemId){const inp=$('ci-'+itemId);const t=inp.value.trim();if(!t)return;const e=clientData.entries.find(x=>x.itemId===itemId);e.feedback=e.feedback||{status:'',comments:[]};e.feedback.comments.push({t,by:'Client',d:new Date().toISOString()});renderClient();
   try{await fetch('/api/album-feedback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:clientAlbumId,pin:clientPin,itemId,comment:t})});}catch(err){}}
 
+/* ---------- Suggestion box ---------- */
+let suggestions=[], sugAdmin=false, sugShot='';
+const TEAMS=['General','Creative','Social','Web / Dev','Ops','Sales','Client work'];
+const SSTATUS=['New','Under review','Approved','In progress','Actioned','Parked'];
+async function loadSuggestions(){ if(api.on){try{const r=await fetch('/api/suggestions');if(r.ok){const d=await r.json();return d.suggestions||[];}}catch(e){}} return await local.get('rich_suggestions',[]); }
+async function saveSuggestions(){ if(api.on){try{await fetch('/api/suggestions',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(suggestions)});}catch(e){}} else {await local.set('rich_suggestions',suggestions);} }
+async function sugMutate(fn){ suggestions=await loadSuggestions(); fn(suggestions); await saveSuggestions(); await renderSuggestions(); }
+TEAMS.forEach(t=>{const o=document.createElement('option');o.textContent=t;$('sugTeam').appendChild(o);});
+$('sugBtn').onclick=async()=>{suggestions=await loadSuggestions();await renderSuggestions();$('sugModal').classList.add('show');};
+$('sugClose').onclick=()=>$('sugModal').classList.remove('show');
+$('sugFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const max=640,sc=Math.min(1,max/Math.max(img.width,img.height));const cv=document.createElement('canvas');cv.width=img.width*sc;cv.height=img.height*sc;cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);sugShot=cv.toDataURL('image/jpeg',0.72);const pv=$('sugPrev');pv.style.display='block';pv.innerHTML=`<img src="${sugShot}" style="max-height:180px">`;};img.src=ev.target.result;};r.readAsDataURL(f);});
+$('sugSubmit').onclick=async()=>{const title=$('sugTitle').value.trim();if(!title){alert('Add a title.');return;}
+  const by=$('sugBy').value.trim();if(by)await local.set('rich_me',by);
+  const s={id:'s'+Date.now().toString(36),title,desc:$('sugDesc').value.trim(),team:$('sugTeam').value,image:sugShot,link:$('sugLink').value.trim(),by:by||'Anonymous',created:new Date().toISOString(),status:'New',adminNote:'',upvotes:0,comments:[]};
+  await sugMutate(list=>list.unshift(s));
+  $('sugTitle').value='';$('sugDesc').value='';$('sugLink').value='';sugShot='';$('sugPrev').style.display='none';$('sugPrev').innerHTML='';};
+$('sugAdminBtn').onclick=async()=>{ if(sugAdmin){sugAdmin=false;$('sugAdminBtn').textContent='Admin';await renderSuggestions();return;}
+  const pin=prompt('Admin PIN'); if(pin===null)return; if(pin==='2026'){sugAdmin=true;$('sugAdminBtn').textContent='Admin on';await renderSuggestions();}else{alert('Wrong PIN.');}};
+async function renderSuggestions(){const box=$('sugList');const voted=await local.get('rich_upvotes',[]);
+  const list=(suggestions||[]).slice().sort((a,b)=>((b.upvotes||0)-(a.upvotes||0))||(b.created||'').localeCompare(a.created||''));
+  box.innerHTML=list.length?list.map(s=>sugCard(s,voted)).join(''):'<div class="noteempty">No suggestions yet. Add the first one above.</div>';}
+function sugCard(s,voted){
+  const img=s.image?`<div class="sugthumb"><img src="${s.image}"></div>`:'';
+  const comments=(s.comments||[]).map(c=>`<div class="cc">${esc(c.t)}${c.by?` <span style="color:var(--muted-2)">&mdash; ${esc(c.by)}</span>`:''}</div>`).join('');
+  const admin= sugAdmin?`<div class="sugadmin"><div class="row"><span class="lbl" style="margin:0">Status</span><select onchange="sugStatus('${s.id}',this.value)">${SSTATUS.map(x=>`<option${x===(s.status||'New')?' selected':''}>${x}</option>`).join('')}</select></div>
+    <textarea placeholder="Internal note (Mike)" onchange="sugNote('${s.id}',this.value)">${esc(s.adminNote||'')}</textarea>
+    <div class="row"><button class="btn sm" onclick="copySugBrief('${s.id}',this)">Copy for ChatGPT brief</button><button class="btn ghost sm" onclick="copySugShare('${s.id}',this)">Copy to share</button><button class="btn ghost sm" style="color:var(--coral)" onclick="sugDelete('${s.id}')">Delete</button></div></div>`:'';
+  return `<div class="sugcard"><div class="sugtop">${img}<div class="sugbody">
+    <div class="sugtitle">${esc(s.title)} <span class="pstatus">${esc(s.status||'New')}</span></div>
+    <div class="sugmeta">${esc(s.team||'General')} &middot; ${esc(s.by||'Anonymous')} &middot; ${new Date(s.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>
+    ${s.desc?`<div class="sugdesc">${esc(s.desc)}</div>`:''}
+    ${s.link?`<a class="passet" href="${s.link}" target="_blank" rel="noopener">Open link &rsaquo;</a>`:''}
+    <div style="margin-top:10px"><button class="upvote${voted.includes(s.id)?' on':''}" onclick="upvote('${s.id}')">&#9650; ${s.upvotes||0}</button></div>
+    <div class="ccomments">${comments}</div><div class="ccadd"><input type="text" id="sci-${s.id}" placeholder="Add a comment"><button class="btn sm" onclick="sugComment('${s.id}')">Send</button></div>
+    ${admin}</div></div></div>`;}
+async function upvote(id){const voted=await local.get('rich_upvotes',[]);const has=voted.includes(id);
+  await local.set('rich_upvotes', has?voted.filter(x=>x!==id):voted.concat([id]));
+  await sugMutate(list=>{const s=list.find(x=>x.id===id);if(s){s.upvotes=(s.upvotes||0)+(has?-1:1);if(s.upvotes<0)s.upvotes=0;}});}
+async function sugComment(id){const inp=$('sci-'+id);const t=inp.value.trim();if(!t)return;const by=await local.get('rich_me','');
+  await sugMutate(list=>{const s=list.find(x=>x.id===id);if(s){s.comments=s.comments||[];s.comments.push({t,by,d:new Date().toISOString()});}});}
+async function sugStatus(id,v){await sugMutate(list=>{const s=list.find(x=>x.id===id);if(s)s.status=v;});}
+async function sugNote(id,v){await sugMutate(list=>{const s=list.find(x=>x.id===id);if(s)s.adminNote=v;});}
+async function sugDelete(id){if(!confirm('Delete this suggestion?'))return;await sugMutate(list=>{const i=list.findIndex(x=>x.id===id);if(i>=0)list.splice(i,1);});}
+function copySugBrief(id,btn){const s=suggestions.find(x=>x.id===id);if(!s)return;
+  const comments=(s.comments||[]).map(c=>'- '+c.t+(c.by?' ('+c.by+')':'')).join('\n');
+  const txt=`Turn this internal suggestion into a clear project brief for the team.\n\nSuggestion: ${s.title}\nSubmitted by: ${s.by||'Unknown'} on ${new Date(s.created).toLocaleDateString('en-GB')}\nTeam/area: ${s.team||'General'}\nUpvotes: ${s.upvotes||0}\nStatus: ${s.status||'New'}\n\nDescription:\n${s.desc||''}\n\nTeam comments:\n${comments||'(none)'}\n\nAdmin note:\n${s.adminNote||'(none)'}\n\nPlease write a brief with: objective, scope, key deliverables, a suggested owner, an effort estimate, and clear next steps.`;
+  try{navigator.clipboard.writeText(txt);}catch(e){}btn.textContent='Copied for ChatGPT';setTimeout(()=>btn.textContent='Copy for ChatGPT brief',1500);}
+function copySugShare(id,btn){const s=suggestions.find(x=>x.id===id);if(!s)return;
+  const txt=`Suggestion box: ${s.title}\n\n${s.desc||''}\n\nStatus: ${s.status||'New'} · ${s.upvotes||0} upvotes · from ${s.by||'the team'}`;
+  try{navigator.clipboard.writeText(txt);}catch(e){}btn.textContent='Copied';setTimeout(()=>btn.textContent='Copy to share',1400);}
+
 /* ---------- Card kebab menu (Edit / Remove) ---------- */
 function toggleMenu(e,id){e.stopPropagation();const m=$('kmenu');if(m.classList.contains('show')&&kmId===id){m.classList.remove('show');kmId=null;return;}
   kmId=id;const r=e.currentTarget.getBoundingClientRect();m.classList.add('show');
@@ -814,6 +896,7 @@ const TOUR=[
  {t:'3. Play, notes and Used',b:'Tap any tile to play the clip. Hit Notes to add dated comments over time. Mark used flags anything that has gone into real work, and it gets a Used badge on the tile.'},
  {t:'New: client albums',b:'Open Albums to build a mini collection for a client. Add ideas from the three-dot menu on any card, write a client-facing note on each, set a PIN, then Copy link and send it. The client enters the PIN, plays the clips, and can Approve, pass, or comment on each idea, without seeing anything else in the library. Their responses come back inside the album.'},
  {t:'New: content calendars',b:'Open Calendars to plan a month for a client. Add posts with a date, channel, caption and a screenshot of the asset, link the reference reel it is based on, set a PIN and share the link. The client sees the plan, opens the assets, and approves or comments on each post. Best viewed on a desktop.'},
+ {t:'New: suggestion box',b:'Got an idea for the business? Open Suggestions, describe it, add a screenshot, and submit. The team upvotes and comments so the best rise. Mike unlocks the admin view with a PIN to set a status, add a note, and in one tap copy the idea into a brief to build with the team.'},
  {t:'Keep it tidy',b:'Use the Admin button to add or rename clients and categories, so we all tag the same way. Everything saves to one library the whole team sees. That is it, start by pasting a link.'}
 ];
 let tourStep=0;
@@ -827,7 +910,7 @@ $('tourNext').onclick=()=>{if(tourStep<TOUR.length-1){tourStep++;renderTour();}e
 $('tourBack').onclick=()=>{if(tourStep>0){tourStep--;renderTour();}};
 $('tourSkip').onclick=closeTour;
 $('tour').onclick=e=>{if(e.target.id==='tour')closeTour();};
-async function closeTour(){$('tour').classList.remove('show');await local.set('rich_tour_seen_v3',true);}
+async function closeTour(){$('tour').classList.remove('show');await local.set('rich_tour_seen_v4',true);}
 $('helpBtn').onclick=openTour;
 
 (async()=>{
@@ -835,9 +918,9 @@ $('helpBtn').onclick=openTour;
   if(params.get('album')){await clientMode(params.get('album'));return;}
   if(params.get('calendar')){await calendarMode(params.get('calendar'));return;}
   const d=await loadData();clients=d.clients;cats=d.cats;items=d.items;tileSize=await local.get(K.size,'m');
-  albums=await loadAlbums();calendars=await loadCalendars();
+  albums=await loadAlbums();calendars=await loadCalendars();suggestions=await loadSuggestions();
   buildClientUI();buildCatUI();buildTypeFilter();[...$('sizer').children].forEach(b=>b.classList.toggle('on',b.dataset.size===tileSize));applySize();render();
-  if(!(await local.get('rich_tour_seen_v3',false)))openTour();
+  if(!(await local.get('rich_tour_seen_v4',false)))openTour();
 })();
 </script>
 </body>
