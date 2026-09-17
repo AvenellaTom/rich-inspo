@@ -280,6 +280,15 @@
   .upvote.on{border-color:var(--blue);background:var(--blue-soft);color:#fff}
   .sugadmin{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border-2);display:flex;flex-direction:column;gap:8px}
   .sugadmin .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .sugctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .sugctrls select{background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);border-radius:9px;padding:8px 10px;font-size:13px}
+  .suggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .suggrid .sugcard{margin-bottom:0}
+  .sugrow{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:8px;flex-wrap:wrap}
+  .sugrow .srmain{flex:1;min-width:180px}
+  .sugrow .srtitle{font-weight:600;font-size:14px}
+  .sugrow .sracts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .sugrow .sracts select{background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);border-radius:8px;padding:6px 8px;font-size:12px}
   @media(max-width:560px){ .sugtop{flex-direction:column} .sugthumb{width:100%;aspect-ratio:16/9} }
 </style>
 </head>
@@ -829,7 +838,7 @@ async function clientComment(itemId){const inp=$('ci-'+itemId);const t=inp.value
   try{await fetch('/api/album-feedback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:clientAlbumId,pin:clientPin,itemId,comment:t})});}catch(err){}}
 
 /* ---------- Suggestion box ---------- */
-let suggestions=[], sugAdmin=false, sugShot='';
+let suggestions=[], sugAdmin=false, sugShot='', sugView='list', sugFStatus='', sugFTeam='', sugSort='top';
 const TEAMS=['General','Creative','Social','Web / Dev','Ops','Sales','Client work'];
 const SSTATUS=['New','Under review','Approved','In progress','Actioned','Parked'];
 async function loadSuggestions(){ if(api.on){try{const r=await fetch('/api/suggestions');if(r.ok){const d=await r.json();return d.suggestions||[];}}catch(e){}} return await local.get('rich_suggestions',[]); }
@@ -847,8 +856,21 @@ $('sugSubmit').onclick=async()=>{const title=$('sugTitle').value.trim();if(!titl
 $('sugAdminBtn').onclick=async()=>{ if(sugAdmin){sugAdmin=false;$('sugAdminBtn').textContent='Admin';await renderSuggestions();return;}
   const pin=prompt('Admin PIN'); if(pin===null)return; if(pin==='2026'){sugAdmin=true;$('sugAdminBtn').textContent='Admin on';await renderSuggestions();}else{alert('Wrong PIN.');}};
 async function renderSuggestions(){const box=$('sugList');const voted=await local.get('rich_upvotes',[]);
-  const list=(suggestions||[]).slice().sort((a,b)=>((b.upvotes||0)-(a.upvotes||0))||(b.created||'').localeCompare(a.created||''));
-  box.innerHTML=list.length?list.map(s=>sugCard(s,voted)).join(''):'<div class="noteempty">No suggestions yet. Add the first one above.</div>';}
+  let list=(suggestions||[]).slice();
+  if(sugAdmin){ if(sugFStatus)list=list.filter(s=>(s.status||'New')===sugFStatus); if(sugFTeam)list=list.filter(s=>(s.team||'General')===sugFTeam); }
+  list.sort((a,b)=> sugSort==='new' ? (b.created||'').localeCompare(a.created||'') : sugSort==='status' ? (SSTATUS.indexOf(a.status||'New')-SSTATUS.indexOf(b.status||'New')) : (((b.upvotes||0)-(a.upvotes||0))||(b.created||'').localeCompare(a.created||'')) );
+  let html='';
+  if(sugAdmin){ const opt=(arr,cur,all)=>`<option value="">${all}</option>`+arr.map(x=>`<option${x===cur?' selected':''}>${x}</option>`).join('');
+    html+=`<div class="sugctrls"><select onchange="sugSetFilter('status',this.value)">${opt(SSTATUS,sugFStatus,'All statuses')}</select><select onchange="sugSetFilter('team',this.value)">${opt(TEAMS,sugFTeam,'All teams')}</select><select onchange="sugSetFilter('sort',this.value)"><option value="top"${sugSort==='top'?' selected':''}>Most upvoted</option><option value="new"${sugSort==='new'?' selected':''}>Newest</option><option value="status"${sugSort==='status'?' selected':''}>By status</option></select><div class="sizer"><button class="${sugView==='list'?'on':''}" onclick="sugSetView('list')">List</button><button class="${sugView==='grid'?'on':''}" onclick="sugSetView('grid')">Grid</button></div><span style="color:var(--muted-2);font-size:12px">${list.length} shown</span></div>`; }
+  if(!list.length){ box.innerHTML=html+'<div class="noteempty">'+((sugAdmin&&(sugFStatus||sugFTeam))?'No suggestions match those filters.':'No suggestions yet. Add the first one above.')+'</div>'; return; }
+  if(sugAdmin&&sugView==='list'){ html+=list.map(s=>sugRow(s,voted)).join(''); }
+  else if(sugAdmin){ html+=`<div class="suggrid">${list.map(s=>sugCard(s,voted)).join('')}</div>`; }
+  else { html+=list.map(s=>sugCard(s,voted)).join(''); }
+  box.innerHTML=html;}
+function sugSetView(v){sugView=v;renderSuggestions();}
+function sugSetFilter(k,v){if(k==='status')sugFStatus=v;else if(k==='team')sugFTeam=v;else if(k==='sort')sugSort=v;renderSuggestions();}
+function sugRow(s,voted){const cn=(s.comments||[]).length;
+  return `<div class="sugrow"><div class="srmain"><div class="srtitle">${esc(s.title)} <span class="pstatus">${esc(s.status||'New')}</span></div><div class="sugmeta">${esc(s.team||'General')} &middot; ${esc(s.by||'Anonymous')} &middot; ${new Date(s.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'})} &middot; &#9650;${s.upvotes||0} &middot; ${cn} comment${cn===1?'':'s'}</div></div><div class="sracts"><select onchange="sugStatus('${s.id}',this.value)">${SSTATUS.map(x=>`<option${x===(s.status||'New')?' selected':''}>${x}</option>`).join('')}</select><button class="btn sm" onclick="copySugBrief('${s.id}',this)">Brief</button><button class="btn ghost sm" onclick="copySugShare('${s.id}',this)">Share</button><button class="btn ghost sm" style="color:var(--coral)" onclick="sugDelete('${s.id}')">Delete</button></div></div>`;}
 function sugCard(s,voted){
   const img=s.image?`<div class="sugthumb"><img src="${s.image}"></div>`:'';
   const comments=(s.comments||[]).map(c=>`<div class="cc">${esc(c.t)}${c.by?` <span style="color:var(--muted-2)">&mdash; ${esc(c.by)}</span>`:''}</div>`).join('');
