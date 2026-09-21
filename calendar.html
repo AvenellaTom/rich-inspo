@@ -149,7 +149,63 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .script-table input,.script-table textarea{width:100%;border:none;background:transparent;font-size:13px;font-family:inherit;padding:4px;resize:vertical}
 .script-table input:focus,.script-table textarea:focus{outline:none;background:var(--blue-light);border-radius:4px}
 
-/* Client view */
+
+/* ========== CLIENT VIEW (polished) ========== */
+.client-wrap{max-width:900px;margin:0 auto;padding:24px 16px}
+.client-intro{background:var(--card);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;box-shadow:var(--shadow)}
+.client-intro p{font-size:14px;color:var(--muted);line-height:1.6}
+.client-month-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:24px}
+.client-month-nav h2{font-size:28px;min-width:220px;text-align:center}
+.client-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:28px}
+.client-stat{background:var(--card);border-radius:8px;padding:14px 16px;text-align:center;box-shadow:var(--shadow)}
+.client-stat .stat-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--blue)}
+.client-stat .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:2px}
+.client-week-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2);margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+.client-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;border:1px solid var(--border)}
+.client-card .cc-media{width:100%;background:#0a0a0a;position:relative;display:flex;align-items:center;justify-content:center}
+.client-card .cc-media img{width:100%;display:block}
+.client-card .cc-media video{width:100%;display:block}
+.client-card .cc-media .no-creative{padding:40px;color:#555;font-size:14px;text-align:center}
+.client-card .cc-meta{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.cc-meta .cc-date-block{display:flex;align-items:center;gap:10px}
+.cc-meta .cc-day{background:var(--blue);color:#fff;width:44px;height:44px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.cc-meta .cc-day .cc-d{font-size:20px;font-weight:700;font-family:'Barlow Condensed',sans-serif}
+.cc-meta .cc-day .cc-m{font-size:9px;text-transform:uppercase;font-weight:600;letter-spacing:.04em}
+.cc-meta .cc-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;text-transform:uppercase}
+.cc-meta .cc-platforms{display:flex;gap:4px;flex-wrap:wrap}
+.cc-meta .cc-platforms .ptag{font-size:11px;padding:4px 10px;border-radius:5px;font-weight:600}
+.client-card .cc-content{padding:20px}
+.cc-content .cc-section{margin-bottom:16px}
+.cc-content .cc-section:last-child{margin-bottom:0}
+.cc-content .cc-section h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.cc-content .cc-section h4 .platform-icon{width:14px;height:14px;border-radius:3px;display:inline-block}
+.cc-content .cc-section p{font-size:14px;line-height:1.6;white-space:pre-wrap}
+.cc-content .cc-assets{display:flex;gap:6px;flex-wrap:wrap}
+.cc-content .cc-assets a{font-size:13px;padding:6px 12px;background:var(--bg);border-radius:6px;color:var(--blue);text-decoration:none;font-weight:500;transition:background .15s}
+.cc-content .cc-assets a:hover{background:var(--blue-light)}
+.client-card .cc-approval{padding:16px 20px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cc-approval .cc-status-pill{font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;margin-right:auto}
+.cc-approval .btn{min-width:100px;justify-content:center}
+.btn.cc-approve{border:2px solid var(--green);color:var(--green);background:transparent;font-weight:600}
+.btn.cc-approve:hover,.btn.cc-approve.active{background:var(--green);color:#fff}
+.btn.cc-changes{border:2px solid var(--amber);color:var(--amber);background:transparent;font-weight:600}
+.btn.cc-changes:hover,.btn.cc-changes.active{background:var(--amber);color:#fff}
+.cc-comments{padding:0 20px 16px}
+.cc-comments .cc-comment{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.cc-comments .cc-comment:last-of-type{border-bottom:none}
+.cc-comments .cc-cm-meta{font-size:11px;color:var(--muted);margin-bottom:2px}
+.cc-comments .cc-cm-meta strong{color:var(--text)}
+.cc-comment-form{display:flex;gap:6px;padding-top:8px}
+.cc-comment-form input{flex:1;padding:8px 12px;border:1px solid var(--border-2);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif}
+.cc-comment-form input:focus{outline:none;border-color:var(--blue)}
+.cc-comment-form .btn{white-space:nowrap}
+
+/* Footer branding */
+.client-footer{text-align:center;padding:40px 20px 24px;font-size:12px;color:var(--muted-2)}
+.client-footer img{height:24px;opacity:.4;margin-bottom:6px;display:block;margin-left:auto;margin-right:auto}
+
+/* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
 .client-gate p{color:var(--muted);margin-bottom:20px}
@@ -1002,62 +1058,144 @@ async function clientEnter(){
   renderClientView();
 }
 
-function renderClientView(){
+function renderClientView(targetMonth){
   const c = clientData;
   const posts = (c.posts||[]).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   
+  // Work out which month to show
+  const allDates = posts.map(p=>p.date).filter(Boolean).sort();
+  let vm;
+  if(targetMonth) vm = targetMonth;
+  else if(allDates.length){
+    // Default to current month if it has posts, otherwise first month with posts
+    const now = new Date();
+    const nowKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    const hasNow = allDates.some(d=>d.startsWith(nowKey));
+    vm = hasNow ? new Date(now.getFullYear(),now.getMonth(),1) : new Date(allDates[0]+'T00:00:00');
+  } else { vm = new Date(); }
+  
+  const year = vm.getFullYear(), month = vm.getMonth();
+  const monthKey = year+'-'+String(month+1).padStart(2,'0');
+  const monthPosts = posts.filter(p=>(p.date||'').startsWith(monthKey));
+  
+  // Count available months for nav
+  const availMonths = [...new Set(allDates.map(d=>d.substring(0,7)))].sort();
+  const currentIdx = availMonths.indexOf(monthKey);
+  const prevMonth = currentIdx > 0 ? availMonths[currentIdx-1] : null;
+  const nextMonth = currentIdx < availMonths.length-1 ? availMonths[currentIdx+1] : null;
+  
+  // Stats
+  const totalPosts = monthPosts.length;
+  const platforms = [...new Set(monthPosts.flatMap(p=>p.platforms||[]))];
+  const approved = monthPosts.filter(p=>{const fb=p.feedback||{};return fb.status==='approved';}).length;
+  const needsReview = monthPosts.filter(p=>['Ready to Review','In Production'].includes(p.status)).length;
+  
   let html = `<div class="header" style="display:flex"><img src="${$('logoImg').src}" alt="RICH"><h1>${esc(c.name)}</h1></div>
-    <div class="container">`;
+    <div class="client-wrap">`;
   
-  if(c.intro) html += `<div style="background:var(--card);padding:16px 20px;border-radius:var(--radius);margin-bottom:20px;font-size:14px;color:var(--muted)">${esc(c.intro)}</div>`;
+  if(c.intro) html += `<div class="client-intro"><p>${esc(c.intro)}</p></div>`;
   
-  if(!posts.length){
-    html += '<div style="text-align:center;padding:40px;color:var(--muted)">No posts in this calendar yet.</div>';
+  // Month nav
+  html += `<div class="client-month-nav">
+    ${prevMonth ? `<button class="month-nav" onclick="clientGoMonth('${prevMonth}')">&lsaquo;</button>` : '<div style="width:36px"></div>'}
+    <h2>${MONTH_NAMES[month]} ${year}</h2>
+    ${nextMonth ? `<button class="month-nav" onclick="clientGoMonth('${nextMonth}')">&rsaquo;</button>` : '<div style="width:36px"></div>'}
+  </div>`;
+  
+  // Summary bar
+  html += `<div class="client-summary">
+    <div class="client-stat"><div class="stat-num">${totalPosts}</div><div class="stat-label">Posts planned</div></div>
+    <div class="client-stat"><div class="stat-num">${platforms.length}</div><div class="stat-label">Channels</div></div>
+    <div class="client-stat"><div class="stat-num">${approved}</div><div class="stat-label">Approved</div></div>
+    <div class="client-stat"><div class="stat-num">${totalPosts - approved}</div><div class="stat-label">Awaiting review</div></div>
+  </div>`;
+  
+  if(!monthPosts.length){
+    html += '<div style="text-align:center;padding:40px;color:var(--muted)">No content planned for this month yet.</div>';
+  } else {
+    // Group by week
+    let currentWeek = -1;
+    monthPosts.forEach(p=>{
+      const d = new Date(p.date+'T00:00:00');
+      const weekNum = getWeekOfMonth(d);
+      if(weekNum !== currentWeek){
+        currentWeek = weekNum;
+        const weekStart = getWeekStart(d);
+        const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+        html += `<div class="client-week-label">Week ${weekNum} &middot; ${weekStart.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} - ${weekEnd.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>`;
+      }
+      
+      const plats = (p.platforms||[p.channel]).filter(Boolean).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join('');
+      const fb = p.feedback||{status:'',comments:[]};
+      const dd = new Date(p.date+'T00:00:00');
+      const dayNum = dd.getDate();
+      const dayMonth = dd.toLocaleDateString('en-GB',{month:'short'});
+      const dayName = dd.toLocaleDateString('en-GB',{weekday:'long'});
+      
+      // Media
+      let mediaHTML = '';
+      const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || '';
+      const isVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
+      if(previewImg){
+        mediaHTML = `<div class="cc-media">${isVideo ? `<video src="${previewImg}" controls></video>` : `<img src="${previewImg}" alt="">`}</div>`;
+      }
+      
+      // Status pill
+      const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#dbeafe',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
+      const statusFg = {Draft:'#374151','In Production':'#92400e','Ready to Review':'#1e40af',Approved:'#166534',Scheduled:'#1e40af',Published:'#166534'};
+      
+      html += `<div class="client-card">
+        ${mediaHTML}
+        <div class="cc-meta">
+          <div class="cc-date-block">
+            <div class="cc-day"><span class="cc-d">${dayNum}</span><span class="cc-m">${dayMonth}</span></div>
+            <div>
+              <div class="cc-title">${esc(p.topic||'Untitled')}</div>
+              <div style="font-size:12px;color:var(--muted)">${dayName}${p.creativeType ? ' &middot; '+esc(p.creativeType) : ''}</div>
+            </div>
+          </div>
+          <div class="cc-platforms">${plats}</div>
+        </div>
+        <div class="cc-content">
+          ${p.captionEN ? `<div class="cc-section"><h4>Caption (English)</h4><p>${esc(p.captionEN)}</p></div>` : ''}
+          ${p.caption && !p.captionEN ? `<div class="cc-section"><h4>Caption</h4><p>${esc(p.caption)}</p></div>` : ''}
+          ${p.captionAR ? `<div class="cc-section"><h4>Caption (Arabic)</h4><p dir="rtl">${esc(p.captionAR)}</p></div>` : ''}
+          ${(p.assets||[]).filter(a=>a.url).length ? `<div class="cc-section"><h4>Assets</h4><div class="cc-assets">${(p.assets||[]).filter(a=>a.url).map(a=>`<a href="${esc(a.url)}" target="_blank">${esc(a.label||'View file')}</a>`).join('')}</div></div>` : ''}
+          ${p.assetLink ? `<div class="cc-section"><h4>Asset</h4><div class="cc-assets"><a href="${esc(p.assetLink)}" target="_blank">View file</a></div></div>` : ''}
+        </div>
+        <div class="cc-approval">
+          <div class="cc-status-pill" style="background:${statusBg[p.status]||'#e5e7eb'};color:${statusFg[p.status]||'#374151'}">${esc(p.status||'Draft')}</div>
+          <button class="btn sm cc-approve ${fb.status==='approved'?'active':''}" onclick="clientFeedback('${p.id}','approved')">Approve</button>
+          <button class="btn sm cc-changes ${fb.status==='declined'?'active':''}" onclick="clientFeedback('${p.id}','declined')">Request changes</button>
+        </div>
+        <div class="cc-comments">
+          ${(fb.comments||[]).map(cm=>`<div class="cc-comment"><div class="cc-cm-meta"><strong>${esc(cm.by||'Client')}</strong> &middot; ${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</div><div>${esc(cm.t)}</div></div>`).join('')}
+          <div class="cc-comment-form"><input placeholder="Leave a comment or note..." id="cc-${p.id}"><button class="btn sm primary" onclick="clientComment('${p.id}')">Send</button></div>
+        </div>
+      </div>`;
+    });
   }
   
-  let lastDate = '';
-  posts.forEach(p=>{
-    if(p.date !== lastDate){
-      html += `<div style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--muted);margin:20px 0 8px">${fmtDate(p.date)}</div>`;
-      lastDate = p.date;
-    }
-    
-    const plats = (p.platforms||[p.channel]).filter(Boolean).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join(' ');
-    const sc = STATUS_COLORS[p.status]||'#d1d5db';
-    const fb = p.feedback||{status:'',comments:[]};
-    
-    // Find best preview image
-    const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || ''; const clientIsVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
-    
-    html += `<div class="client-post">
-      ${previewImg ? `<div class="creative-hero">${clientIsVideo ? `<video src="${previewImg}" controls></video>` : `<img src="${previewImg}" alt="Creative preview">`}</div>` : ''}
-      <div class="channel-strip">${plats}</div>
-      <div class="client-post-header">
-        <h3>${esc(p.topic||p.caption||'Untitled')}</h3>
-        <div class="post-date">${fmtDate(p.date)} &middot; ${esc(p.creativeType||'')} &middot; ${esc(p.status||'')}</div>
-      </div>
-      <div class="client-post-body">
-        ${p.captionEN ? `<div class="caption-block"><h4>Caption (English)</h4><p>${esc(p.captionEN)}</p></div>` : ''}
-        ${p.caption && !p.captionEN ? `<div class="caption-block"><h4>Caption</h4><p>${esc(p.caption)}</p></div>` : ''}
-        ${p.captionAR ? `<div class="caption-block"><h4>Caption (Arabic)</h4><p dir="rtl">${esc(p.captionAR)}</p></div>` : ''}
-        ${p.assetLink ? `<div style="margin-bottom:12px"><a href="${esc(p.assetLink)}" target="_blank" class="btn sm">View asset</a></div>` : ''}
-        ${(p.assets||[]).filter(a=>a.url).length ? `<div style="margin-bottom:12px">${(p.assets||[]).filter(a=>a.url).map(a=>`<a href="${esc(a.url)}" target="_blank" class="btn sm" style="margin-right:6px">${esc(a.label||'View asset')}</a>`).join('')}</div>` : ''}
-      </div>
-      <div class="client-actions">
-        <button class="btn approve ${fb.status==='approved'?'active':''}" onclick="clientFeedback('${p.id}','approved')">Approve</button>
-        <button class="btn reject ${fb.status==='declined'?'active':''}" onclick="clientFeedback('${p.id}','declined')">Not for us</button>
-      </div>
-      <div style="padding:0 20px 16px">
-        <div class="comments-area">
-          ${(fb.comments||[]).map(cm=>`<div class="comment-item"><div class="comment-meta"><strong>${esc(cm.by||'Client')}</strong><span>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span></div><div>${esc(cm.t)}</div></div>`).join('')||'<div style="font-size:13px;color:var(--muted-2)">No comments yet.</div>'}
-          <div class="comment-add"><input placeholder="Add a comment" id="cc-${p.id}"><button class="btn sm" onclick="clientComment('${p.id}')">Send</button></div>
-        </div>
-      </div>
-    </div>`;
-  });
-  
+  html += `<div class="client-footer"><img src="${$('logoImg').src}" alt="RICH">Prepared by RICH Marketing</div>`;
   html += '</div>';
   $('clientApp').innerHTML = html;
+}
+
+function clientGoMonth(key){
+  const [y,m] = key.split('-').map(Number);
+  renderClientView(new Date(y,m-1,1));
+}
+
+function getWeekOfMonth(d){
+  const first = new Date(d.getFullYear(),d.getMonth(),1);
+  return Math.ceil((d.getDate()+((first.getDay()+6)%7))/7);
+}
+
+function getWeekStart(d){
+  const day = (d.getDay()+6)%7;
+  const start = new Date(d);
+  start.setDate(start.getDate()-day);
+  return start;
 }
 
 async function clientFeedback(postId, status){
