@@ -164,7 +164,7 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .client-stat{background:var(--card);border-radius:8px;padding:14px 16px;text-align:center;box-shadow:var(--shadow)}
 .client-stat .stat-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--blue)}
 .client-stat .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:2px}
-.sz-s .client-week-label{display:none}
+.sz-s .client-week-label,.sz-m .client-week-label{display:none}
 .client-week-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2);margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 
 .client-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;border:1px solid var(--border)}
@@ -219,8 +219,8 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 
 /* Client card sizes */
 .client-grid{display:flex;flex-direction:column;gap:20px}
-.client-grid.sz-s{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-.client-grid.sz-m{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px}
+.client-grid.sz-s{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.client-grid.sz-m{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 .client-grid.sz-l{display:flex;flex-direction:column;gap:20px}
 
 /* Small card overrides */
@@ -343,6 +343,32 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
   .client-grid.sz-s{grid-template-columns:repeat(2,1fr)}
   .client-cal-day{min-height:90px}
 }
+
+
+/* Compact comments in grid views */
+.sz-m .cc-comment-box,.sz-s .cc-comment-box{padding:8px}
+.sz-m .cc-new-comment,.sz-s .cc-new-comment{padding-top:8px}
+.sz-m .cc-name-row,.sz-s .cc-name-row{margin-bottom:4px}
+.sz-m .cc-name-row label,.sz-s .cc-name-row label{display:none}
+.sz-m .cc-msg-row textarea,.sz-s .cc-msg-row textarea{min-height:32px;font-size:12px}
+.sz-s .cc-comment-avatar{display:none}
+.sz-m .cc-approval,.sz-s .cc-approval{padding:10px 12px;flex-wrap:nowrap}
+.sz-m .cc-approval .cc-approval-status,.sz-s .cc-approval .cc-approval-status{font-size:12px}
+.sz-m .cc-content .cc-section p,.sz-s .cc-content .cc-section p{max-height:100px;overflow:hidden}
+.sz-m .cc-comments,.sz-s .cc-comments{padding:0 12px 10px}
+
+/* Clean up no-comments state */
+.cc-no-comments{font-size:12px;color:var(--muted-2);padding:2px 0;font-style:italic}
+
+
+/* Fix meta layout in grid cards */
+.sz-m .client-card .cc-meta,.sz-s .client-card .cc-meta{flex-direction:column;align-items:flex-start;gap:6px}
+.sz-m .client-card .cc-meta .cc-platforms,.sz-s .client-card .cc-meta .cc-platforms{margin-top:0}
+.sz-m .client-card .cc-title,.sz-s .client-card .cc-title{font-size:15px}
+.sz-s .client-card .cc-title{font-size:13px}
+.sz-s .client-card .cc-day{width:32px;height:32px}
+.sz-s .client-card .cc-day .cc-d{font-size:14px}
+.sz-s .client-card .cc-day .cc-m{font-size:8px}
 
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
@@ -1453,10 +1479,11 @@ function renderClientView(targetMonth){
         topLevel.forEach((cm,ci)=>{
           const initial = (cm.by||'?')[0].toUpperCase();
           const replies = comments.filter(r=>r.replyTo===ci);
+          const isOwn = savedName && cm.by === savedName;
           commentsHTML += `<div class="cc-comment"><div class="cc-comment-row">
             <div class="cc-comment-avatar">${initial}</div>
             <div class="cc-comment-body">
-              <div class="cc-comment-header"><strong>${esc(cm.by||'Anonymous')}</strong><time>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time></div>
+              <div class="cc-comment-header"><strong>${esc(cm.by||'Anonymous')}</strong><time>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time>${isOwn?`<button class="cc-reply-btn" style="margin-left:auto" onclick="editClientComment('${p.id}',${ci})">Edit</button>`:''}</div>
               <div class="cc-comment-text">${esc(cm.t)}</div>
               <button class="cc-reply-btn" onclick="showReplyForm('${p.id}',${ci})">Reply</button>
               <div id="reply-${p.id}-${ci}"></div>
@@ -1504,7 +1531,7 @@ function renderClientView(targetMonth){
           </div>
           <div class="cc-comments" style="padding:0 20px 16px">
             <div class="cc-comment-box">
-              ${commentsHTML||'<div style="font-size:13px;color:var(--muted-2);padding:4px 0">No comments yet. Leave feedback below.</div>'}
+              ${commentsHTML||'<div class="cc-no-comments">No comments yet.</div>'}
               <div class="cc-new-comment">
                 <div class="cc-name-row"><label>Your name</label><input id="cn-${p.id}" value="${esc(savedName)}" placeholder="Enter your name" onchange="saveClientName(this.value)"></div>
                 <div class="cc-msg-row"><textarea id="ct-${p.id}" placeholder="Leave a comment or request changes..." rows="2"></textarea><button class="btn sm primary" onclick="clientComment('${p.id}')">Send</button></div>
@@ -1550,6 +1577,25 @@ async function clientFeedback(postId, status){
   p.feedback.status = (p.feedback.status===status) ? '' : status;
   renderClientView(clientCurrentMonth);
   await sendFeedback(clientCalId_c, clientPin, postId, {status:p.feedback.status});
+}
+
+
+async function editClientComment(postId, commentIdx){
+  const p = (clientData.posts||[]).find(x=>x.id===postId); if(!p) return;
+  const fb = p.feedback||{};
+  const comments = fb.comments||[];
+  const topLevel = comments.filter(cm=>!cm.replyTo);
+  const cm = topLevel[commentIdx]; if(!cm) return;
+  const newText = prompt('Edit your comment:', cm.t);
+  if(newText===null) return;
+  if(newText.trim()===''){
+    const realIdx = comments.indexOf(cm);
+    if(realIdx>-1) comments.splice(realIdx,1);
+  } else {
+    cm.t = newText.trim();
+  }
+  renderClientView(clientCurrentMonth);
+  await sendFeedback(clientCalId_c, clientPin, postId, {replaceComments:comments});
 }
 
 async function clientComment(postId){
