@@ -51,10 +51,15 @@ export async function onRequest(context) {
       if ((c.pin||'') !== pin) return json({ error:'pin' }, 403);
       const items = (await kv.get('items','json'))||[]; const byId={}; items.forEach(i=>byId[i.id]=i);
       const posts = (c.posts||[]).map(p=>{ const r=p.refItemId?byId[p.refItemId]:null;
-        return { id:p.id, date:p.date, time:p.time||'', channel:p.channel||'', status:p.status||'', caption:p.caption||'', screenshot:p.screenshot||'', assetLink:p.assetLink||'',
+        return { id:p.id, date:p.date, time:p.time||'', channel:p.channel||'', status:p.status||'', caption:p.caption||'',
+          captionEN:p.captionEN||'', captionAR:p.captionAR||'', topic:p.topic||'',
+          platforms:p.platforms||[], creativeType:p.creativeType||'', brief:p.brief||'',
+          screenshot:p.screenshot||'', assetLink:p.assetLink||'', assets:p.assets||[],
+          hasCreativeEN:!!(p.creativesEN||p.hasCreativeEN), hasCreativeAR:!!(p.creativesAR||p.hasCreativeAR),
+          creativeENType:p.creativeENType||'image', creativeARType:p.creativeARType||'image',
           ref: r?{platform:r.platform,embedId:r.embedId,shortcode:r.shortcode,url:r.url,short:r.short,mtype:r.mtype,cover:r.cover||''}:null,
           feedback:(c.feedback&&c.feedback[p.id])||{status:'',comments:[]} }; });
-      return json({ name:c.name, intro:c.intro||'', posts });
+      return json({ name:c.name, intro:c.intro||'', calId:id, posts });
     }
     if (path === 'calendar-feedback' && request.method === 'POST') {
       const b = await request.json(); const cals=(await kv.get('calendars','json'))||[]; const c=cals.find(x=>x.id===b.id);
@@ -64,6 +69,47 @@ export async function onRequest(context) {
       if (b.status!==undefined) c.feedback[b.postId].status=b.status;
       if (b.comment) c.feedback[b.postId].comments.push({ t:b.comment, by:b.by||'Client', d:new Date().toISOString() });
       await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
+    }
+
+    // Creative asset upload/serve (stored per-asset in KV to handle large video files)
+    if (path === 'creative-upload' && request.method === 'POST') {
+      const ct = request.headers.get('content-type')||'';
+      let key, mimeType, data;
+      if (ct.includes('application/json')) {
+        // Small files via JSON (base64)
+        const b = await request.json();
+        key = `creative:${b.calId}:${b.postId}:${b.lang}`;
+        mimeType = b.mimeType || 'image/jpeg';
+        data = Uint8Array.from(atob(b.data), c=>c.charCodeAt(0));
+      } else {
+        // Large files via binary upload
+        const calId = url.searchParams.get('calId');
+        const postId = url.searchParams.get('postId');
+        const lang = url.searchParams.get('lang');
+        mimeType = url.searchParams.get('mime') || 'video/mp4';
+        key = `creative:${calId}:${postId}:${lang}`;
+        data = new Uint8Array(await request.arrayBuffer());
+      }
+      // Store binary in KV with metadata
+      await kv.put(key, data, { metadata: { mimeType, uploaded: new Date().toISOString() } });
+      return json({ ok: true, key });
+    }
+    if (path === 'creative' && request.method === 'GET') {
+      const calId = url.searchParams.get('calId');
+      const postId = url.searchParams.get('postId');
+      const lang = url.searchParams.get('lang');
+      const pin = url.searchParams.get('pin')||'';
+      // If PIN provided, verify access
+      if (pin) {
+        const cals = (await kv.get('calendars','json'))||[];
+        const c = cals.find(x=>x.id===calId);
+        if (!c || (c.pin||'') !== pin) return json({ error:'forbidden' }, 403);
+      }
+      const key = `creative:${calId}:${postId}:${lang}`;
+      const { value, metadata } = await kv.getWithMetadata(key, { type: 'arrayBuffer' });
+      if (!value) return new Response('Not found', { status: 404 });
+      const mime = (metadata && metadata.mimeType) || 'application/octet-stream';
+      return new Response(value, { status: 200, headers: { 'content-type': mime, 'cache-control': 'public, max-age=3600' } });
     }
 
     // Suggestions (team box; admin gate is client-side PIN)
