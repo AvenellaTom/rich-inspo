@@ -77,17 +77,21 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .status-dot.draft{background:#d1d5db}.status-dot.review{background:var(--amber)}.status-dot.approved{background:var(--green)}.status-dot.scheduled{background:var(--blue)}.status-dot.published{background:var(--green)}
 
 /* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;overflow-y:auto;padding:20px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;overflow-y:auto;padding:20px;-webkit-overflow-scrolling:touch}
 .modal-overlay.show{display:flex;justify-content:center;align-items:flex-start}
-.modal{background:var(--card);border-radius:12px;width:100%;max-width:900px;margin:20px auto;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:none}
-.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal{background:var(--card);border-radius:12px;width:100%;max-width:900px;margin:20px auto;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:calc(100vh - 40px);display:flex;flex-direction:column}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
 .modal-head h2{font-size:18px}
 .modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted);padding:4px 8px}
-.modal-body{padding:20px;overflow-y:auto}
-.modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.modal-body{padding:20px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
 
 /* Form fields */
 .field{margin-bottom:16px}
+
+/* Ensure form fields are interactive */
+.modal-body input,.modal-body textarea,.modal-body select{-webkit-user-select:auto;user-select:auto;pointer-events:auto;touch-action:auto}
+.modal-body textarea{cursor:text}
 .field label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
 .field input,.field select,.field textarea{width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:8px 10px;border:1px solid var(--border-2);border-radius:6px;background:var(--card);color:var(--text);transition:border-color .15s}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue)}
@@ -111,7 +115,7 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 /* Editor layout */
 .editor-layout{display:flex;gap:20px}
 .editor-fields{flex:1;min-width:0}
-.preview-wrap{position:sticky;top:80px;align-self:flex-start}
+.preview-wrap{align-self:flex-start}
 @media(max-width:700px){.editor-layout{flex-direction:column}.phone-preview{width:100%;max-height:200px;border-radius:12px}.preview-wrap{position:static}}
 
 /* Section dividers */
@@ -936,14 +940,20 @@ function editPost(postId){
       <div class="field"><textarea id="peCaptionEN" rows="6" ${ro}>${esc(p.captionEN||'')}</textarea></div>
       <div class="comments-area"><div style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Comments on English caption</div>
         ${commentsHTML ? commentsHTML.split('').length ? '' : '' : '<div style="font-size:13px;color:var(--muted-2)">No comments yet.</div>'}
-        ${(p.comments||[]).filter(cm=>cm.section==='captionEN').map(cm=>`<div class="comment-item"><div class="comment-meta"><strong>${esc(cm.by||'')}</strong>${cm.internal?'<span class="badge internal">Internal</span>':''}<span>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span></div><div>${esc(cm.text)}</div></div>`).join('')||'<div style="font-size:13px;color:var(--muted-2)">No comments yet.</div>'}
+        ${(p.comments||[]).filter(cm=>cm.section==='captionEN').map((cm,ci)=>{
+        const idx=(p.comments||[]).indexOf(cm);
+        return `<div class="comment-item"><div class="comment-meta"><strong>${esc(cm.by||'Anonymous')}</strong>${cm.editor?'<span class="badge editor">Editor</span>':''}${cm.internal?'<span class="badge internal">Internal</span>':''}<span>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span><button class="btn sm ghost" style="margin-left:auto;padding:2px 6px;font-size:10px" onclick="editComment(${idx})">Edit</button><button class="btn sm ghost" style="padding:2px 6px;font-size:10px;color:var(--coral)" onclick="deleteComment(${idx})">Delete</button></div><div>${esc(cm.text)}</div></div>`;
+      }).join('')||'<div style="font-size:13px;color:var(--muted-2)">No comments yet.</div>'}
         <div class="comment-add"><input placeholder="Your name" id="cmNameEN" style="max-width:120px"><input placeholder="Add a note... mention with @name@rich.marketing" id="cmTextEN" style="flex:2"><label class="int-toggle"><input type="checkbox" id="cmIntEN"> Internal note (hidden from client)</label><button class="btn sm" onclick="addComment('captionEN')">Post</button></div>
       </div>
       
       <div class="section-title">Arabic caption copy</div>
       <div class="field"><textarea id="peCaptionAR" rows="6" dir="rtl" ${ro}>${esc(p.captionAR||'')}</textarea></div>
       <div class="comments-area"><div style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Comments on Arabic caption</div>
-        ${(p.comments||[]).filter(cm=>cm.section==='captionAR').map(cm=>`<div class="comment-item"><div class="comment-meta"><strong>${esc(cm.by||'')}</strong>${cm.internal?'<span class="badge internal">Internal</span>':''}<span>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span></div><div>${esc(cm.text)}</div></div>`).join('')||'<div style="font-size:13px;color:var(--muted-2)">No comments yet.</div>'}
+        ${(p.comments||[]).filter(cm=>cm.section==='captionAR').map((cm,ci)=>{
+        const idx=(p.comments||[]).indexOf(cm);
+        return `<div class="comment-item"><div class="comment-meta"><strong>${esc(cm.by||'Anonymous')}</strong>${cm.editor?'<span class="badge editor">Editor</span>':''}${cm.internal?'<span class="badge internal">Internal</span>':''}<span>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span><button class="btn sm ghost" style="margin-left:auto;padding:2px 6px;font-size:10px" onclick="editComment(${idx})">Edit</button><button class="btn sm ghost" style="padding:2px 6px;font-size:10px;color:var(--coral)" onclick="deleteComment(${idx})">Delete</button></div><div>${esc(cm.text)}</div></div>`;
+      }).join('')||'<div style="font-size:13px;color:var(--muted-2)">No comments yet.</div>'}
         <div class="comment-add"><input placeholder="Your name" id="cmNameAR" style="max-width:120px"><input placeholder="Add a note... mention with @name@rich.marketing" id="cmTextAR" style="flex:2"><label class="int-toggle"><input type="checkbox" id="cmIntAR"> Internal note (hidden from client)</label><button class="btn sm" onclick="addComment('captionAR')">Post</button></div>
       </div>
 
@@ -980,7 +990,10 @@ function editPost(postId){
         </div>
       </div>
       <div class="comments-area" style="margin-top:12px"><div style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Creative comments</div>
-        ${(p.comments||[]).filter(cm=>cm.section==='creative').map(cm=>`<div class="comment-item"><div class="comment-meta"><strong>${esc(cm.by||'')}</strong>${cm.editor?'<span class="badge editor">Editor</span>':''}${cm.internal?'<span class="badge internal">Internal</span>':''}<span>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span></div><div>${esc(cm.text)}</div></div>`).join('')||'<div style="font-size:13px;color:var(--muted-2)">No comments yet.</div>'}
+        ${(p.comments||[]).filter(cm=>cm.section==='creative').map((cm,ci)=>{
+        const idx=(p.comments||[]).indexOf(cm);
+        return `<div class="comment-item"><div class="comment-meta"><strong>${esc(cm.by||'Anonymous')}</strong>${cm.editor?'<span class="badge editor">Editor</span>':''}${cm.internal?'<span class="badge internal">Internal</span>':''}<span>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span><button class="btn sm ghost" style="margin-left:auto;padding:2px 6px;font-size:10px" onclick="editComment(${idx})">Edit</button><button class="btn sm ghost" style="padding:2px 6px;font-size:10px;color:var(--coral)" onclick="deleteComment(${idx})">Delete</button></div><div>${esc(cm.text)}</div></div>`;
+      }).join('')||'<div style="font-size:13px;color:var(--muted-2)">No comments yet.</div>'}
         <div class="comment-add"><input placeholder="Your name" id="cmNameCr" style="max-width:120px"><input placeholder="Add a note..." id="cmTextCr" style="flex:2"><label class="int-toggle"><input type="checkbox" id="cmIntCr"> Internal note</label><button class="btn sm" onclick="addComment('creative')">Post</button></div>
       </div>
     </div>
@@ -1121,6 +1134,36 @@ function addComment(section){
   const p = (c.posts||[]).find(x=>x.id===postId[1]); if(!p) return;
   p.comments = p.comments||[];
   p.comments.push({section, by:name||'Anonymous', text, internal, editor:true, d:new Date().toISOString()});
+  saveCalendars();
+  editPost(p.id);
+}
+
+
+function editComment(idx){
+  const postMatch = $('postModalFoot').innerHTML.match(/deletePost\('([^']+)'\)/);
+  if(!postMatch) return;
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postMatch[1]); if(!p) return;
+  const cm = (p.comments||[])[idx]; if(!cm) return;
+  const newText = prompt('Edit comment:', cm.text);
+  if(newText===null) return;
+  if(newText.trim()===''){
+    p.comments.splice(idx,1);
+  } else {
+    cm.text = newText.trim();
+    cm.edited = new Date().toISOString();
+  }
+  saveCalendars();
+  editPost(p.id);
+}
+
+function deleteComment(idx){
+  if(!confirm('Delete this comment?')) return;
+  const postMatch = $('postModalFoot').innerHTML.match(/deletePost\('([^']+)'\)/);
+  if(!postMatch) return;
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postMatch[1]); if(!p) return;
+  (p.comments||[]).splice(idx,1);
   saveCalendars();
   editPost(p.id);
 }
