@@ -200,6 +200,38 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
   .cal-day{min-height:90px}
   body{background:#fff}
 }
+
+/* View toggle */
+.view-tabs{display:flex;gap:0;border:1px solid var(--border-2);border-radius:6px;overflow:hidden;margin-right:8px}
+.view-tabs button{padding:6px 14px;font-size:12px;font-weight:500;border:none;background:var(--card);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.view-tabs button.active{background:var(--blue);color:#fff}
+.view-tabs button:not(:last-child){border-right:1px solid var(--border-2)}
+
+/* Approval cards */
+.approval-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+@media(max-width:700px){.approval-grid{grid-template-columns:1fr}}
+.approval-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.approval-card .card-media{width:100%;aspect-ratio:4/5;background:#111;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.approval-card .card-media img{width:100%;height:100%;object-fit:cover}
+.approval-card .card-media video{width:100%;height:100%;object-fit:cover}
+.approval-card .card-media .no-media{color:#555;font-size:13px}
+.approval-card .card-channel{position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;z-index:2}
+.approval-card .card-status-badge{position:absolute;top:8px;right:8px;font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600;z-index:2}
+.approval-card .card-body{padding:14px;flex:1;display:flex;flex-direction:column}
+.approval-card .card-topic{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:600;text-transform:uppercase;margin-bottom:4px}
+.approval-card .card-date{font-size:12px;color:var(--muted);margin-bottom:8px}
+.approval-card .card-caption{font-size:13px;line-height:1.5;color:var(--text);max-height:80px;overflow:hidden;text-overflow:ellipsis;margin-bottom:10px;flex:1}
+.approval-card .card-actions{display:flex;gap:6px;margin-top:auto}
+.approval-card .card-actions .btn{flex:1;justify-content:center}
+.btn.approved-active{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.declined-active{background:var(--coral);color:#fff;border-color:var(--coral)}
+
+/* Client view - creative at top */
+.client-post .creative-hero{width:100%;max-height:500px;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.client-post .creative-hero img{width:100%;max-height:500px;object-fit:contain}
+.client-post .creative-hero video{width:100%;max-height:500px}
+.client-post .channel-strip{display:flex;gap:6px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--border)}
+.channel-strip .ptag{font-size:11px;padding:3px 8px;border-radius:4px}
 </style>
 </head>
 <body>
@@ -380,6 +412,7 @@ function renderCalendarView(){
   const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
   $('pageTitle').textContent = c.name + (editorLocked?' (Locked)':' - Editor');
   if(viewMode==='year') renderYearView(c);
+  else if(viewMode==='approval') renderApprovalView(c);
   else renderMonthView(c);
 }
 
@@ -458,6 +491,10 @@ function renderMonthView(c){
     </div>
     <div style="display:flex;gap:6px">
       ${editorLocked?'':'<button class="btn sm primary" onclick="addPost()">+ Add post</button>'}
+    <div class="view-tabs">
+      <button class="${viewMode==='month'?'active':''}" onclick="viewMode='month';renderCalendarView()">Calendar</button>
+      <button class="${viewMode==='approval'?'active':''}" onclick="viewMode='approval';renderCalendarView()">Approval</button>
+    </div>
     </div>
   </div>`;
   
@@ -501,6 +538,88 @@ function renderMonthView(c){
 
 function monthNav(dir){
   viewMonth.setMonth(viewMonth.getMonth()+dir);
+  renderCalendarView();
+}
+
+
+/* ========== APPROVAL VIEW ========== */
+function renderApprovalView(c){
+  const vm = viewMonth || new Date();
+  const year = vm.getFullYear(), month = vm.getMonth();
+  const allPosts = (c.posts||[]);
+  const monthPosts = allPosts.filter(p=>{const d=new Date(p.date+'T00:00:00');return d.getFullYear()===year&&d.getMonth()===month;}).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  
+  let html = `<div class="toolbar">
+    <button class="btn sm" onclick="viewMode='year';renderCalendarView()">&lsaquo; Year</button>
+    <div class="month-header">
+      <button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button>
+      <h2>${MONTH_NAMES[month]} ${year}</h2>
+      <button class="month-nav" onclick="monthNav(1)">&rsaquo;</button>
+    </div>
+    <div style="display:flex;gap:6px">
+      ${editorLocked?'':'<button class="btn sm primary" onclick="addPost()">+ Add post</button>'}
+      <div class="view-tabs">
+        <button class="${viewMode==='month'?'active':''}" onclick="viewMode='month';renderCalendarView()">Calendar</button>
+        <button class="active" onclick="">Approval</button>
+      </div>
+    </div>
+  </div>`;
+  
+  if(!monthPosts.length){
+    html += '<div style="text-align:center;padding:40px;color:var(--muted)">No posts this month.</div>';
+    $('app').innerHTML = html;
+    return;
+  }
+  
+  html += '<div class="approval-grid">';
+  monthPosts.forEach(p=>{
+    const sc = STATUS_COLORS[p.status]||'#d1d5db';
+    const plats = (p.platforms||[]).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join('');
+    const fb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
+    
+    // Determine media source
+    let mediaHTML = '<div class="no-media">No creative</div>';
+    if(p.creativesEN){
+      mediaHTML = `<img src="${p.creativesEN}" alt="">`;
+    } else if(p.hasCreativeEN){
+      if(p.creativeENType==='video'){
+        mediaHTML = `<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" controls></video>`;
+      } else {
+        mediaHTML = `<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" alt="">`;
+      }
+    }
+    
+    const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#fef3c7',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
+    const statusFg = {Draft:'#374151','In Production':'#92400e','Ready to Review':'#92400e',Approved:'#166534',Scheduled:'#1e40af',Published:'#166534'};
+    
+    html += `<div class="approval-card">
+      <div class="card-media" onclick="editPost('${p.id}')">
+        ${mediaHTML}
+        <div class="card-channel">${plats}</div>
+        <div class="card-status-badge" style="background:${statusBg[p.status]||'#e5e7eb'};color:${statusFg[p.status]||'#374151'}">${esc(p.status||'Draft')}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-topic">${esc(p.topic||'Untitled')}</div>
+        <div class="card-date">${fmtDate(p.date)}</div>
+        <div class="card-caption">${esc(p.captionEN||p.caption||'')}</div>
+        <div class="card-actions">
+          <button class="btn sm ${fb.status==='approved'?'approved-active':''}" onclick="teamApprove('${p.id}','approved')">Approve</button>
+          <button class="btn sm ${fb.status==='declined'?'declined-active':''}" onclick="teamApprove('${p.id}','declined')">Needs changes</button>
+          <button class="btn sm ghost" onclick="editPost('${p.id}')">Edit</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  $('app').innerHTML = html;
+}
+
+async function teamApprove(postId, status){
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  c.feedback = c.feedback||{};
+  c.feedback[postId] = c.feedback[postId]||{status:'',comments:[]};
+  c.feedback[postId].status = (c.feedback[postId].status===status) ? '' : status;
+  await saveCalendars();
   renderCalendarView();
 }
 
@@ -911,12 +1030,13 @@ function renderClientView(){
     const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || ''; const clientIsVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
     
     html += `<div class="client-post">
+      ${previewImg ? `<div class="creative-hero">${clientIsVideo ? `<video src="${previewImg}" controls></video>` : `<img src="${previewImg}" alt="Creative preview">`}</div>` : ''}
+      <div class="channel-strip">${plats}</div>
       <div class="client-post-header">
-        <h3><span class="status-dot" style="background:${sc}"></span>${esc(p.topic||p.caption||'Untitled')}</h3>
-        <div class="post-date">${plats} &middot; ${esc(p.status||'')}</div>
+        <h3>${esc(p.topic||p.caption||'Untitled')}</h3>
+        <div class="post-date">${fmtDate(p.date)} &middot; ${esc(p.creativeType||'')} &middot; ${esc(p.status||'')}</div>
       </div>
       <div class="client-post-body">
-        ${previewImg ? (clientIsVideo ? `<video class="preview-img" src="${previewImg}" controls style="max-height:400px;width:100%;border-radius:8px;margin-bottom:16px"></video>` : `<img class="preview-img" src="${previewImg}" alt="Creative preview">`) : ''}
         ${p.captionEN ? `<div class="caption-block"><h4>Caption (English)</h4><p>${esc(p.captionEN)}</p></div>` : ''}
         ${p.caption && !p.captionEN ? `<div class="caption-block"><h4>Caption</h4><p>${esc(p.caption)}</p></div>` : ''}
         ${p.captionAR ? `<div class="caption-block"><h4>Caption (Arabic)</h4><p dir="rtl">${esc(p.captionAR)}</p></div>` : ''}
