@@ -218,9 +218,9 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .sizer button svg{display:block}
 
 /* Client card sizes */
-.client-grid{display:flex;flex-direction:column;gap:20px}
-.client-grid.sz-s{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.client-grid.sz-m{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.client-grid{display:flex;flex-direction:column;gap:20px;align-items:stretch}
+.client-grid.sz-s{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:start}
+.client-grid.sz-m{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:start}
 .client-grid.sz-l{display:flex;flex-direction:column;gap:20px}
 
 /* Small card overrides */
@@ -369,6 +369,10 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .sz-s .client-card .cc-day{width:32px;height:32px}
 .sz-s .client-card .cc-day .cc-d{font-size:14px}
 .sz-s .client-card .cc-day .cc-m{font-size:8px}
+
+
+/* Caption edit */
+.cc-section h4 .cc-reply-btn{margin-left:6px;font-size:11px}
 
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
@@ -1519,9 +1523,9 @@ function renderClientView(targetMonth){
             <div class="cc-platforms">${plats}</div>
           </div>
           <div class="cc-content">
-            ${p.captionEN ? `<div class="cc-section"><h4>Caption (English)</h4><p>${esc(p.captionEN)}</p></div>` : ''}
-            ${p.caption && !p.captionEN ? `<div class="cc-section"><h4>Caption</h4><p>${esc(p.caption)}</p></div>` : ''}
-            ${p.captionAR ? `<div class="cc-section"><h4>Caption (Arabic)</h4><p dir="rtl">${esc(p.captionAR)}</p></div>` : ''}
+            ${p.captionEN ? `<div class="cc-section"><h4>Caption (English) <button class="cc-reply-btn" onclick="editClientCaption('${p.id}','captionEN')">Edit</button></h4><p id="cap-${p.id}-en">${esc(p.captionEN)}</p></div>` : ''}
+            ${p.caption && !p.captionEN ? `<div class="cc-section"><h4>Caption <button class="cc-reply-btn" onclick="editClientCaption('${p.id}','caption')">Edit</button></h4><p id="cap-${p.id}-c">${esc(p.caption)}</p></div>` : ''}
+            ${p.captionAR ? `<div class="cc-section"><h4>Caption (Arabic) <button class="cc-reply-btn" onclick="editClientCaption('${p.id}','captionAR')">Edit</button></h4><p dir="rtl" id="cap-${p.id}-ar">${esc(p.captionAR)}</p></div>` : ''}
             ${(p.assets||[]).filter(a=>a.url).length ? `<div class="cc-section"><h4>Assets</h4><div class="cc-assets">${(p.assets||[]).filter(a=>a.url).map(a=>`<a href="${esc(a.url)}" target="_blank">${esc(a.label||'View file')}</a>`).join('')}</div></div>` : ''}
           </div>
           <div class="cc-approval">
@@ -1579,6 +1583,46 @@ async function clientFeedback(postId, status){
   await sendFeedback(clientCalId_c, clientPin, postId, {status:p.feedback.status});
 }
 
+
+
+async function editClientCaption(postId, field){
+  const p = (clientData.posts||[]).find(x=>x.id===postId); if(!p) return;
+  const current = p[field]||'';
+  
+  // Replace the paragraph with a textarea inline
+  const elId = field==='captionEN'?'cap-'+postId+'-en':field==='captionAR'?'cap-'+postId+'-ar':'cap-'+postId+'-c';
+  const el = document.getElementById(elId);
+  if(!el) return;
+  
+  // If already editing, skip
+  if(el.tagName==='TEXTAREA') return;
+  
+  const ta = document.createElement('textarea');
+  ta.value = current;
+  ta.id = elId;
+  ta.style.cssText = 'width:100%;min-height:100px;padding:8px 10px;border:1px solid var(--blue);border-radius:6px;font-size:14px;font-family:inherit;line-height:1.5;resize:vertical;';
+  if(field==='captionAR') ta.dir = 'rtl';
+  el.replaceWith(ta);
+  ta.focus();
+  
+  // Add save/cancel below
+  const actions = document.createElement('div');
+  actions.style.cssText = 'display:flex;gap:6px;margin-top:6px;';
+  actions.innerHTML = `<button class="btn sm primary" id="save-${postId}-${field}">Save</button><button class="btn sm" id="cancel-${postId}-${field}">Cancel</button>`;
+  ta.after(actions);
+  
+  document.getElementById('save-'+postId+'-'+field).onclick = async function(){
+    const newVal = ta.value;
+    p[field] = newVal;
+    try{
+      await fetch('/api/calendar-edit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:clientCalId_c,pin:clientPin,postId,captionEN:field==='captionEN'?newVal:undefined,captionAR:field==='captionAR'?newVal:undefined,caption:field==='caption'?newVal:undefined})});
+    }catch(e){console.error(e);}
+    renderClientView(clientCurrentMonth);
+  };
+  document.getElementById('cancel-'+postId+'-'+field).onclick = function(){
+    renderClientView(clientCurrentMonth);
+  };
+}
 
 async function editClientComment(postId, commentIdx){
   const p = (clientData.posts||[]).find(x=>x.id===postId); if(!p) return;
