@@ -67,7 +67,8 @@ export async function onRequest(context) {
       if ((c.pin||'') !== (b.pin||'')) return json({ error:'pin' }, 403);
       c.feedback=c.feedback||{}; c.feedback[b.postId]=c.feedback[b.postId]||{status:'',comments:[]};
       if (b.status!==undefined) c.feedback[b.postId].status=b.status;
-      if (b.comment) c.feedback[b.postId].comments.push({ t:b.comment, by:b.by||'Client', d:new Date().toISOString() });
+      if (b.replaceComments) c.feedback[b.postId].comments = b.replaceComments;
+      else if (b.comment) c.feedback[b.postId].comments.push({ t:b.comment, by:b.by||'Client', d:new Date().toISOString(), replyTo:b.replyTo!==undefined?b.replyTo:undefined });
       await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
     }
 
