@@ -636,7 +636,7 @@ function fmtDay(ds){try{return new Date(ds+'T00:00:00').toLocaleDateString('en-G
 async function loadCalendars(){ if(api.on){try{const r=await fetch('/api/calendars');if(r.ok){const d=await r.json();return d.calendars||[];}}catch(e){}} return await local.get('rich_calendars',[]); }
 async function saveCalendars(){ if(api.on){try{await fetch('/api/calendars',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(calendars)});}catch(e){}} else {await local.set('rich_calendars',calendars);} }
 function calLink(id){return location.origin+location.pathname+'?calendar='+id;}
-$('calBtn').onclick=()=>{renderCalendars();$('calsModal').classList.add('show');};
+$('calBtn').onclick=()=>{window.open('/calendar.html','_blank');};
 $('calsClose').onclick=()=>$('calsModal').classList.remove('show');
 function renderCalendars(){$('calsList').innerHTML=calendars.length?calendars.map(c=>`<div class="albumrow"><div><div class="an">${esc(c.name)}</div><div class="am">${(c.posts||[]).length} posts &middot; PIN ${esc(c.pin||'')}</div></div><button class="btn sm" onclick="openCalManage('${c.id}')">Open</button></div>`).join(''):'<div class="noteempty">No client calendars yet. Create one below.</div>';}
 $('newCalBtn').onclick=async()=>{const n=$('newCal').value.trim();if(!n)return;const c={id:'cal'+Date.now().toString(36),name:n,intro:'',pin:String(Math.floor(1000+Math.random()*9000)),by:'',created:new Date().toISOString(),posts:[],feedback:{}};calendars.unshift(c);await saveCalendars();$('newCal').value='';renderCalendars();openCalManage(c.id);};
