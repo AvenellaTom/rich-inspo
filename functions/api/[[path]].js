@@ -113,6 +113,20 @@ export async function onRequest(context) {
       return new Response(value, { status: 200, headers: { 'content-type': mime, 'cache-control': 'public, max-age=3600' } });
     }
 
+
+    // Client edit post content (with PIN auth)
+    if (path === 'calendar-edit' && request.method === 'POST') {
+      const b = await request.json(); const cals=(await kv.get('calendars','json'))||[]; const c=cals.find(x=>x.id===b.id);
+      if (!c) return json({ error:'notfound' }, 404);
+      if ((c.pin||'') !== (b.pin||'')) return json({ error:'pin' }, 403);
+      const p = (c.posts||[]).find(x=>x.id===b.postId);
+      if (!p) return json({ error:'post not found' }, 404);
+      if (b.captionEN !== undefined) p.captionEN = b.captionEN;
+      if (b.captionAR !== undefined) p.captionAR = b.captionAR;
+      if (b.caption !== undefined) p.caption = b.caption;
+      await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
+    }
+
     // Suggestions (team box; admin gate is client-side PIN)
     if (path === 'suggestions' && request.method === 'GET') return json({ suggestions: (await kv.get('suggestions','json'))||[] });
     if (path === 'suggestions' && request.method === 'PUT') { await kv.put('suggestions', JSON.stringify(await request.json())); return json({ ok:true }); }
