@@ -256,6 +256,90 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .breadcrumb a:hover{text-decoration:underline}
 .breadcrumb span{color:var(--muted-2)}
 
+
+/* Client view toggle */
+.client-view-toggle{display:flex;gap:0;border:1px solid var(--border-2);border-radius:8px;overflow:hidden}
+.client-view-toggle button{padding:8px 16px;font-size:13px;font-weight:500;border:none;background:var(--card);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;display:flex;align-items:center;gap:5px}
+.client-view-toggle button.active{background:var(--blue);color:#fff}
+.client-view-toggle button:not(:last-child){border-right:1px solid var(--border-2)}
+
+/* Client month calendar grid */
+.client-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
+.client-cal-head{background:var(--card);padding:10px 4px;text-align:center;font-size:12px;font-weight:600;color:var(--muted)}
+.client-cal-day{background:var(--card);min-height:100px;padding:6px;vertical-align:top}
+.client-cal-day.empty{background:var(--bg);opacity:.4}
+.client-cal-day .ccd-num{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.client-cal-day .ccd-num.today{color:var(--blue);font-weight:700}
+.client-cal-day .ccd-post{background:var(--bg);border-radius:4px;padding:4px 6px;margin-bottom:3px;font-size:10px;cursor:pointer;border-left:3px solid var(--green);transition:background .15s;overflow:hidden}
+.client-cal-day .ccd-post:hover{background:var(--blue-light)}
+.ccd-post .ccd-title{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccd-post .ccd-plats{display:flex;gap:1px;margin-top:2px;flex-wrap:wrap}
+.ccd-post .ccd-plats .ptag{font-size:8px;padding:0 3px;border-radius:2px}
+.ccd-post .ccd-thumb{width:100%;height:40px;object-fit:cover;border-radius:2px;margin-bottom:2px}
+
+/* Client comment improvements */
+.cc-comment-box{background:var(--bg);border-radius:8px;padding:12px;margin-top:8px}
+.cc-thread{margin-left:0}
+.cc-comment{padding:10px 0;border-bottom:1px solid var(--border)}
+.cc-comment:last-of-type{border-bottom:none}
+.cc-comment-avatar{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.cc-comment-row{display:flex;gap:8px;align-items:flex-start}
+.cc-comment-body{flex:1;min-width:0}
+.cc-comment-header{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.cc-comment-header strong{font-size:13px}
+.cc-comment-header time{font-size:11px;color:var(--muted-2)}
+.cc-comment-text{font-size:13px;line-height:1.5}
+.cc-reply-btn{font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 0;margin-top:2px;font-family:inherit}
+.cc-reply-btn:hover{text-decoration:underline}
+.cc-replies{margin-left:36px;border-left:2px solid var(--border);padding-left:12px;margin-top:4px}
+.cc-replies .cc-comment{padding:6px 0}
+.cc-new-comment{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.cc-name-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.cc-name-row label{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.cc-name-row input{flex:1;padding:8px 12px;border:1px solid var(--border-2);border-radius:6px;font-size:13px;font-family:inherit}
+.cc-name-row input:focus{outline:none;border-color:var(--blue)}
+.cc-msg-row{display:flex;gap:8px}
+.cc-msg-row textarea{flex:1;padding:8px 12px;border:1px solid var(--border-2);border-radius:6px;font-size:13px;font-family:inherit;resize:none;min-height:40px}
+.cc-msg-row textarea:focus{outline:none;border-color:var(--blue)}
+.cc-msg-row .btn{align-self:flex-end}
+
+/* Status badge in approval */
+.cc-approval-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;margin-right:auto}
+.cc-approval-status .status-icon{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Mobile responsive */
+@media(max-width:768px){
+  .client-wrap{padding:12px}
+  .client-month-nav h2{font-size:22px;min-width:160px}
+  .client-summary{grid-template-columns:repeat(2,1fr);gap:8px}
+  .client-stat{padding:10px 12px}
+  .client-stat .stat-num{font-size:22px}
+  .client-cal-grid{font-size:11px}
+  .client-cal-day{min-height:70px;padding:4px}
+  .client-cal-day .ccd-post{font-size:9px;padding:2px 4px}
+  .client-cal-day .ccd-thumb{height:28px}
+  .client-card .cc-meta{flex-direction:column;align-items:flex-start}
+  .client-card .cc-meta .cc-platforms{margin-top:4px}
+  .cc-approval .btn{font-size:12px;padding:6px 10px;min-width:0}
+  .sizer{display:none}
+  .client-grid.sz-s,.client-grid.sz-m{grid-template-columns:1fr}
+  .client-view-toggle button{padding:6px 10px;font-size:12px}
+}
+@media(max-width:480px){
+  .header h1{font-size:15px}
+  .header img{height:32px}
+  .client-month-nav h2{font-size:18px;min-width:120px}
+  .client-card .cc-content{padding:12px}
+  .cc-name-row{flex-direction:column;gap:4px}
+  .cc-msg-row{flex-direction:column;gap:6px}
+}
+/* Tablet */
+@media(min-width:769px) and (max-width:1024px){
+  .client-grid.sz-m{grid-template-columns:repeat(2,1fr)}
+  .client-grid.sz-s{grid-template-columns:repeat(2,1fr)}
+  .client-cal-day{min-height:90px}
+}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -1102,6 +1186,40 @@ let clientPin = '';
 let clientData = null;
 let clientCalId_c = null;
 let clientViewSize = 'l';
+let clientTab = 'content';
+let clientCurrentMonth = null;
+
+function setClientTab(tab){
+  clientTab = tab;
+  renderClientView(clientCurrentMonth);
+}
+
+function saveClientName(name){
+  try{localStorage.setItem('rich_cal_name',name);}catch(e){}
+}
+
+function showReplyForm(postId, commentIdx){
+  const container = document.getElementById('reply-'+postId+'-'+commentIdx);
+  if(!container || container.innerHTML) return;
+  let savedName='';try{savedName=localStorage.getItem('rich_cal_name')||'';}catch(e){}
+  container.innerHTML = `<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">
+    <input placeholder="Your name" value="${savedName}" id="rn-${postId}-${commentIdx}" style="padding:6px 8px;border:1px solid var(--border-2);border-radius:4px;font-size:12px;font-family:inherit" onchange="saveClientName(this.value)">
+    <div style="display:flex;gap:4px"><input placeholder="Write a reply..." id="rt-${postId}-${commentIdx}" style="flex:1;padding:6px 8px;border:1px solid var(--border-2);border-radius:4px;font-size:12px;font-family:inherit"><button class="btn sm" onclick="sendReply('${postId}',${commentIdx})">Reply</button></div>
+  </div>`;
+  container.querySelector('input:last-of-type')?.focus();
+}
+
+async function sendReply(postId, commentIdx){
+  const name = document.getElementById('rn-'+postId+'-'+commentIdx)?.value?.trim()||'Client';
+  const text = document.getElementById('rt-'+postId+'-'+commentIdx)?.value?.trim();
+  if(!text) return;
+  saveClientName(name);
+  const p = (clientData.posts||[]).find(x=>x.id===postId); if(!p) return;
+  p.feedback = p.feedback||{status:'',comments:[]};
+  p.feedback.comments.push({t:text, by:name, d:new Date().toISOString(), replyTo:commentIdx});
+  renderClientView(clientCurrentMonth);
+  await sendFeedback(clientCalId_c, clientPin, postId, {comment:text, by:name, replyTo:commentIdx});
+}
 
 function setClientSize(sz){
   clientViewSize = sz;
@@ -1150,12 +1268,11 @@ function renderClientView(targetMonth){
   const c = clientData;
   const posts = (c.posts||[]).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   
-  // Work out which month to show
+  // Determine month
   const allDates = posts.map(p=>p.date).filter(Boolean).sort();
   let vm;
   if(targetMonth) vm = targetMonth;
   else if(allDates.length){
-    // Default to current month if it has posts, otherwise first month with posts
     const now = new Date();
     const nowKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
     const hasNow = allDates.some(d=>d.startsWith(nowKey));
@@ -1165,8 +1282,9 @@ function renderClientView(targetMonth){
   const year = vm.getFullYear(), month = vm.getMonth();
   const monthKey = year+'-'+String(month+1).padStart(2,'0');
   const monthPosts = posts.filter(p=>(p.date||'').startsWith(monthKey));
+  clientCurrentMonth = vm;
   
-  // Count available months for nav
+  // Nav months
   const availMonths = [...new Set(allDates.map(d=>d.substring(0,7)))].sort();
   const currentIdx = availMonths.indexOf(monthKey);
   const prevMonth = currentIdx > 0 ? availMonths[currentIdx-1] : null;
@@ -1174,108 +1292,192 @@ function renderClientView(targetMonth){
   
   // Stats
   const totalPosts = monthPosts.length;
-  const platforms = [...new Set(monthPosts.flatMap(p=>p.platforms||[]))];
+  const platformSet = [...new Set(monthPosts.flatMap(p=>p.platforms||[]))];
   const approved = monthPosts.filter(p=>{const fb=p.feedback||{};return fb.status==='approved';}).length;
-  const needsReview = monthPosts.filter(p=>['Ready to Review','In Production'].includes(p.status)).length;
+  
+  // Get saved name
+  let savedName = '';
+  try{savedName=localStorage.getItem('rich_cal_name')||'';}catch(e){}
   
   let html = `<div class="header" style="display:flex"><img src="${$('logoImg').src}" alt="RICH"><h1>${esc(c.name)}</h1></div>
     <div class="client-wrap">`;
   
   if(c.intro) html += `<div class="client-intro"><p>${esc(c.intro)}</p></div>`;
   
-  // Month nav + sizer
+  // Controls bar
   html += `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
-    <div class="client-month-nav" style="margin-bottom:0">
+    <div class="client-month-nav" style="margin-bottom:0;flex:1;justify-content:flex-start">
       ${prevMonth ? `<button class="month-nav" onclick="clientGoMonth('${prevMonth}')">&lsaquo;</button>` : '<div style="width:36px"></div>'}
-      <h2>${MONTH_NAMES[month]} ${year}</h2>
+      <h2 style="min-width:auto">${MONTH_NAMES[month]} ${year}</h2>
       ${nextMonth ? `<button class="month-nav" onclick="clientGoMonth('${nextMonth}')">&rsaquo;</button>` : '<div style="width:36px"></div>'}
     </div>
-    <div class="sizer" id="clientSizer">
-      <button data-sz="l" title="Large" onclick="setClientSize('l')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
-      <button data-sz="m" title="Medium" onclick="setClientSize('m')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/></svg></button>
-      <button data-sz="s" title="Small" onclick="setClientSize('s')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg></button>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="client-view-toggle" id="clientViewToggle">
+        <button class="${clientTab==='calendar'?'active':''}" onclick="setClientTab('calendar')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/></svg> Calendar</button>
+        <button class="${clientTab==='content'?'active':''}" onclick="setClientTab('content')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Content</button>
+      </div>
+      <div class="sizer" id="clientSizer">
+        <button data-sz="l" title="Large" onclick="setClientSize('l')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
+        <button data-sz="m" title="Medium" onclick="setClientSize('m')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/></svg></button>
+        <button data-sz="s" title="Small" onclick="setClientSize('s')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg></button>
+      </div>
     </div>
   </div>`;
   
   // Summary bar
   html += `<div class="client-summary">
     <div class="client-stat"><div class="stat-num">${totalPosts}</div><div class="stat-label">Posts planned</div></div>
-    <div class="client-stat"><div class="stat-num">${platforms.length}</div><div class="stat-label">Channels</div></div>
+    <div class="client-stat"><div class="stat-num">${platformSet.length}</div><div class="stat-label">Channels</div></div>
     <div class="client-stat"><div class="stat-num">${approved}</div><div class="stat-label">Approved</div></div>
     <div class="client-stat"><div class="stat-num">${totalPosts - approved}</div><div class="stat-label">Awaiting review</div></div>
   </div>`;
   
-  if(!monthPosts.length){
-    html += '<div style="text-align:center;padding:40px;color:var(--muted)">No content planned for this month yet.</div>';
-  } else {
-    html += `<div class="client-grid sz-${clientViewSize}" id="clientGrid">`;
-    // Group by week
-    let currentWeek = -1;
-    monthPosts.forEach(p=>{
-      const d = new Date(p.date+'T00:00:00');
-      const weekNum = getWeekOfMonth(d);
-      if(weekNum !== currentWeek){
-        currentWeek = weekNum;
-        const weekStart = getWeekStart(d);
-        const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
-        html += `<div class="client-week-label">Week ${weekNum} &middot; ${weekStart.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} - ${weekEnd.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>`;
-      }
+  // ===== CALENDAR TAB =====
+  if(clientTab === 'calendar'){
+    const daysInMonth = new Date(year,month+1,0).getDate();
+    const firstDay = (new Date(year,month,1).getDay()+6)%7;
+    const today = new Date();
+    
+    html += '<div class="client-cal-grid">';
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{html+=`<div class="client-cal-head">${d}</div>`;});
+    for(let i=0;i<firstDay;i++) html+='<div class="client-cal-day empty"></div>';
+    
+    for(let d=1;d<=daysInMonth;d++){
+      const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
+      const dayPosts = monthPosts.filter(p=>p.date===ds);
       
-      const plats = (p.platforms||[p.channel]).filter(Boolean).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join('');
-      const fb = p.feedback||{status:'',comments:[]};
-      const dd = new Date(p.date+'T00:00:00');
-      const dayNum = dd.getDate();
-      const dayMonth = dd.toLocaleDateString('en-GB',{month:'short'});
-      const dayName = dd.toLocaleDateString('en-GB',{weekday:'long'});
-      
-      // Media
-      let mediaHTML = '';
-      const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || '';
-      const isVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
-      if(previewImg){
-        mediaHTML = `<div class="cc-media">${isVideo ? `<video src="${previewImg}" controls></video>` : `<img src="${previewImg}" alt="">`}</div>`;
-      }
-      
-      // Status pill
-      const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#dbeafe',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
-      const statusFg = {Draft:'#374151','In Production':'#92400e','Ready to Review':'#1e40af',Approved:'#166534',Scheduled:'#1e40af',Published:'#166534'};
-      
-      html += `<div class="client-card">
-        ${mediaHTML}
-        <div class="cc-meta">
-          <div class="cc-date-block">
-            <div class="cc-day"><span class="cc-d">${dayNum}</span><span class="cc-m">${dayMonth}</span></div>
-            <div>
-              <div class="cc-title">${esc(p.topic||'Untitled')}</div>
-              <div style="font-size:12px;color:var(--muted)">${dayName}${p.creativeType ? ' &middot; '+esc(p.creativeType) : ''}</div>
-            </div>
-          </div>
-          <div class="cc-platforms">${plats}</div>
-        </div>
-        <div class="cc-content">
-          ${p.captionEN ? `<div class="cc-section"><h4>Caption (English)</h4><p>${esc(p.captionEN)}</p></div>` : ''}
-          ${p.caption && !p.captionEN ? `<div class="cc-section"><h4>Caption</h4><p>${esc(p.caption)}</p></div>` : ''}
-          ${p.captionAR ? `<div class="cc-section"><h4>Caption (Arabic)</h4><p dir="rtl">${esc(p.captionAR)}</p></div>` : ''}
-          ${(p.assets||[]).filter(a=>a.url).length ? `<div class="cc-section"><h4>Assets</h4><div class="cc-assets">${(p.assets||[]).filter(a=>a.url).map(a=>`<a href="${esc(a.url)}" target="_blank">${esc(a.label||'View file')}</a>`).join('')}</div></div>` : ''}
-          ${p.assetLink ? `<div class="cc-section"><h4>Asset</h4><div class="cc-assets"><a href="${esc(p.assetLink)}" target="_blank">View file</a></div></div>` : ''}
-        </div>
-        <div class="cc-approval">
-          <div class="cc-status-pill" style="background:${statusBg[p.status]||'#e5e7eb'};color:${statusFg[p.status]||'#374151'}">${esc(p.status||'Draft')}</div>
-          <button class="btn sm cc-approve ${fb.status==='approved'?'active':''}" onclick="clientFeedback('${p.id}','approved')">Approve</button>
-          <button class="btn sm cc-changes ${fb.status==='declined'?'active':''}" onclick="clientFeedback('${p.id}','declined')">Request changes</button>
-        </div>
-        <div class="cc-comments">
-          ${(fb.comments||[]).map(cm=>`<div class="cc-comment"><div class="cc-cm-meta"><strong>${esc(cm.by||'Client')}</strong> &middot; ${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</div><div>${esc(cm.t)}</div></div>`).join('')}
-          <div class="cc-comment-form"><input placeholder="Leave a comment or note..." id="cc-${p.id}"><button class="btn sm primary" onclick="clientComment('${p.id}')">Send</button></div>
-        </div>
-      </div>`;
-    });
+      html += `<div class="client-cal-day"><div class="ccd-num${isToday?' today':''}">${d}</div>`;
+      dayPosts.forEach(p=>{
+        const sc = STATUS_COLORS[p.status]||'#d1d5db';
+        const plats = (p.platforms||[]).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join('');
+        // Thumbnail
+        const thumb = p.creativesEN || (p.hasCreativeEN && p.creativeENType!=='video' ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '');
+        html += `<div class="ccd-post" style="border-left-color:${sc}" onclick="setClientTab('content');setTimeout(()=>{const el=document.getElementById('cpost-${p.id}');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},100)">
+          ${thumb?`<img class="ccd-thumb" src="${thumb}" alt="">`:''}
+          <div class="ccd-title">${esc(p.topic||'Untitled')}</div>
+          <div class="ccd-plats">${plats}</div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    const totalCells = firstDay + daysInMonth;
+    const remaining = (7-(totalCells%7))%7;
+    for(let i=0;i<remaining;i++) html+='<div class="client-cal-day empty"></div>';
+    html += '</div>';
   }
   
-  html += '</div>'; // close client-grid
+  // ===== CONTENT TAB =====
+  if(clientTab === 'content'){
+    if(!monthPosts.length){
+      html += '<div style="text-align:center;padding:40px;color:var(--muted)">No content planned for this month yet.</div>';
+    } else {
+      html += `<div class="client-grid sz-${clientViewSize}" id="clientGrid">`;
+      let currentWeek = -1;
+      monthPosts.forEach(p=>{
+        const d = new Date(p.date+'T00:00:00');
+        const weekNum = getWeekOfMonth(d);
+        if(weekNum !== currentWeek && clientViewSize==='l'){
+          currentWeek = weekNum;
+          const weekStart = getWeekStart(d);
+          const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+          html += `<div class="client-week-label">Week ${weekNum} &middot; ${weekStart.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} - ${weekEnd.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>`;
+        }
+        
+        const plats = (p.platforms||[p.channel]).filter(Boolean).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join('');
+        const fb = p.feedback||{status:'',comments:[]};
+        const dd = new Date(p.date+'T00:00:00');
+        const dayNum = dd.getDate();
+        const dayMonth = dd.toLocaleDateString('en-GB',{month:'short'});
+        const dayName = dd.toLocaleDateString('en-GB',{weekday:'long'});
+        
+        // Media
+        let mediaHTML = '';
+        const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || '';
+        const isVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
+        if(previewImg){
+          mediaHTML = `<div class="cc-media">${isVideo ? `<video src="${previewImg}" controls playsinline></video>` : `<img src="${previewImg}" alt="">`}</div>`;
+        }
+        
+        const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#dbeafe',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
+        const statusFg = {Draft:'#374151','In Production':'#92400e','Ready to Review':'#1e40af',Approved:'#166534',Scheduled:'#1e40af',Published:'#166534'};
+        const statusIcon = {Draft:'#9ca3af','In Production':'#f59e0b','Ready to Review':'#3b82f6',Approved:'#16a34a',Scheduled:'#3b82f6',Published:'#16a34a'};
+        
+        // Comments with threading
+        const comments = fb.comments||[];
+        const topLevel = comments.filter(cm=>!cm.replyTo);
+        let commentsHTML = '';
+        topLevel.forEach((cm,ci)=>{
+          const initial = (cm.by||'?')[0].toUpperCase();
+          const replies = comments.filter(r=>r.replyTo===ci);
+          commentsHTML += `<div class="cc-comment"><div class="cc-comment-row">
+            <div class="cc-comment-avatar">${initial}</div>
+            <div class="cc-comment-body">
+              <div class="cc-comment-header"><strong>${esc(cm.by||'Anonymous')}</strong><time>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time></div>
+              <div class="cc-comment-text">${esc(cm.t)}</div>
+              <button class="cc-reply-btn" onclick="showReplyForm('${p.id}',${ci})">Reply</button>
+              <div id="reply-${p.id}-${ci}"></div>
+            </div>
+          </div>`;
+          if(replies.length){
+            commentsHTML += '<div class="cc-replies">';
+            replies.forEach(r=>{
+              const ri = (r.by||'?')[0].toUpperCase();
+              commentsHTML += `<div class="cc-comment"><div class="cc-comment-row">
+                <div class="cc-comment-avatar" style="width:22px;height:22px;font-size:10px">${ri}</div>
+                <div class="cc-comment-body">
+                  <div class="cc-comment-header"><strong>${esc(r.by||'Anonymous')}</strong><time>${r.d?new Date(r.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time></div>
+                  <div class="cc-comment-text">${esc(r.t)}</div>
+                </div>
+              </div></div>`;
+            });
+            commentsHTML += '</div>';
+          }
+          commentsHTML += '</div>';
+        });
+        
+        html += `<div class="client-card" id="cpost-${p.id}">
+          ${mediaHTML}
+          <div class="cc-meta">
+            <div class="cc-date-block">
+              <div class="cc-day"><span class="cc-d">${dayNum}</span><span class="cc-m">${dayMonth}</span></div>
+              <div>
+                <div class="cc-title">${esc(p.topic||'Untitled')}</div>
+                <div style="font-size:12px;color:var(--muted)">${dayName}${p.creativeType ? ' &middot; '+esc(p.creativeType) : ''}</div>
+              </div>
+            </div>
+            <div class="cc-platforms">${plats}</div>
+          </div>
+          <div class="cc-content">
+            ${p.captionEN ? `<div class="cc-section"><h4>Caption (English)</h4><p>${esc(p.captionEN)}</p></div>` : ''}
+            ${p.caption && !p.captionEN ? `<div class="cc-section"><h4>Caption</h4><p>${esc(p.caption)}</p></div>` : ''}
+            ${p.captionAR ? `<div class="cc-section"><h4>Caption (Arabic)</h4><p dir="rtl">${esc(p.captionAR)}</p></div>` : ''}
+            ${(p.assets||[]).filter(a=>a.url).length ? `<div class="cc-section"><h4>Assets</h4><div class="cc-assets">${(p.assets||[]).filter(a=>a.url).map(a=>`<a href="${esc(a.url)}" target="_blank">${esc(a.label||'View file')}</a>`).join('')}</div></div>` : ''}
+          </div>
+          <div class="cc-approval">
+            <div class="cc-approval-status"><span class="status-icon" style="background:${statusIcon[p.status]||'#9ca3af'}"></span>${esc(p.status||'Draft')}</div>
+            <button class="btn sm cc-approve ${fb.status==='approved'?'active':''}" onclick="clientFeedback('${p.id}','approved')">Approve</button>
+            <button class="btn sm cc-changes ${fb.status==='declined'?'active':''}" onclick="clientFeedback('${p.id}','declined')">Request changes</button>
+          </div>
+          <div class="cc-comments" style="padding:0 20px 16px">
+            <div class="cc-comment-box">
+              ${commentsHTML||'<div style="font-size:13px;color:var(--muted-2);padding:4px 0">No comments yet. Leave feedback below.</div>'}
+              <div class="cc-new-comment">
+                <div class="cc-name-row"><label>Your name</label><input id="cn-${p.id}" value="${esc(savedName)}" placeholder="Enter your name" onchange="saveClientName(this.value)"></div>
+                <div class="cc-msg-row"><textarea id="ct-${p.id}" placeholder="Leave a comment or request changes..." rows="2"></textarea><button class="btn sm primary" onclick="clientComment('${p.id}')">Send</button></div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      });
+      html += '</div>'; // close grid
+    }
+  }
+  
   html += `<div class="client-footer"><img src="${$('logoImg').src}" alt="RICH">Prepared by RICH Marketing</div>`;
   html += '</div>';
   $('clientApp').innerHTML = html;
+  
   // Init sizer
   try{clientViewSize=localStorage.getItem('rich_cal_sz')||'l';}catch(e){}
   document.querySelectorAll('#clientSizer button').forEach(b=>{b.classList.toggle('on',b.dataset.sz===clientViewSize);});
@@ -1303,18 +1505,21 @@ async function clientFeedback(postId, status){
   const p = (clientData.posts||[]).find(x=>x.id===postId); if(!p) return;
   p.feedback = p.feedback||{status:'',comments:[]};
   p.feedback.status = (p.feedback.status===status) ? '' : status;
-  renderClientView();
+  renderClientView(clientCurrentMonth);
   await sendFeedback(clientCalId_c, clientPin, postId, {status:p.feedback.status});
 }
 
 async function clientComment(postId){
-  const inp = document.getElementById('cc-'+postId);
-  const text = inp.value.trim(); if(!text) return;
+  const nameInp = document.getElementById('cn-'+postId);
+  const textInp = document.getElementById('ct-'+postId);
+  const name = nameInp?.value?.trim()||'Client';
+  const text = textInp?.value?.trim(); if(!text) return;
+  saveClientName(name);
   const p = (clientData.posts||[]).find(x=>x.id===postId); if(!p) return;
   p.feedback = p.feedback||{status:'',comments:[]};
-  p.feedback.comments.push({t:text, by:'Client', d:new Date().toISOString()});
-  renderClientView();
-  await sendFeedback(clientCalId_c, clientPin, postId, {comment:text});
+  p.feedback.comments.push({t:text, by:name, d:new Date().toISOString()});
+  renderClientView(clientCurrentMonth);
+  await sendFeedback(clientCalId_c, clientPin, postId, {comment:text, by:name});
 }
 
 /* ========== BOOT ========== */
