@@ -1483,11 +1483,10 @@ function renderClientView(targetMonth){
         topLevel.forEach((cm,ci)=>{
           const initial = (cm.by||'?')[0].toUpperCase();
           const replies = comments.filter(r=>r.replyTo===ci);
-          const isOwn = savedName && cm.by === savedName;
           commentsHTML += `<div class="cc-comment"><div class="cc-comment-row">
             <div class="cc-comment-avatar">${initial}</div>
             <div class="cc-comment-body">
-              <div class="cc-comment-header"><strong>${esc(cm.by||'Anonymous')}</strong><time>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time>${isOwn?`<button class="cc-reply-btn" style="margin-left:auto" onclick="editClientComment('${p.id}',${ci})">Edit</button>`:''}</div>
+              <div class="cc-comment-header"><strong>${esc(cm.by||'Anonymous')}</strong><time>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time><button class="cc-reply-btn" style="margin-left:auto" onclick="editClientComment('${p.id}',${ci})">Edit</button><button class="cc-reply-btn" style="color:var(--coral)" onclick="deleteClientComment('${p.id}',${ci})">Delete</button></div>
               <div class="cc-comment-text">${esc(cm.t)}</div>
               <button class="cc-reply-btn" onclick="showReplyForm('${p.id}',${ci})">Reply</button>
               <div id="reply-${p.id}-${ci}"></div>
@@ -1622,6 +1621,22 @@ async function editClientCaption(postId, field){
   document.getElementById('cancel-'+postId+'-'+field).onclick = function(){
     renderClientView(clientCurrentMonth);
   };
+}
+
+
+async function deleteClientComment(postId, commentIdx){
+  if(!confirm('Delete this comment?')) return;
+  const p = (clientData.posts||[]).find(x=>x.id===postId); if(!p) return;
+  const fb = p.feedback||{};
+  const comments = fb.comments||[];
+  const topLevel = comments.filter(cm=>!cm.replyTo);
+  const cm = topLevel[commentIdx]; if(!cm) return;
+  const realIdx = comments.indexOf(cm);
+  // Remove the comment and its replies
+  const newComments = comments.filter((c,i)=>i!==realIdx && c.replyTo!==commentIdx);
+  fb.comments = newComments;
+  renderClientView(clientCurrentMonth);
+  await sendFeedback(clientCalId_c, clientPin, postId, {replaceComments:newComments});
 }
 
 async function editClientComment(postId, commentIdx){
