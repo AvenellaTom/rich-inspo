@@ -374,6 +374,58 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 /* Caption edit */
 .cc-section h4 .cc-reply-btn{margin-left:6px;font-size:11px}
 
+
+/* Client feedback panel in editor */
+.feedback-panel{border-radius:8px;padding:16px;margin-bottom:20px;border:2px solid var(--border)}
+.feedback-panel.fb-approved{border-color:var(--green);background:#f0fdf4}
+.feedback-panel.fb-declined{border-color:var(--amber);background:#fffbeb}
+.feedback-panel.fb-none{border-color:var(--border);background:var(--bg)}
+.feedback-panel .fb-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.feedback-panel .fb-status-tag{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 10px;border-radius:4px}
+.fb-status-tag.approved{background:#dcfce7;color:#166534}
+.fb-status-tag.declined{background:#fef3c7;color:#92400e}
+.fb-status-tag.pending{background:#e5e7eb;color:#374151}
+.feedback-panel .fb-title{font-size:14px;font-weight:600}
+.feedback-panel .fb-comment{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.08);display:flex;gap:8px;align-items:flex-start}
+.feedback-panel .fb-comment:last-of-type{border-bottom:none}
+.feedback-panel .fb-avatar{width:24px;height:24px;border-radius:50%;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.feedback-panel .fb-cm-body{flex:1;min-width:0}
+.feedback-panel .fb-cm-meta{font-size:11px;color:var(--muted);margin-bottom:1px}
+.feedback-panel .fb-cm-meta strong{color:var(--text)}
+.feedback-panel .fb-cm-text{font-size:13px;line-height:1.5}
+.feedback-panel .fb-empty{font-size:13px;color:var(--muted-2);font-style:italic}
+
+/* Calendar badges */
+.day-post .dp-feedback{display:flex;gap:3px;align-items:center;margin-top:2px}
+.dp-fb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dp-fb-dot.fb-ok{background:var(--green)}
+.dp-fb-dot.fb-changes{background:var(--amber)}
+.dp-comment-count{font-size:9px;color:var(--muted);font-weight:600}
+.dp-approved-tick{color:var(--green);font-size:10px;font-weight:700}
+.dp-changes-dot{color:var(--amber);font-size:10px;font-weight:700}
+
+/* Approval card feedback badge */
+.card-fb-badge{position:absolute;bottom:8px;left:8px;display:flex;gap:4px;align-items:center;z-index:2;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px}
+.card-fb-badge.fb-ok{background:rgba(22,163,74,.9);color:#fff}
+.card-fb-badge.fb-changes{background:rgba(245,158,11,.9);color:#fff}
+.card-fb-badge.fb-comments{background:rgba(0,0,0,.7);color:#fff}
+
+/* Activity feed */
+.activity-feed{margin-top:28px}
+.activity-feed h2{font-size:20px;margin-bottom:4px}
+.activity-feed .af-sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+.af-item{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;background:var(--card);border-radius:8px;margin-bottom:6px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
+.af-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
+.af-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;font-weight:700}
+.af-icon.af-approved{background:#dcfce7;color:#166534}
+.af-icon.af-declined{background:#fef3c7;color:#92400e}
+.af-icon.af-comment{background:#dbeafe;color:#1e40af}
+.af-body{flex:1;min-width:0}
+.af-body .af-text{font-size:13px;line-height:1.4}
+.af-body .af-text strong{font-weight:600}
+.af-body .af-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.af-empty{text-align:center;padding:24px;color:var(--muted);font-size:13px;background:var(--card);border-radius:8px}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -596,7 +648,62 @@ function renderCalendarList(){
     html += '</div>';
   }
   html += '</div>';
+  
+  // Activity feed
+  const allActivity = [];
+  calendars.forEach(cal=>{
+    const fb = cal.feedback||{};
+    Object.keys(fb).forEach(postId=>{
+      const entry = fb[postId];
+      const post = (cal.posts||[]).find(p=>p.id===postId);
+      const postName = post ? (post.topic||'Untitled') : 'Unknown post';
+      
+      if(entry.status){
+        allActivity.push({type:entry.status==='approved'?'approved':'declined', calId:cal.id, calName:cal.name, postId, postName, d:null, by:null});
+      }
+      (entry.comments||[]).forEach(cm=>{
+        allActivity.push({type:'comment', calId:cal.id, calName:cal.name, postId, postName, d:cm.d, by:cm.by||'Client', text:cm.t||''});
+      });
+    });
+  });
+  
+  // Sort by date descending
+  allActivity.sort((a,b)=>((b.d||'')).localeCompare(a.d||''));
+  const recentActivity = allActivity.slice(0,15);
+  
+  html += '<div class="activity-feed"><h2>Recent Client Activity</h2><p class="af-sub">Comments, approvals, and change requests from your clients.</p>';
+  
+  if(!recentActivity.length){
+    html += '<div class="af-empty">No client activity yet. Share a calendar link and feedback will appear here.</div>';
+  } else {
+    recentActivity.forEach(a=>{
+      let icon='', text='';
+      if(a.type==='approved'){
+        icon = '<div class="af-icon af-approved">&#10003;</div>';
+        text = `<strong>Post approved</strong> &middot; ${esc(a.postName)}`;
+      } else if(a.type==='declined'){
+        icon = '<div class="af-icon af-declined">!</div>';
+        text = `<strong>Changes requested</strong> &middot; ${esc(a.postName)}`;
+      } else {
+        icon = `<div class="af-icon af-comment">${(a.by||'?')[0].toUpperCase()}</div>`;
+        text = `<strong>${esc(a.by)}</strong> commented on <strong>${esc(a.postName)}</strong>: ${esc((a.text||'').substring(0,100))}${(a.text||'').length>100?'...':''}`;
+      }
+      const meta = `${esc(a.calName)}${a.d?' &middot; '+new Date(a.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}`;
+      
+      html += `<div class="af-item" onclick="openCalendarToPost('${a.calId}','${a.postId}')">
+        ${icon}
+        <div class="af-body"><div class="af-text">${text}</div><div class="af-meta">${meta}</div></div>
+      </div>`;
+    });
+  }
+  html += '</div>';
+  
   $('app').innerHTML = html;
+}
+
+function openCalendarToPost(calId, postId){
+  openCalendar(calId);
+  setTimeout(()=>{editPost(postId);},300);
 }
 
 function previewAsClient(id){
@@ -769,8 +876,14 @@ function renderMonthView(c){
     dayPosts.forEach(p=>{
       const sc = STATUS_COLORS[p.status]||'#d1d5db';
       const plats = (p.platforms||[]).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join('');
+      const pfb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
+      const pfbCount = (pfb.comments||[]).length;
+      let fbIndicator = '';
+      if(pfb.status==='approved') fbIndicator = '<span class="dp-approved-tick">&#10003;</span>';
+      else if(pfb.status==='declined') fbIndicator = '<span class="dp-changes-dot">!</span>';
+      if(pfbCount) fbIndicator += `<span class="dp-comment-count">${pfbCount}</span>`;
       html += `<div class="day-post" draggable="${editorLocked?'false':'true'}" ondragstart="dragPost(event,'${p.id}')" onclick="editPost('${p.id}')" style="border-left-color:${sc}">
-        <div class="dp-title"><span class="status-dot" style="background:${sc}"></span>${esc(p.topic||'Untitled')}</div>
+        <div class="dp-title"><span class="status-dot" style="background:${sc}"></span>${esc(p.topic||'Untitled')}${fbIndicator?'<span class="dp-feedback">'+fbIndicator+'</span>':''}</div>
         ${plats?`<div class="dp-platforms">${plats}</div>`:''}
       </div>`;
     });
@@ -843,16 +956,25 @@ function renderApprovalView(c){
     const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#fef3c7',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
     const statusFg = {Draft:'#374151','In Production':'#92400e','Ready to Review':'#92400e',Approved:'#166534',Scheduled:'#1e40af',Published:'#166534'};
     
+    const apfb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
+    const apfbCount = (apfb.comments||[]).length;
+    let apfbBadge = '';
+    if(apfb.status==='approved') apfbBadge = '<div class="card-fb-badge fb-ok">&#10003; Client approved</div>';
+    else if(apfb.status==='declined') apfbBadge = '<div class="card-fb-badge fb-changes">! Changes requested</div>';
+    else if(apfbCount) apfbBadge = `<div class="card-fb-badge fb-comments">${apfbCount} comment${apfbCount!==1?'s':''}</div>`;
+    
     html += `<div class="approval-card">
       <div class="card-media" onclick="editPost('${p.id}')">
         ${mediaHTML}
         <div class="card-channel">${plats}</div>
         <div class="card-status-badge" style="background:${statusBg[p.status]||'#e5e7eb'};color:${statusFg[p.status]||'#374151'}">${esc(p.status||'Draft')}</div>
+        ${apfbBadge}
       </div>
       <div class="card-body">
         <div class="card-topic">${esc(p.topic||'Untitled')}</div>
         <div class="card-date">${fmtDate(p.date)}</div>
         <div class="card-caption">${esc(p.captionEN||p.caption||'')}</div>
+        ${apfbCount ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px;border-top:1px solid var(--border);padding-top:8px"><strong>${esc((apfb.comments[apfb.comments.length-1]||{}).by||'Client')}:</strong> ${esc(((apfb.comments[apfb.comments.length-1]||{}).t||'').substring(0,80))}${(apfb.comments[apfb.comments.length-1]||{}).t&&(apfb.comments[apfb.comments.length-1]).t.length>80?'...':''}</div>`:''}
         <div class="card-actions">
           <button class="btn sm ${fb.status==='approved'?'approved-active':''}" onclick="teamApprove('${p.id}','approved')">Approve</button>
           <button class="btn sm ${fb.status==='declined'?'declined-active':''}" onclick="teamApprove('${p.id}','declined')">Needs changes</button>
@@ -949,8 +1071,30 @@ function editPost(postId){
   // Preview image
   const previewSrc = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN` : '') || (p.assets&&p.assets[0]&&p.assets[0].url&&/\.(jpg|jpeg|png|gif|webp|svg)/i.test(p.assets[0].url) ? p.assets[0].url : ''); const previewIsVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
   
+  const fb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
+  const fbComments = (fb.comments||[]);
+  const fbStatus = fb.status||'';
+  const fbClass = fbStatus==='approved'?'fb-approved':fbStatus==='declined'?'fb-declined':'fb-none';
+  const fbTag = fbStatus==='approved'?'<span class="fb-status-tag approved">Approved by client</span>':fbStatus==='declined'?'<span class="fb-status-tag declined">Changes requested</span>':'<span class="fb-status-tag pending">Awaiting client review</span>';
+  
+  let fbCommentsHTML = '';
+  if(fbComments.length){
+    fbCommentsHTML = fbComments.map(cm=>{
+      const init = (cm.by||'?')[0].toUpperCase();
+      return `<div class="fb-comment"><div class="fb-avatar">${init}</div><div class="fb-cm-body"><div class="fb-cm-meta"><strong>${esc(cm.by||'Client')}</strong> &middot; ${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</div><div class="fb-cm-text">${esc(cm.t||'')}</div></div></div>`;
+    }).join('');
+  } else {
+    fbCommentsHTML = '<div class="fb-empty">No client feedback yet.</div>';
+  }
+  
+  const feedbackPanelHTML = `<div class="feedback-panel ${fbClass}">
+    <div class="fb-header">${fbTag}<span class="fb-title">Client feedback</span></div>
+    ${fbCommentsHTML}
+  </div>`;
+
   const body = `<div class="editor-layout">
     <div class="editor-fields">
+      ${editorLocked?'':feedbackPanelHTML}
       <div class="field"><label>Topic (shown on the calendar)</label><input id="peTopic" value="${esc(p.topic)}" ${ro}></div>
       <div class="field-row">
         <div class="field"><label>Date</label><input type="date" id="peDate" value="${p.date||''}" ${ro}></div>
