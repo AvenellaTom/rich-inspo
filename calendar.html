@@ -426,6 +426,85 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .af-body .af-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .af-empty{text-align:center;padding:24px;color:var(--muted);font-size:13px;background:var(--card);border-radius:8px}
 
+
+/* ===== PREMIUM DASHBOARD ===== */
+:root{--gradient-blue:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);--gradient-green:linear-gradient(135deg,#16a34a 0%,#059669 100%);--gradient-amber:linear-gradient(135deg,#f59e0b 0%,#ef4444 100%);--gradient-dark:linear-gradient(135deg,#1e1e2e 0%,#2d2b55 100%);--card-hover:0 8px 24px rgba(0,0,0,.12)}
+
+/* Premium buttons */
+.btn.primary{background:var(--gradient-blue);border:none;color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(79,70,229,.3)}
+.btn.primary:hover{box-shadow:0 4px 16px rgba(79,70,229,.4);transform:translateY(-1px)}
+.btn.gradient-green{background:var(--gradient-green);border:none;color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(22,163,74,.3)}
+.btn.gradient-green:hover{box-shadow:0 4px 16px rgba(22,163,74,.4);transform:translateY(-1px)}
+
+/* Dashboard layout */
+.dash-layout{display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start}
+@media(max-width:1024px){.dash-layout{grid-template-columns:1fr}}
+.dash-main{min-width:0}
+.dash-sidebar{position:sticky;top:80px}
+@media(max-width:1024px){.dash-sidebar{position:static}}
+
+/* Dashboard header */
+.dash-header{margin-bottom:24px}
+.dash-header h2{font-size:32px;font-weight:700;margin-bottom:2px;background:var(--gradient-dark);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.dash-header .dash-sub{color:var(--muted);font-size:14px}
+
+/* Global stats bar */
+.global-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+@media(max-width:600px){.global-stats{grid-template-columns:repeat(2,1fr)}}
+.g-stat{background:var(--card);border-radius:12px;padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.g-stat::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.g-stat.gs-total::after{background:var(--gradient-blue)}
+.g-stat.gs-approved::after{background:var(--gradient-green)}
+.g-stat.gs-pending::after{background:var(--gradient-amber)}
+.g-stat.gs-cals::after{background:var(--gradient-dark)}
+.g-stat .gs-num{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:700;color:var(--text);line-height:1}
+.g-stat .gs-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:4px}
+
+/* Toolbar */
+.dash-toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.dash-search{flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--border-2);border-radius:8px;font-size:14px;font-family:inherit;background:var(--card);transition:border-color .15s}
+.dash-search:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.dash-filters{display:flex;gap:4px}
+.filter-btn{padding:6px 12px;font-size:12px;font-weight:500;border:1px solid var(--border-2);border-radius:6px;background:var(--card);cursor:pointer;font-family:inherit;transition:all .15s;color:var(--muted)}
+.filter-btn:hover{border-color:var(--blue);color:var(--blue)}
+.filter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* Calendar cards with banners */
+.cal-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;transition:all .2s;border:1px solid var(--border)}
+.cal-card:hover{box-shadow:var(--card-hover);transform:translateY(-2px)}
+.cal-card-banner{width:100%;height:80px;background:var(--gradient-dark);position:relative;overflow:hidden;cursor:pointer}
+.cal-card-banner img{width:100%;height:100%;object-fit:cover}
+.cal-card-banner .banner-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.4) 100%)}
+.cal-card-banner .banner-edit{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer;opacity:0;transition:opacity .15s;font-family:inherit}
+.cal-card:hover .banner-edit{opacity:1}
+.cal-card-header{padding:14px 16px 8px}
+.cal-card-header h3{font-size:17px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;font-weight:700;margin-bottom:0}
+.cal-card-header .cal-pin{font-size:11px;color:var(--muted)}
+.cal-card-stats{display:flex;gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.cal-card-stats .ccs{flex:1;text-align:center;padding:10px 6px;border-right:1px solid var(--border)}
+.cal-card-stats .ccs:last-child{border-right:none}
+.cal-card-stats .ccs-n{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700}
+.cal-card-stats .ccs-l{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.cal-card .progress-bar{height:4px;background:var(--bg);margin:0}
+.cal-card .progress-fill{height:100%;background:var(--gradient-green);border-radius:0 2px 2px 0;transition:width .3s}
+.cal-card-actions{padding:10px 12px;display:flex;gap:6px;flex-wrap:wrap}
+.cal-card-actions .btn{flex:1;justify-content:center;font-size:12px;min-width:0;padding:7px 8px}
+.cal-card-actions .btn svg{width:14px;height:14px;flex-shrink:0}
+.cal-card .last-activity{padding:0 16px 10px;font-size:11px;color:var(--muted)}
+
+/* Activity sidebar */
+.sidebar-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--border)}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sidebar-header h3{font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px}
+.sidebar-header .activity-count{background:var(--blue);color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:700}
+.sidebar-body{max-height:600px;overflow-y:auto}
+.af-item{display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.af-item:hover{background:var(--bg)}
+.af-item:last-child{border-bottom:none}
+.af-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:700}
+.af-body .af-text{font-size:12px;line-height:1.4}
+.af-body .af-meta{font-size:10px;color:var(--muted-2);margin-top:2px}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -612,42 +691,18 @@ function renderCalendarList(){
   $('lockToggle').style.display = 'none';
   $('pageTitle').textContent = 'Content Calendar';
   
-  let html = '<div class="admin-dash"><h2>Admin Dashboard</h2><p class="dash-sub">Manage your client content calendars. Open to edit, preview what the client sees, or share the link.</p>';
-  html += '<div style="margin-bottom:16px"><button class="btn primary" onclick="createCalendar()">+ New calendar</button></div>';
-  
-  if(!calendars.length){
-    html += '<div style="text-align:center;padding:60px 20px;color:var(--muted)"><p>No calendars yet. Create one to start planning content for a client.</p></div>';
-  } else {
-    html += '<div class="cal-cards">';
-    calendars.forEach(c => {
-      const posts = c.posts||[];
-      const count = posts.length;
-      const fb = c.feedback||{};
-      const approved = Object.values(fb).filter(f=>f.status==='approved').length;
-      const declined = Object.values(fb).filter(f=>f.status==='declined').length;
-      const shareUrl = location.origin + location.pathname + '?calendar=' + c.id;
-      
-      html += `<div class="cal-card">
-        <div class="cal-card-header">
-          <h3>${esc(c.name)}</h3>
-          <div class="cal-pin">PIN: ${esc(c.pin||'')} &middot; Created ${c.created?new Date(c.created).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</div>
-        </div>
-        <div class="cal-card-stats">
-          <div class="ccs"><div class="ccs-n">${count}</div><div class="ccs-l">Posts</div></div>
-          <div class="ccs"><div class="ccs-n">${approved}</div><div class="ccs-l">Approved</div></div>
-          <div class="ccs"><div class="ccs-n">${declined}</div><div class="ccs-l">Changes requested</div></div>
-        </div>
-        <div class="cal-card-actions">
-          <button class="btn sm primary" onclick="openCalendar('${c.id}')">Edit content</button>
-          <button class="btn sm" onclick="previewAsClient('${c.id}')">Client preview</button>
-          <button class="btn sm" onclick="copyCalLink('${c.id}')">Copy link</button>
-          <button class="btn sm ghost" onclick="calSettings('${c.id}')">Settings</button>
-        </div>
-      </div>`;
+  // Global stats
+  let totalPosts=0, totalApproved=0, totalPending=0, totalComments=0;
+  calendars.forEach(c=>{
+    const posts = c.posts||[];
+    totalPosts += posts.length;
+    const fb = c.feedback||{};
+    Object.values(fb).forEach(f=>{
+      if(f.status==='approved') totalApproved++;
+      totalComments += (f.comments||[]).length;
     });
-    html += '</div>';
-  }
-  html += '</div>';
+  });
+  totalPending = totalPosts - totalApproved;
   
   // Activity feed
   const allActivity = [];
@@ -656,49 +711,170 @@ function renderCalendarList(){
     Object.keys(fb).forEach(postId=>{
       const entry = fb[postId];
       const post = (cal.posts||[]).find(p=>p.id===postId);
-      const postName = post ? (post.topic||'Untitled') : 'Unknown post';
-      
+      const postName = post ? (post.topic||'Untitled') : 'Unknown';
       if(entry.status){
-        allActivity.push({type:entry.status==='approved'?'approved':'declined', calId:cal.id, calName:cal.name, postId, postName, d:null, by:null});
+        const lastComment = (entry.comments||[]).slice(-1)[0];
+        allActivity.push({type:entry.status==='approved'?'approved':'declined', calId:cal.id, calName:cal.name, postId, postName, d:lastComment?lastComment.d:null, by:lastComment?lastComment.by:'Client'});
       }
       (entry.comments||[]).forEach(cm=>{
         allActivity.push({type:'comment', calId:cal.id, calName:cal.name, postId, postName, d:cm.d, by:cm.by||'Client', text:cm.t||''});
       });
     });
   });
-  
-  // Sort by date descending
   allActivity.sort((a,b)=>((b.d||'')).localeCompare(a.d||''));
-  const recentActivity = allActivity.slice(0,15);
+  const recentActivity = allActivity.slice(0,20);
   
-  html += '<div class="activity-feed"><h2>Recent Client Activity</h2><p class="af-sub">Comments, approvals, and change requests from your clients.</p>';
+  let html = '<div class="dash-header"><h2>Content Calendar</h2><p class="dash-sub">Manage client content calendars, track approvals, and review feedback.</p></div>';
+  
+  // Global stats
+  html += `<div class="global-stats">
+    <div class="g-stat gs-cals"><div class="gs-num">${calendars.length}</div><div class="gs-label">Calendars</div></div>
+    <div class="g-stat gs-total"><div class="gs-num">${totalPosts}</div><div class="gs-label">Total posts</div></div>
+    <div class="g-stat gs-approved"><div class="gs-num">${totalApproved}</div><div class="gs-label">Approved</div></div>
+    <div class="g-stat gs-pending"><div class="gs-num">${totalPending}</div><div class="gs-label">Awaiting review</div></div>
+  </div>`;
+  
+  html += '<div class="dash-layout"><div class="dash-main">';
+  
+  // Toolbar
+  html += `<div class="dash-toolbar">
+    <input class="dash-search" placeholder="Search calendars..." id="calSearch" oninput="filterDashboard()">
+    <div class="dash-filters" id="dashFilters">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+      <button class="filter-btn" data-filter="attention" onclick="setFilter('attention')">Needs attention</button>
+      <button class="filter-btn" data-filter="uptodate" onclick="setFilter('uptodate')">Up to date</button>
+    </div>
+    <button class="btn primary" onclick="createCalendar()">+ New calendar</button>
+  </div>`;
+  
+  if(!calendars.length){
+    html += '<div style="text-align:center;padding:60px 20px;color:var(--muted)"><p>No calendars yet. Create one to start planning content.</p></div>';
+  } else {
+    html += '<div class="cal-cards" id="calCardsGrid">';
+    calendars.forEach(c => {
+      const posts = c.posts||[];
+      const count = posts.length;
+      const fb = c.feedback||{};
+      const approved = Object.values(fb).filter(f=>f.status==='approved').length;
+      const declined = Object.values(fb).filter(f=>f.status==='declined').length;
+      const pct = count ? Math.round((approved/count)*100) : 0;
+      const needsAttention = declined > 0 || (count > 0 && approved < count);
+      
+      // Last activity
+      const calComments = [];
+      Object.values(fb).forEach(f=>(f.comments||[]).forEach(cm=>calComments.push(cm)));
+      calComments.sort((a,b)=>((b.d||'')).localeCompare(a.d||''));
+      const lastAct = calComments[0];
+      
+      html += `<div class="cal-card" data-name="${esc(c.name.toLowerCase())}" data-attention="${needsAttention}">
+        <div class="cal-card-banner" onclick="openCalendar('${c.id}')">
+          ${c.banner ? `<img src="${c.banner}" alt="">` : ''}
+          <div class="banner-overlay"></div>
+          <button class="banner-edit" onclick="event.stopPropagation();uploadBanner('${c.id}')">Change image</button>
+        </div>
+        <input type="file" id="banner-${c.id}" accept="image/*" style="display:none" onchange="handleBanner('${c.id}')">
+        <div class="cal-card-header">
+          <h3>${esc(c.name)}</h3>
+          <div class="cal-pin">PIN: ${esc(c.pin||'')} &middot; ${c.created?new Date(c.created).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</div>
+        </div>
+        <div class="cal-card-stats">
+          <div class="ccs"><div class="ccs-n">${count}</div><div class="ccs-l">Posts</div></div>
+          <div class="ccs"><div class="ccs-n" style="color:var(--green)">${approved}</div><div class="ccs-l">Approved</div></div>
+          <div class="ccs"><div class="ccs-n" style="color:${declined?'var(--amber)':'var(--muted-2)'}">${declined}</div><div class="ccs-l">Changes</div></div>
+          <div class="ccs"><div class="ccs-n">${pct}%</div><div class="ccs-l">Complete</div></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        ${lastAct ? `<div class="last-activity">Last: <strong>${esc(lastAct.by||'Client')}</strong> &middot; ${lastAct.d?new Date(lastAct.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</div>` : ''}
+        <div class="cal-card-actions">
+          <button class="btn sm primary" onclick="openCalendar('${c.id}')">Edit</button>
+          <button class="btn sm" onclick="previewAsClient('${c.id}')">Preview</button>
+          <button class="btn sm" onclick="copyCalLink('${c.id}')">Copy link</button>
+          <button class="btn sm ghost" onclick="calSettings('${c.id}')">Settings</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  
+  html += '</div>'; // close dash-main
+  
+  // Sidebar
+  html += '<div class="dash-sidebar"><div class="sidebar-card">';
+  html += `<div class="sidebar-header"><h3>Activity ${recentActivity.length?`<span class="activity-count">${recentActivity.length}</span>`:''}</h3></div>`;
+  html += '<div class="sidebar-body">';
   
   if(!recentActivity.length){
-    html += '<div class="af-empty">No client activity yet. Share a calendar link and feedback will appear here.</div>';
+    html += '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No client activity yet.</div>';
   } else {
     recentActivity.forEach(a=>{
       let icon='', text='';
       if(a.type==='approved'){
         icon = '<div class="af-icon af-approved">&#10003;</div>';
-        text = `<strong>Post approved</strong> &middot; ${esc(a.postName)}`;
+        text = `<strong>${esc(a.postName)}</strong> approved`;
       } else if(a.type==='declined'){
         icon = '<div class="af-icon af-declined">!</div>';
-        text = `<strong>Changes requested</strong> &middot; ${esc(a.postName)}`;
+        text = `Changes requested on <strong>${esc(a.postName)}</strong>`;
       } else {
         icon = `<div class="af-icon af-comment">${(a.by||'?')[0].toUpperCase()}</div>`;
-        text = `<strong>${esc(a.by)}</strong> commented on <strong>${esc(a.postName)}</strong>: ${esc((a.text||'').substring(0,100))}${(a.text||'').length>100?'...':''}`;
+        text = `<strong>${esc(a.by)}</strong>: ${esc((a.text||'').substring(0,80))}${(a.text||'').length>80?'...':''}`;
       }
-      const meta = `${esc(a.calName)}${a.d?' &middot; '+new Date(a.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}`;
-      
+      const timeAgo = a.d ? getTimeAgo(new Date(a.d)) : '';
       html += `<div class="af-item" onclick="openCalendarToPost('${a.calId}','${a.postId}')">
         ${icon}
-        <div class="af-body"><div class="af-text">${text}</div><div class="af-meta">${meta}</div></div>
+        <div class="af-body"><div class="af-text">${text}</div><div class="af-meta">${esc(a.calName)}${timeAgo?' &middot; '+timeAgo:''}</div></div>
       </div>`;
     });
   }
-  html += '</div>';
+  
+  html += '</div></div></div>'; // close sidebar
+  html += '</div>'; // close dash-layout
   
   $('app').innerHTML = html;
+}
+
+function getTimeAgo(date){
+  const now = new Date();
+  const diff = Math.floor((now-date)/1000);
+  if(diff<60) return 'just now';
+  if(diff<3600) return Math.floor(diff/60)+'m ago';
+  if(diff<86400) return Math.floor(diff/3600)+'h ago';
+  if(diff<604800) return Math.floor(diff/86400)+'d ago';
+  return date.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+
+let dashFilter = 'all';
+function setFilter(f){
+  dashFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));
+  filterDashboard();
+}
+function filterDashboard(){
+  const q = (document.getElementById('calSearch')?.value||'').toLowerCase();
+  document.querySelectorAll('.cal-card').forEach(card=>{
+    const name = card.dataset.name||'';
+    const attention = card.dataset.attention==='true';
+    let show = name.includes(q);
+    if(dashFilter==='attention') show = show && attention;
+    if(dashFilter==='uptodate') show = show && !attention;
+    card.style.display = show ? '' : 'none';
+  });
+}
+
+function uploadBanner(calId){
+  document.getElementById('banner-'+calId)?.click();
+}
+function handleBanner(calId){
+  const input = document.getElementById('banner-'+calId);
+  const file = input?.files?.[0]; if(!file) return;
+  if(file.size > 3*1024*1024){alert('Image too large. Please use under 3MB.');return;}
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const c = calendars.find(x=>x.id===calId); if(!c) return;
+    c.banner = e.target.result;
+    saveCalendars();
+    renderCalendarList();
+  };
+  reader.readAsDataURL(file);
 }
 
 function openCalendarToPost(calId, postId){
