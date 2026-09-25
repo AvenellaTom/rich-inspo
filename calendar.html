@@ -707,7 +707,7 @@ async function loadCalendars(){
 }
 async function saveCalendars(){
   if(apiOn){try{await fetch('/api/calendars',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(calendars)});}catch(e){}}
-  else{try{localStorage.setItem('rich_calendars',JSON.stringify(calendars));}catch(e){}}
+  try{localStorage.setItem('rich_calendars',JSON.stringify(calendars));}catch(e){}
 }
 async function loadCalendarClient(id,pin){
   try{const r=await fetch('/api/calendar?id='+encodeURIComponent(id)+'&pin='+encodeURIComponent(pin));
@@ -1606,11 +1606,13 @@ function removeSlide(lang,idx){
   editPost(p.id);
 }
 
-function processFile(file,lang){
+let uploadQueue = Promise.resolve();
+
+function processFile(file, lang){
   const isVideo = file.type.startsWith('video/');
   const maxSize = isVideo ? 20*1024*1024 : 8*1024*1024;
   if(file.size > maxSize){
-    alert(isVideo ? 'Video too large. Please keep videos under 20MB.' : 'Image too large. Please keep images under 8MB.');
+    alert(isVideo ? 'Video too large. Keep under 20MB.' : 'Image too large. Keep under 8MB.');
     return;
   }
   const postMatch = $('postModalFoot').innerHTML.match(/deletePost\('([^']+)'\)/);
@@ -1618,48 +1620,50 @@ function processFile(file,lang){
   const postId = postMatch[1];
   const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
   const p = (c.posts||[]).find(x=>x.id===postId); if(!p) return;
-
-  // Show local preview immediately
-  const localUrl = URL.createObjectURL(file);
-  const slot = $('slot'+lang);
-  if(isVideo){
-    slot.innerHTML = `<video src="${localUrl}" controls style="width:100%;max-height:200px;border-radius:6px"></video>`;
-  } else {
-    slot.innerHTML = `<img src="${localUrl}" alt="${lang} creative">`;
-  }
-  slot.classList.add('has-file');
-  if(lang==='EN'){
-    if(isVideo) $('phonePreview').innerHTML = `<video src="${localUrl}" controls style="width:100%;height:100%;object-fit:cover"></video>`;
-    else $('phonePreview').innerHTML = `<img src="${localUrl}" alt="Preview">`;
-  }
-
-  // Upload to API as binary
   const mime = file.type || (isVideo ? 'video/mp4' : 'image/jpeg');
   const key = 'carousel'+lang;
-  const slideIdx = (p[key]||[]).length;
-  const uploadUrl = `/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(postId)}&lang=${encodeURIComponent(lang+'-'+slideIdx)}&mime=${encodeURIComponent(mime)}`;
-  // Also upload as the base lang key for backward compat (first slide)
-  if(slideIdx===0){
-    fetch(`/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(postId)}&lang=${encodeURIComponent(lang)}&mime=${encodeURIComponent(mime)}`,{method:'POST',body:file,headers:{'content-type':mime}}).catch(e=>{});
-  }
-  
-  fetch(uploadUrl, {method:'POST', body:file, headers:{'content-type':mime}})
-    .then(r=>r.json())
-    .then(d=>{
+
+  // Queue uploads sequentially so slide indices are correct
+  uploadQueue = uploadQueue.then(async ()=>{
+    if(!p[key]) p[key] = [];
+    const slideIdx = p[key].length;
+
+    // Show uploading indicator
+    const grid = $('grid'+lang);
+    if(grid){
+      const placeholder = document.createElement('div');
+      placeholder.className = 'creative-thumb';
+      placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;background:var(--bg);border-color:var(--blue)';
+      placeholder.innerHTML = '<div style="font-size:10px;color:var(--blue);text-align:center">Uploading...</div>';
+      const addBtn = grid.querySelector('.creative-add-btn');
+      if(addBtn) grid.insertBefore(placeholder, addBtn);
+      else grid.appendChild(placeholder);
+    }
+
+    try {
+      // Upload the slide
+      const uploadUrl = '/api/creative-upload?calId='+encodeURIComponent(currentCalId)+'&postId='+encodeURIComponent(postId)+'&lang='+encodeURIComponent(lang+'-'+slideIdx)+'&mime='+encodeURIComponent(mime);
+      const r = await fetch(uploadUrl, {method:'POST', body:file, headers:{'content-type':mime}});
+      const d = await r.json();
+
       if(d.ok){
-        const key = 'carousel'+lang;
-        if(!p[key]) p[key] = [];
-        const slideIdx = p[key].length;
         p[key].push({type:isVideo?'video':'image', idx:slideIdx});
-        // Also set legacy flags for backward compat
-        if(lang==='EN'){p.hasCreativeEN=true;p.creativeENType=p[key].length===1&&isVideo?'video':'image';}
-        else{p.hasCreativeAR=true;p.creativeARType=p[key].length===1&&isVideo?'video':'image';}
+
+        // Also upload as base lang key for first slide (backward compat)
+        if(slideIdx===0){
+          fetch('/api/creative-upload?calId='+encodeURIComponent(currentCalId)+'&postId='+encodeURIComponent(postId)+'&lang='+encodeURIComponent(lang)+'&mime='+encodeURIComponent(mime),{method:'POST',body:file,headers:{'content-type':mime}}).catch(()=>{});
+          if(lang==='EN'){p.hasCreativeEN=true;p.creativeENType=isVideo?'video':'image';}
+          else{p.hasCreativeAR=true;p.creativeARType=isVideo?'video':'image';}
+        }
         p.creativesEN='';p.creativesAR='';
-        saveCalendars();
+        await saveCalendars();
         editPost(p.id);
       }
-    })
-    .catch(e=>console.error('Upload failed:',e));
+    } catch(e){
+      console.error('Upload failed:', e);
+      editPost(p.id);
+    }
+  });
 }
 
 /* ========== CLIENT VIEW ========== */
