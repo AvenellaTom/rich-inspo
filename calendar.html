@@ -607,6 +607,26 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .client-toolbar{border-radius:10px}
 .client-wrap{max-width:1200px}
 
+
+/* Resolved comments */
+.fb-comment.resolved{opacity:.6}
+.fb-comment.resolved .fb-cm-text{text-decoration:line-through}
+.fb-resolve-btn{font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--border-2);background:var(--card);cursor:pointer;font-family:inherit;transition:all .15s;margin-left:auto;white-space:nowrap}
+.fb-resolve-btn:hover{border-color:var(--green);color:var(--green)}
+.fb-resolve-btn.is-resolved{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+.fb-resolved-tick{color:var(--green);font-weight:700;margin-right:4px}
+.fb-all-resolved{display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f0fdf4;border-radius:6px;font-size:12px;color:#166534;font-weight:500;margin-top:8px}
+.fb-unresolved-count{background:var(--amber);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700}
+
+/* Client resolved view */
+.cc-comment.resolved .cc-comment-text{text-decoration:line-through;opacity:.6}
+.cc-resolved-badge{font-size:10px;background:#dcfce7;color:#166534;padding:1px 6px;border-radius:3px;font-weight:600}
+
+/* Creative updated badge */
+.creative-updated-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:4px;background:#dbeafe;color:#1e40af;font-weight:500;margin-left:8px}
+.post-revision-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f0fdf4;border-bottom:1px solid var(--border);font-size:12px;color:#166534}
+.post-revision-bar .btn{font-size:11px;padding:3px 10px}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -1156,10 +1176,12 @@ function renderMonthView(c){
       const plats = (p.platforms||[]).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join('');
       const pfb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
       const pfbCount = (pfb.comments||[]).length;
+      const pfbUnresolved = (pfb.comments||[]).filter(cm=>!cm.resolved).length;
       let fbIndicator = '';
       if(pfb.status==='approved') fbIndicator = '<span class="dp-approved-tick">&#10003;</span>';
       else if(pfb.status==='declined') fbIndicator = '<span class="dp-changes-dot">!</span>';
-      if(pfbCount) fbIndicator += `<span class="dp-comment-count">${pfbCount}</span>`;
+      if(pfbUnresolved) fbIndicator += `<span class="dp-comment-count" style="color:var(--amber)">${pfbUnresolved}</span>`;
+      else if(pfbCount) fbIndicator += `<span class="dp-comment-count">${pfbCount}</span>`;
       html += `<div class="day-post" draggable="${editorLocked?'false':'true'}" ondragstart="dragPost(event,'${p.id}')" onclick="editPost('${p.id}')" style="border-left-color:${sc}">
         <div class="dp-title"><span class="status-dot" style="background:${sc}"></span>${esc(p.topic||'Untitled')}${fbIndicator?'<span class="dp-feedback">'+fbIndicator+'</span>':''}</div>
         ${plats?`<div class="dp-platforms">${plats}</div>`:''}
@@ -1364,23 +1386,36 @@ function editPost(postId){
   const fbTag = fbStatus==='approved'?'<span class="fb-status-tag approved">Approved by client</span>':fbStatus==='declined'?'<span class="fb-status-tag declined">Changes requested</span>':'<span class="fb-status-tag pending">Awaiting client review</span>';
   
   let fbCommentsHTML = '';
+  const unresolvedCount = fbComments.filter(cm=>!cm.resolved).length;
   if(fbComments.length){
-    fbCommentsHTML = fbComments.map(cm=>{
+    fbCommentsHTML = fbComments.map((cm,ci)=>{
       const init = (cm.by||'?')[0].toUpperCase();
-      return `<div class="fb-comment"><div class="fb-avatar">${init}</div><div class="fb-cm-body"><div class="fb-cm-meta"><strong>${esc(cm.by||'Client')}</strong> &middot; ${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</div><div class="fb-cm-text">${esc(cm.t||'')}</div></div></div>`;
+      const resolved = cm.resolved;
+      return `<div class="fb-comment ${resolved?'resolved':''}"><div class="fb-avatar">${init}</div><div class="fb-cm-body"><div class="fb-cm-meta"><strong>${resolved?'<span class="fb-resolved-tick">&#10003;</span>':''}${esc(cm.by||'Client')}</strong> &middot; ${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}<button class="fb-resolve-btn ${resolved?'is-resolved':''}" onclick="toggleResolve('${p.id}',${ci})">${resolved?'Resolved':'Mark resolved'}</button></div><div class="fb-cm-text">${esc(cm.t||'')}</div></div></div>`;
     }).join('');
+    if(unresolvedCount===0 && fbComments.length>0){
+      fbCommentsHTML += '<div class="fb-all-resolved">&#10003; All feedback has been addressed</div>';
+    }
   } else {
     fbCommentsHTML = '<div class="fb-empty">No client feedback yet.</div>';
   }
   
   const feedbackPanelHTML = `<div class="feedback-panel ${fbClass}">
-    <div class="fb-header">${fbTag}<span class="fb-title">Client feedback</span></div>
+    <div class="fb-header">${fbTag}<span class="fb-title">Client feedback</span>${unresolvedCount>0?`<span class="fb-unresolved-count">${unresolvedCount} unresolved</span>`:''}</div>
     ${fbCommentsHTML}
   </div>`;
 
   const body = `<div class="editor-layout">
     <div class="editor-fields">
       ${editorLocked?'':feedbackPanelHTML}
+      ${!editorLocked && fbStatus==='declined' ? `<div class="post-revision-bar">
+        <span>&#9888; Client requested changes on this post.</span>
+        <button class="btn sm gradient-green" onclick="markUpdated('${p.id}')">Mark as updated</button>
+      </div>` : ''}
+      ${!editorLocked && p.markedUpdated ? `<div class="post-revision-bar" style="background:#dbeafe;color:#1e40af">
+        <span>&#10003; Marked as updated ${p.updatedAt ? new Date(p.updatedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : ''}. Client will see the revised content.</span>
+        <button class="btn sm" onclick="unmarkUpdated('${p.id}')">Undo</button>
+      </div>` : ''}
       <div class="field"><label>Topic (shown on the calendar)</label><input id="peTopic" value="${esc(p.topic)}" ${ro}></div>
       <div class="field-row">
         <div class="field"><label>Date</label><input type="date" id="peDate" value="${p.date||''}" ${ro}></div>
@@ -1604,6 +1639,35 @@ function addComment(section){
   editPost(p.id);
 }
 
+
+
+async function toggleResolve(postId, commentIdx){
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  c.feedback = c.feedback||{};
+  c.feedback[postId] = c.feedback[postId]||{status:'',comments:[]};
+  const cm = (c.feedback[postId].comments||[])[commentIdx];
+  if(cm) cm.resolved = !cm.resolved;
+  await saveCalendars();
+  editPost(postId);
+}
+
+function markUpdated(postId){
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postId); if(!p) return;
+  p.markedUpdated = true;
+  p.updatedAt = new Date().toISOString();
+  saveCalendars();
+  editPost(postId);
+}
+
+function unmarkUpdated(postId){
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postId); if(!p) return;
+  p.markedUpdated = false;
+  p.updatedAt = null;
+  saveCalendars();
+  editPost(postId);
+}
 
 function editComment(idx){
   const postMatch = $('postModalFoot').innerHTML.match(/deletePost\('([^']+)'\)/);
@@ -2013,10 +2077,11 @@ function renderClientView(targetMonth){
         topLevel.forEach((cm,ci)=>{
           const initial = (cm.by||'?')[0].toUpperCase();
           const replies = comments.filter(r=>r.replyTo===ci);
-          commentsHTML += `<div class="cc-comment"><div class="cc-comment-row">
+          const cmResolved = cm.resolved;
+          commentsHTML += `<div class="cc-comment ${cmResolved?'resolved':''}"><div class="cc-comment-row">
             <div class="cc-comment-avatar">${initial}</div>
             <div class="cc-comment-body">
-              <div class="cc-comment-header"><strong>${esc(cm.by||'Anonymous')}</strong><time>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time><button class="cc-reply-btn" style="margin-left:auto" onclick="editClientComment('${p.id}',${ci})">Edit</button><button class="cc-reply-btn" style="color:var(--coral)" onclick="deleteClientComment('${p.id}',${ci})">Delete</button></div>
+              <div class="cc-comment-header"><strong>${esc(cm.by||'Anonymous')}</strong>${cmResolved?'<span class="cc-resolved-badge">Addressed</span>':''}<time>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time><button class="cc-reply-btn" style="margin-left:auto" onclick="editClientComment('${p.id}',${ci})">Edit</button><button class="cc-reply-btn" style="color:var(--coral)" onclick="deleteClientComment('${p.id}',${ci})">Delete</button></div>
               <div class="cc-comment-text">${esc(cm.t)}</div>
               <button class="cc-reply-btn" onclick="showReplyForm('${p.id}',${ci})">Reply</button>
               <div id="reply-${p.id}-${ci}"></div>
@@ -2040,6 +2105,7 @@ function renderClientView(targetMonth){
         });
         
         html += `<div class="client-card" id="cpost-${p.id}">
+          ${p.markedUpdated ? '<div class="post-revision-bar"><span>&#10003; This content has been revised based on your feedback.</span></div>' : ''}
           ${mediaHTML}
           <div class="cc-meta">
             <div class="cc-date-block">
