@@ -1783,9 +1783,9 @@ let uploadQueue = Promise.resolve();
 
 function processFile(file, lang){
   const isVideo = file.type.startsWith('video/');
-  const maxSize = isVideo ? 20*1024*1024 : 8*1024*1024;
+  const maxSize = isVideo ? 24*1024*1024 : 8*1024*1024;
   if(file.size > maxSize){
-    alert(isVideo ? 'Video too large. Keep under 20MB.' : 'Image too large. Keep under 8MB.');
+    alert(isVideo ? 'Video too large. Keep under 24MB.' : 'Image too large. Keep under 8MB.');
     return;
   }
   const postMatch = $('postModalFoot').innerHTML.match(/deletePost\('([^']+)'\)/);
