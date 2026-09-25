@@ -554,6 +554,59 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .approval-card .card-media video{max-height:300px;width:100%;background:#0a0a0a}
 .approval-card .card-media .carousel-wrap{width:100%}
 
+
+/* Tighter cards */
+.client-card{border-radius:10px}
+.client-card .cc-media{max-height:350px;overflow:hidden}
+.client-card .cc-media img{max-height:350px}
+.client-card .cc-media video{max-height:350px}
+.sz-m .client-card .cc-media,.sz-m .client-card .cc-media img,.sz-m .client-card .cc-media video{max-height:280px}
+.sz-s .client-card .cc-media,.sz-s .client-card .cc-media img,.sz-s .client-card .cc-media video{max-height:200px}
+.client-card .cc-meta{padding:12px 14px 8px;gap:6px}
+.client-card .cc-content{padding:8px 14px 12px}
+.client-card .cc-content .cc-section{margin-bottom:8px}
+.client-card .cc-content .cc-section h4{margin-bottom:3px}
+.client-card .cc-approval{padding:8px 14px;gap:6px}
+.client-card .cc-approval .btn{padding:6px 14px}
+.cc-comments{padding:0 14px 10px!important}
+.cc-comment-box{padding:10px}
+.cc-new-comment{padding-top:8px}
+
+/* Carousel tighter */
+.carousel-wrap{max-height:350px;overflow:hidden}
+.sz-m .carousel-wrap{max-height:280px}
+.sz-s .carousel-wrap{max-height:200px}
+.carousel-track .carousel-slide{display:flex;align-items:center;justify-content:center}
+.carousel-track .carousel-slide img{max-height:350px;width:100%;object-fit:contain}
+.carousel-track .carousel-slide video{max-height:350px;width:100%}
+.sz-m .carousel-track .carousel-slide img,.sz-m .carousel-track .carousel-slide video{max-height:280px}
+.sz-s .carousel-track .carousel-slide img,.sz-s .carousel-track .carousel-slide video{max-height:200px}
+.carousel-dots{padding:6px 0}
+
+/* Approval view tighter */
+.approval-card .card-media{max-height:300px;overflow:hidden}
+.approval-card .card-body{padding:10px 14px}
+.approval-card .card-topic{font-size:15px;margin-bottom:2px}
+.approval-card .card-date{font-size:11px;margin-bottom:6px}
+.approval-card .card-caption{font-size:12px;max-height:50px;margin-bottom:6px}
+.approval-card .card-actions .btn{font-size:11px;padding:5px 8px}
+
+/* Compact date block in smaller views */
+.sz-m .cc-meta .cc-day,.sz-s .cc-meta .cc-day{width:36px;height:36px}
+.sz-m .cc-meta .cc-day .cc-d,.sz-s .cc-meta .cc-day .cc-d{font-size:16px}
+.sz-m .cc-meta .cc-day .cc-m,.sz-s .cc-meta .cc-day .cc-m{font-size:8px}
+.sz-m .cc-meta .cc-title{font-size:15px}
+.sz-s .cc-meta .cc-title{font-size:13px}
+
+/* Clean up approval row wrapping */
+.cc-approval{flex-wrap:nowrap!important}
+.cc-approval .btn{white-space:nowrap;flex:0 0 auto}
+.cc-approval .cc-approval-status{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Better nav */
+.client-toolbar{border-radius:10px}
+.client-wrap{max-width:1200px}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -1915,19 +1968,37 @@ function renderClientView(targetMonth){
         
         // Media - carousel or single
         let mediaHTML = '';
-        const slides = p.carouselEN||[];
+        const slides = (p.carouselEN&&p.carouselEN.length>0)?p.carouselEN:(p.carouselAR&&p.carouselAR.length>0)?p.carouselAR:[];
+        const slideLang = (p.carouselEN&&p.carouselEN.length>0)?'EN':'AR';
         if(slides.length > 1){
           const carId = 'car-'+p.id;
           let slidesHTML = slides.map((s,i)=>{
-            const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN-${i}&pin=${encodeURIComponent(clientPin)}`;
+            const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=${slideLang}-${i}&pin=${encodeURIComponent(clientPin)}`;
             return `<div class="carousel-slide">${s.type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="Slide ${i+1}">`}</div>`;
           }).join('');
           mediaHTML = `<div class="carousel-wrap"><div class="carousel-count">${slides.length} slides</div><div class="carousel-track" id="${carId}" style="transform:translateX(0)">${slidesHTML}</div><button class="carousel-nav prev" onclick="carouselNav('${carId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="carouselNav('${carId}',1)">&rsaquo;</button><div class="carousel-dots" id="${carId}-dots">${slides.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="carouselGo('${carId}',${i})"></div>`).join('')}</div></div>`;
+        } else if(slides.length === 1){
+          const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=${slideLang}-0&pin=${encodeURIComponent(clientPin)}`;
+          mediaHTML = `<div class="cc-media">${slides[0].type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="">`}</div>`;
         } else {
           const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || '';
           const isVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
           if(previewImg){
             mediaHTML = `<div class="cc-media">${isVideo ? `<video src="${previewImg}" controls playsinline></video>` : `<img src="${previewImg}" alt="">`}</div>`;
+          }
+        }
+        // Arabic creatives if available and different from what was shown
+        if(slideLang==='EN' && p.carouselAR && p.carouselAR.length>0){
+          const arCarId = 'arcar-'+p.id;
+          if(p.carouselAR.length > 1){
+            let arSlidesHTML = p.carouselAR.map((s,i)=>{
+              const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=AR-${i}&pin=${encodeURIComponent(clientPin)}`;
+              return `<div class="carousel-slide">${s.type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="">`}</div>`;
+            }).join('');
+            mediaHTML += `<div style="padding:4px 14px 0"><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)">Arabic version</div></div><div class="carousel-wrap"><div class="carousel-count">${p.carouselAR.length}</div><div class="carousel-track" id="${arCarId}">${arSlidesHTML}</div><button class="carousel-nav prev" onclick="carouselNav('${arCarId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="carouselNav('${arCarId}',1)">&rsaquo;</button><div class="carousel-dots" id="${arCarId}-dots">${p.carouselAR.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="carouselGo('${arCarId}',${i})"></div>`).join('')}</div></div>`;
+          } else {
+            const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=AR-0&pin=${encodeURIComponent(clientPin)}`;
+            mediaHTML += `<div style="padding:4px 14px 0"><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)">Arabic version</div></div><div class="cc-media">${p.carouselAR[0].type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="">`}</div>`;
           }
         }
         
