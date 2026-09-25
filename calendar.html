@@ -627,6 +627,17 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .post-revision-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f0fdf4;border-bottom:1px solid var(--border);font-size:12px;color:#166534}
 .post-revision-bar .btn{font-size:11px;padding:3px 10px}
 
+
+/* Admin toolbar */
+.admin-toolbar{background:var(--card);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid var(--border);border-top:3px solid #1e1e2e}
+.admin-toolbar .at-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.admin-toolbar .at-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.admin-toolbar .at-label{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1e1e2e;background:#e5e7eb;padding:4px 10px;border-radius:4px}
+.admin-filter{padding:6px 12px;font-size:12px;font-weight:500;border:1px solid var(--border-2);border-radius:6px;background:var(--card);cursor:pointer;font-family:inherit;transition:all .15s;color:var(--muted)}
+.admin-filter:hover{border-color:var(--blue);color:var(--blue)}
+.admin-filter.active{background:#1e1e2e;color:#fff;border-color:#1e1e2e}
+@media(max-width:768px){.admin-toolbar{padding:10px 12px}.admin-toolbar .at-left,.admin-toolbar .at-right{width:100%;justify-content:space-between}}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -965,6 +976,17 @@ function getTimeAgo(date){
 }
 
 let dashFilter = 'all';
+let adminApprovalFilter = 'all';
+let adminViewSize = 'l';
+
+function setAdminFilter(f){
+  adminApprovalFilter=f;
+  renderCalendarView();
+}
+function setAdminSize(sz){
+  adminViewSize=sz;
+  renderCalendarView();
+}
 function setFilter(f){
   dashFilter = f;
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));
@@ -1154,9 +1176,7 @@ function renderMonthView(c){
     </div>
   </div>`;
   
-  if(!editorLocked){
-    html += '<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Click a day to add or edit content. Drag a post to another day to reschedule.</div>';
-  }
+  
   
   html += '<div class="cal-grid">';
   ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{html+=`<div class="cal-head">${d}</div>`;});
@@ -1211,64 +1231,101 @@ function renderApprovalView(c){
   const vm = viewMonth || new Date();
   const year = vm.getFullYear(), month = vm.getMonth();
   const allPosts = (c.posts||[]);
-  const monthPosts = allPosts.filter(p=>{const d=new Date(p.date+'T00:00:00');return d.getFullYear()===year&&d.getMonth()===month;}).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  let monthPosts = allPosts.filter(p=>{const d=new Date(p.date+'T00:00:00');return d.getFullYear()===year&&d.getMonth()===month;}).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   
-  let html = `<div class="toolbar">
-    <button class="btn sm" onclick="viewMode='year';renderCalendarView()">&lsaquo; Year</button>
-    <div class="month-header">
-      <button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button>
-      <h2>${MONTH_NAMES[month]} ${year}</h2>
-      <button class="month-nav" onclick="monthNav(1)">&rsaquo;</button>
+  // Apply filter
+  if(adminApprovalFilter!=='all'){
+    monthPosts = monthPosts.filter(p=>{
+      const pfb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
+      if(adminApprovalFilter==='unresolved') return (pfb.comments||[]).some(cm=>!cm.resolved);
+      if(adminApprovalFilter==='approved') return pfb.status==='approved';
+      if(adminApprovalFilter==='changes') return pfb.status==='declined';
+      if(adminApprovalFilter==='pending') return !pfb.status;
+      return true;
+    });
+  }
+  
+  // Stats
+  const totalMonth = allPosts.filter(p=>{const d=new Date(p.date+'T00:00:00');return d.getFullYear()===year&&d.getMonth()===month;}).length;
+  const fb = c.feedback||{};
+  const approvedCount = Object.entries(fb).filter(([pid,f])=>f.status==='approved' && allPosts.some(p=>p.id===pid&&new Date(p.date+'T00:00:00').getMonth()===month)).length;
+  const unresolvedTotal = Object.entries(fb).reduce((sum,[pid,f])=>{
+    if(!allPosts.some(p=>p.id===pid&&new Date(p.date+'T00:00:00').getMonth()===month)) return sum;
+    return sum + (f.comments||[]).filter(cm=>!cm.resolved).length;
+  },0);
+  
+  let html = '';
+  
+  // Admin toolbar
+  html += `<div class="admin-toolbar">
+    <div class="at-left">
+      <span class="at-label">Internal</span>
+      <div class="month-header" style="margin:0">
+        <button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button>
+        <h2 style="font-size:22px;min-width:auto">${MONTH_NAMES[month]} ${year}</h2>
+        <button class="month-nav" onclick="monthNav(1)">&rsaquo;</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted)">${totalMonth} posts &middot; ${approvedCount} approved${unresolvedTotal ? ` &middot; <span style="color:var(--amber);font-weight:600">${unresolvedTotal} unresolved</span>` : ''}</div>
     </div>
-    <div style="display:flex;gap:6px">
-      ${editorLocked?'':'<button class="btn sm primary" onclick="addPost()">+ Add post</button>'}
+    <div class="at-right">
+      <button class="admin-filter ${adminApprovalFilter==='all'?'active':''}" onclick="setAdminFilter('all')">All</button>
+      <button class="admin-filter ${adminApprovalFilter==='unresolved'?'active':''}" onclick="setAdminFilter('unresolved')">Unresolved</button>
+      <button class="admin-filter ${adminApprovalFilter==='changes'?'active':''}" onclick="setAdminFilter('changes')">Changes</button>
+      <button class="admin-filter ${adminApprovalFilter==='approved'?'active':''}" onclick="setAdminFilter('approved')">Approved</button>
+      <button class="admin-filter ${adminApprovalFilter==='pending'?'active':''}" onclick="setAdminFilter('pending')">Pending</button>
+      <div class="sizer">
+        <button ${adminViewSize==='l'?'class="on"':''} data-asz="l" onclick="setAdminSize('l')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
+        <button ${adminViewSize==='m'?'class="on"':''} data-asz="m" onclick="setAdminSize('m')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/></svg></button>
+        <button ${adminViewSize==='s'?'class="on"':''} data-asz="s" onclick="setAdminSize('s')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg></button>
+      </div>
       <div class="view-tabs">
-        <button class="${viewMode==='month'?'active':''}" onclick="viewMode='month';renderCalendarView()">Calendar</button>
-        <button class="active" onclick="">Approval</button>
+        <button onclick="viewMode='month';renderCalendarView()">Calendar</button>
+        <button class="active">Approval</button>
       </div>
     </div>
   </div>`;
   
   if(!monthPosts.length){
-    html += '<div style="text-align:center;padding:40px;color:var(--muted)">No posts this month.</div>';
+    html += `<div style="text-align:center;padding:40px;color:var(--muted)">${adminApprovalFilter!=='all'?'No posts match this filter.':'No posts this month.'}</div>`;
     $('app').innerHTML = html;
     return;
   }
   
-  html += '<div class="approval-grid">';
+  const gridCols = adminViewSize==='l'?'repeat(3,1fr)':adminViewSize==='m'?'repeat(2,1fr)':'repeat(auto-fill,minmax(220px,1fr))';
+  html += `<div class="approval-grid" style="grid-template-columns:${gridCols};align-items:start">`;
   monthPosts.forEach(p=>{
     const sc = STATUS_COLORS[p.status]||'#d1d5db';
     const plats = (p.platforms||[]).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join('');
-    const fb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
+    const apfb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
+    const apfbCount = (apfb.comments||[]).length;
+    const apfbUnresolved = (apfb.comments||[]).filter(cm=>!cm.resolved).length;
     
-    // Determine media source - carousel or single
+    // Media - carousel or single
     let mediaHTML = '<div class="no-media">No creative</div>';
     const aSlides = p.carouselEN||[];
     if(aSlides.length > 1){
       const aCarId = 'acar-'+p.id;
       let aSlidesHTML = aSlides.map((s,i)=>{
         const src = `/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${i}`;
-        return `<div class="carousel-slide">${s.type==='video'?`<video src="${src}" controls></video>`:`<img src="${src}" alt="">`}</div>`;
+        return `<div class="carousel-slide">${s.type==='video'?`<video src="${src}" controls onclick="event.stopPropagation()"></video>`:`<img src="${src}" alt="">`}</div>`;
       }).join('');
-      mediaHTML = `<div class="carousel-wrap" style="aspect-ratio:4/5"><div class="carousel-count">${aSlides.length}</div><div class="carousel-track" id="${aCarId}" style="transform:translateX(0)">${aSlidesHTML}</div><button class="carousel-nav prev" onclick="event.stopPropagation();carouselNav('${aCarId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="event.stopPropagation();carouselNav('${aCarId}',1)">&rsaquo;</button><div class="carousel-dots" id="${aCarId}-dots">${aSlides.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="event.stopPropagation();carouselGo('${aCarId}',${i})"></div>`).join('')}</div></div>`;
+      mediaHTML = `<div class="carousel-wrap"><div class="carousel-count">${aSlides.length}</div><div class="carousel-track" id="${aCarId}">${aSlidesHTML}</div><button class="carousel-nav prev" onclick="event.stopPropagation();carouselNav('${aCarId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="event.stopPropagation();carouselNav('${aCarId}',1)">&rsaquo;</button><div class="carousel-dots" id="${aCarId}-dots">${aSlides.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="event.stopPropagation();carouselGo('${aCarId}',${i})"></div>`).join('')}</div></div>`;
+    } else if(aSlides.length===1){
+      const src = `/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-0`;
+      mediaHTML = aSlides[0].type==='video'?`<video src="${src}" controls onclick="event.stopPropagation()"></video>`:`<img src="${src}" alt="">`;
     } else if(p.creativesEN){
       mediaHTML = `<img src="${p.creativesEN}" alt="">`;
     } else if(p.hasCreativeEN){
-      if(p.creativeENType==='video'){
-        mediaHTML = `<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" controls onclick="event.stopPropagation()"></video>`;
-      } else {
-        mediaHTML = `<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" alt="">`;
-      }
+      mediaHTML = p.creativeENType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" controls onclick="event.stopPropagation()"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" alt="">`;
     }
     
-    const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#fef3c7',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
-    const statusFg = {Draft:'#374151','In Production':'#92400e','Ready to Review':'#92400e',Approved:'#166534',Scheduled:'#1e40af',Published:'#166534'};
+    const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#dbeafe',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
+    const statusFg = {Draft:'#374151','In Production':'#92400e','Ready to Review':'#1e40af',Approved:'#166534',Scheduled:'#1e40af',Published:'#166534'};
     
-    const apfb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
-    const apfbCount = (apfb.comments||[]).length;
     let apfbBadge = '';
-    if(apfb.status==='approved') apfbBadge = '<div class="card-fb-badge fb-ok">&#10003; Client approved</div>';
-    else if(apfb.status==='declined') apfbBadge = '<div class="card-fb-badge fb-changes">! Changes requested</div>';
+    if(apfb.status==='approved') apfbBadge = '<div class="card-fb-badge fb-ok">&#10003; Approved</div>';
+    else if(apfb.status==='declined') apfbBadge = '<div class="card-fb-badge fb-changes">! Changes</div>';
+    else if(apfbUnresolved) apfbBadge = `<div class="card-fb-badge fb-comments">${apfbUnresolved} unresolved</div>`;
     else if(apfbCount) apfbBadge = `<div class="card-fb-badge fb-comments">${apfbCount} comment${apfbCount!==1?'s':''}</div>`;
     
     html += `<div class="approval-card">
@@ -1281,11 +1338,10 @@ function renderApprovalView(c){
       <div class="card-body">
         <div class="card-topic">${esc(p.topic||'Untitled')}</div>
         <div class="card-date">${fmtDate(p.date)}</div>
-        <div class="card-caption">${esc(p.captionEN||p.caption||'')}</div>
-        ${apfbCount ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px;border-top:1px solid var(--border);padding-top:8px"><strong>${esc((apfb.comments[apfb.comments.length-1]||{}).by||'Client')}:</strong> ${esc(((apfb.comments[apfb.comments.length-1]||{}).t||'').substring(0,80))}${(apfb.comments[apfb.comments.length-1]||{}).t&&(apfb.comments[apfb.comments.length-1]).t.length>80?'...':''}</div>`:''}
+        ${apfbCount && (apfb.comments||[]).length ? `<div style="font-size:11px;color:var(--muted);margin-bottom:6px;border-top:1px solid var(--border);padding-top:6px"><strong>${esc((apfb.comments[apfb.comments.length-1]||{}).by||'Client')}:</strong> ${esc(((apfb.comments[apfb.comments.length-1]||{}).t||'').substring(0,80))}${(apfb.comments[apfb.comments.length-1]||{}).t&&(apfb.comments[apfb.comments.length-1]).t.length>80?'...':''}</div>`:''}
         <div class="card-actions">
-          <button class="btn sm ${fb.status==='approved'?'approved-active':''}" onclick="teamApprove('${p.id}','approved')">Approve</button>
-          <button class="btn sm ${fb.status==='declined'?'declined-active':''}" onclick="teamApprove('${p.id}','declined')">Needs changes</button>
+          <button class="btn sm ${apfb.status==='approved'?'approved-active':''}" onclick="teamApprove('${p.id}','approved')">Approve</button>
+          <button class="btn sm ${apfb.status==='declined'?'declined-active':''}" onclick="teamApprove('${p.id}','declined')">Changes</button>
           <button class="btn sm ghost" onclick="editPost('${p.id}')">Edit</button>
         </div>
       </div>
