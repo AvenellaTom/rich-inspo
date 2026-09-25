@@ -505,6 +505,47 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .af-body .af-text{font-size:12px;line-height:1.4}
 .af-body .af-meta{font-size:10px;color:var(--muted-2);margin-top:2px}
 
+
+/* Carousel uploads */
+.creative-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.creative-thumb{width:100px;height:100px;border-radius:6px;overflow:hidden;position:relative;border:2px solid var(--border);cursor:pointer}
+.creative-thumb img{width:100%;height:100%;object-fit:cover}
+.creative-thumb video{width:100%;height:100%;object-fit:cover}
+.creative-thumb .thumb-remove{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1}
+.creative-thumb:hover .thumb-remove{display:flex}
+.creative-thumb .thumb-idx{position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.7);color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600}
+.creative-add-btn{width:100px;height:100px;border:2px dashed var(--border-2);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s;color:var(--muted);font-size:11px;gap:2px}
+.creative-add-btn:hover{border-color:var(--blue);color:var(--blue)}
+.creative-add-btn .plus{font-size:24px;line-height:1}
+
+/* Client carousel viewer */
+.carousel-wrap{position:relative;width:100%;background:#0a0a0a;overflow:hidden}
+.carousel-track{display:flex;transition:transform .3s ease;touch-action:pan-y}
+.carousel-track .carousel-slide{flex:0 0 100%;min-width:100%}
+.carousel-track .carousel-slide img{width:100%;display:block}
+.carousel-track .carousel-slide video{width:100%;display:block}
+.carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.9);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:2;transition:all .15s}
+.carousel-nav:hover{background:#fff;transform:translateY(-50%) scale(1.1)}
+.carousel-nav.prev{left:8px}
+.carousel-nav.next{right:8px}
+.carousel-dots{display:flex;gap:6px;justify-content:center;padding:8px 0;background:rgba(0,0,0,.03)}
+.carousel-dots .dot{width:8px;height:8px;border-radius:50%;background:var(--border-2);cursor:pointer;transition:all .15s}
+.carousel-dots .dot.active{background:var(--blue);transform:scale(1.2)}
+.carousel-count{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600;z-index:2}
+
+/* Client toolbar - prominent */
+.client-toolbar{background:var(--card);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:56px;z-index:10;border:1px solid var(--border)}
+.client-toolbar .ct-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.client-toolbar .ct-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.client-filter{padding:6px 12px;font-size:12px;font-weight:500;border:1px solid var(--border-2);border-radius:6px;background:var(--card);cursor:pointer;font-family:inherit;transition:all .15s;color:var(--muted)}
+.client-filter:hover{border-color:var(--blue);color:var(--blue)}
+.client-filter.active{background:var(--gradient-blue);color:#fff;border-color:transparent}
+@media(max-width:600px){
+  .client-toolbar{padding:10px 12px;top:48px}
+  .client-toolbar .ct-left,.client-toolbar .ct-right{width:100%;justify-content:space-between}
+  .client-filter{padding:5px 8px;font-size:11px}
+}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -1326,17 +1367,23 @@ function editPost(postId){
       <div class="field-row">
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--blue)">English creatives</label>
-          <div class="creative-slot ${p.creativesEN?'has-file':''}" onclick="uploadCreative('EN')" id="slotEN">
-            ${p.creativesEN?`<img src="${p.creativesEN}" alt="EN creative">`:p.hasCreativeEN?(p.creativeENType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" controls style="width:100%;max-height:200px;border-radius:6px"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" alt="EN creative">`):'<div class="upload-text">Upload photo or video<br>Click or drag files here</div>'}
+          <div class="creative-grid" id="gridEN">
+            ${(p.carouselEN||[]).map((src,i)=>`<div class="creative-thumb"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${i}" alt=""><div class="thumb-idx">${i+1}</div>${editorLocked?'':`<button class="thumb-remove" onclick="removeSlide('EN',${i})">&times;</button>`}</div>`).join('')}
+            ${p.creativesEN?`<div class="creative-thumb"><img src="${p.creativesEN}" alt=""><div class="thumb-idx">1</div></div>`:''}
+            ${p.hasCreativeEN&&!p.carouselEN?.length&&!p.creativesEN?`<div class="creative-thumb">${p.creativeENType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" alt="">`}<div class="thumb-idx">1</div></div>`:''}
+            ${editorLocked?'':`<div class="creative-add-btn" onclick="uploadCreative('EN')"><span class="plus">+</span>Add</div>`}
           </div>
-          <input type="file" id="fileEN" accept="image/*,video/mp4,video/quicktime,video/webm" style="display:none" onchange="handleUpload('EN')">
+          <input type="file" id="fileEN" accept="image/*,video/mp4,video/quicktime,video/webm" multiple style="display:none" onchange="handleUpload('EN')">
         </div>
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--coral)">Arabic creatives</label>
-          <div class="creative-slot ${p.creativesAR?'has-file':''}" onclick="uploadCreative('AR')" id="slotAR">
-            ${p.creativesAR?`<img src="${p.creativesAR}" alt="AR creative">`:p.hasCreativeAR?(p.creativeARType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR" controls style="width:100%;max-height:200px;border-radius:6px"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR" alt="AR creative">`):'<div class="upload-text">Upload photo or video<br>Click or drag files here</div>'}
+          <div class="creative-grid" id="gridAR">
+            ${(p.carouselAR||[]).map((src,i)=>`<div class="creative-thumb"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR-${i}" alt=""><div class="thumb-idx">${i+1}</div>${editorLocked?'':`<button class="thumb-remove" onclick="removeSlide('AR',${i})">&times;</button>`}</div>`).join('')}
+            ${p.creativesAR?`<div class="creative-thumb"><img src="${p.creativesAR}" alt=""><div class="thumb-idx">1</div></div>`:''}
+            ${p.hasCreativeAR&&!p.carouselAR?.length&&!p.creativesAR?`<div class="creative-thumb">${p.creativeARType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR" alt="">`}<div class="thumb-idx">1</div></div>`:''}
+            ${editorLocked?'':`<div class="creative-add-btn" onclick="uploadCreative('AR')"><span class="plus">+</span>Add</div>`}
           </div>
-          <input type="file" id="fileAR" accept="image/*,video/mp4,video/quicktime,video/webm" style="display:none" onchange="handleUpload('AR')">
+          <input type="file" id="fileAR" accept="image/*,video/mp4,video/quicktime,video/webm" multiple style="display:none" onchange="handleUpload('AR')">
         </div>
       </div>
       <div class="comments-area" style="margin-top:12px"><div style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Creative comments</div>
@@ -1525,9 +1572,22 @@ function uploadCreative(lang){
 }
 
 function handleUpload(lang){
-  const file = $('file'+lang).files[0];
-  if(!file) return;
-  processFile(file,lang);
+  const files = Array.from($('file'+lang).files);
+  if(!files.length) return;
+  files.forEach(f=>processFile(f,lang));
+  $('file'+lang).value = '';
+}
+
+function removeSlide(lang,idx){
+  const postMatch = $('postModalFoot').innerHTML.match(/deletePost\('([^']+)'\)/);
+  if(!postMatch) return;
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postMatch[1]); if(!p) return;
+  const key = 'carousel'+lang;
+  if(!p[key]) return;
+  p[key].splice(idx,1);
+  saveCalendars();
+  editPost(p.id);
 }
 
 function processFile(file,lang){
@@ -1559,16 +1619,28 @@ function processFile(file,lang){
 
   // Upload to API as binary
   const mime = file.type || (isVideo ? 'video/mp4' : 'image/jpeg');
-  const uploadUrl = `/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(postId)}&lang=${encodeURIComponent(lang)}&mime=${encodeURIComponent(mime)}`;
+  const key = 'carousel'+lang;
+  const slideIdx = (p[key]||[]).length;
+  const uploadUrl = `/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(postId)}&lang=${encodeURIComponent(lang+'-'+slideIdx)}&mime=${encodeURIComponent(mime)}`;
+  // Also upload as the base lang key for backward compat (first slide)
+  if(slideIdx===0){
+    fetch(`/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(postId)}&lang=${encodeURIComponent(lang)}&mime=${encodeURIComponent(mime)}`,{method:'POST',body:file,headers:{'content-type':mime}}).catch(e=>{});
+  }
   
   fetch(uploadUrl, {method:'POST', body:file, headers:{'content-type':mime}})
     .then(r=>r.json())
     .then(d=>{
       if(d.ok){
-        // Store flag in post (not the actual data)
-        if(lang==='EN'){p.hasCreativeEN=true;p.creativeENType=isVideo?'video':'image';p.creativesEN='';}
-        else{p.hasCreativeAR=true;p.creativeARType=isVideo?'video':'image';p.creativesAR='';}
+        const key = 'carousel'+lang;
+        if(!p[key]) p[key] = [];
+        const slideIdx = p[key].length;
+        p[key].push({type:isVideo?'video':'image', idx:slideIdx});
+        // Also set legacy flags for backward compat
+        if(lang==='EN'){p.hasCreativeEN=true;p.creativeENType=p[key].length===1&&isVideo?'video':'image';}
+        else{p.hasCreativeAR=true;p.creativeARType=p[key].length===1&&isVideo?'video':'image';}
+        p.creativesEN='';p.creativesAR='';
         saveCalendars();
+        editPost(p.id);
       }
     })
     .catch(e=>console.error('Upload failed:',e));
@@ -1580,6 +1652,12 @@ let clientData = null;
 let clientCalId_c = null;
 let clientViewSize = 'l';
 let clientTab = 'content';
+let clientStatusFilter = 'all';
+
+function setClientFilter(f){
+  clientStatusFilter=f;
+  renderClientView(clientCurrentMonth);
+}
 let clientCurrentMonth = null;
 
 function setClientTab(tab){
@@ -1643,6 +1721,22 @@ async function clientMode(id){
   setTimeout(()=>document.getElementById('clientPinInput').focus(),100);
 }
 
+
+const carouselState = {};
+function carouselNav(id,dir){
+  const track = document.getElementById(id); if(!track) return;
+  const total = track.children.length;
+  carouselState[id] = ((carouselState[id]||0)+dir+total)%total;
+  carouselGo(id, carouselState[id]);
+}
+function carouselGo(id,idx){
+  const track = document.getElementById(id); if(!track) return;
+  carouselState[id] = idx;
+  track.style.transform = `translateX(-${idx*100}%)`;
+  const dots = document.getElementById(id+'-dots');
+  if(dots) dots.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+}
+
 async function clientEnter(){
   const pin = document.getElementById('clientPinInput').value.trim();
   const err = document.getElementById('clientError');
@@ -1674,7 +1768,16 @@ function renderClientView(targetMonth){
   
   const year = vm.getFullYear(), month = vm.getMonth();
   const monthKey = year+'-'+String(month+1).padStart(2,'0');
-  const monthPosts = posts.filter(p=>(p.date||'').startsWith(monthKey));
+  let monthPosts = posts.filter(p=>(p.date||'').startsWith(monthKey));
+  if(clientStatusFilter!=='all'){
+    monthPosts = monthPosts.filter(p=>{
+      const fb = p.feedback||{};
+      if(clientStatusFilter==='approved') return fb.status==='approved';
+      if(clientStatusFilter==='declined') return fb.status==='declined';
+      if(clientStatusFilter==='pending') return !fb.status || fb.status==='';
+      return true;
+    });
+  }
   clientCurrentMonth = vm;
   
   // Nav months
@@ -1697,18 +1800,24 @@ function renderClientView(targetMonth){
   
   if(c.intro) html += `<div class="client-intro"><p>${esc(c.intro)}</p></div>`;
   
-  // Controls bar
-  html += `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
-    <div class="client-month-nav" style="margin-bottom:0;flex:1;justify-content:flex-start">
-      ${prevMonth ? `<button class="month-nav" onclick="clientGoMonth('${prevMonth}')">&lsaquo;</button>` : '<div style="width:36px"></div>'}
-      <h2 style="min-width:auto">${MONTH_NAMES[month]} ${year}</h2>
-      ${nextMonth ? `<button class="month-nav" onclick="clientGoMonth('${nextMonth}')">&rsaquo;</button>` : '<div style="width:36px"></div>'}
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <div class="client-view-toggle" id="clientViewToggle">
+  // Prominent toolbar
+  html += `<div class="client-toolbar">
+    <div class="ct-left">
+      <div class="client-month-nav" style="margin-bottom:0">
+        ${prevMonth ? `<button class="month-nav" onclick="clientGoMonth('${prevMonth}')">&lsaquo;</button>` : '<div style="width:36px"></div>'}
+        <h2 style="min-width:auto;font-size:22px">${MONTH_NAMES[month]} ${year}</h2>
+        ${nextMonth ? `<button class="month-nav" onclick="clientGoMonth('${nextMonth}')">&rsaquo;</button>` : '<div style="width:36px"></div>'}
+      </div>
+      <div class="client-view-toggle">
         <button class="${clientTab==='calendar'?'active':''}" onclick="setClientTab('calendar')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/></svg> Calendar</button>
         <button class="${clientTab==='content'?'active':''}" onclick="setClientTab('content')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Content</button>
       </div>
+    </div>
+    <div class="ct-right">
+      <button class="client-filter ${clientStatusFilter==='all'?'active':''}" onclick="setClientFilter('all')">All</button>
+      <button class="client-filter ${clientStatusFilter==='pending'?'active':''}" onclick="setClientFilter('pending')">Pending</button>
+      <button class="client-filter ${clientStatusFilter==='approved'?'active':''}" onclick="setClientFilter('approved')">Approved</button>
+      <button class="client-filter ${clientStatusFilter==='declined'?'active':''}" onclick="setClientFilter('declined')">Changes</button>
       <div class="sizer" id="clientSizer">
         <button data-sz="l" title="Large" onclick="setClientSize('l')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
         <button data-sz="m" title="Medium" onclick="setClientSize('m')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/></svg></button>
@@ -1784,12 +1893,22 @@ function renderClientView(targetMonth){
         const dayMonth = dd.toLocaleDateString('en-GB',{month:'short'});
         const dayName = dd.toLocaleDateString('en-GB',{weekday:'long'});
         
-        // Media
+        // Media - carousel or single
         let mediaHTML = '';
-        const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || '';
-        const isVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
-        if(previewImg){
-          mediaHTML = `<div class="cc-media">${isVideo ? `<video src="${previewImg}" controls playsinline></video>` : `<img src="${previewImg}" alt="">`}</div>`;
+        const slides = p.carouselEN||[];
+        if(slides.length > 1){
+          const carId = 'car-'+p.id;
+          let slidesHTML = slides.map((s,i)=>{
+            const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN-${i}&pin=${encodeURIComponent(clientPin)}`;
+            return `<div class="carousel-slide">${s.type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="Slide ${i+1}">`}</div>`;
+          }).join('');
+          mediaHTML = `<div class="carousel-wrap"><div class="carousel-count">${slides.length} slides</div><div class="carousel-track" id="${carId}" style="transform:translateX(0)">${slidesHTML}</div><button class="carousel-nav prev" onclick="carouselNav('${carId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="carouselNav('${carId}',1)">&rsaquo;</button><div class="carousel-dots" id="${carId}-dots">${slides.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="carouselGo('${carId}',${i})"></div>`).join('')}</div></div>`;
+        } else {
+          const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || '';
+          const isVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
+          if(previewImg){
+            mediaHTML = `<div class="cc-media">${isVideo ? `<video src="${previewImg}" controls playsinline></video>` : `<img src="${previewImg}" alt="">`}</div>`;
+          }
         }
         
         const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#dbeafe',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
