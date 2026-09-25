@@ -164,11 +164,13 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .client-stat{background:var(--card);border-radius:8px;padding:14px 16px;text-align:center;box-shadow:var(--shadow)}
 .client-stat .stat-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--blue)}
 .client-stat .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:2px}
-.sz-s .client-week-label,.sz-m .client-week-label{display:none}
+.sz-s .client-week-label,.sz-m .client-week-label,.sz-l .client-week-label{display:none}
 .client-week-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2);margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 
 .client-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;border:1px solid var(--border)}
 .client-card .cc-media{width:100%;background:#0a0a0a;position:relative;display:flex;align-items:center;justify-content:center}
+.client-card .cc-media img{width:100%;display:block;object-fit:contain;max-height:400px}
+.client-card .cc-media video{width:100%;display:block;max-height:400px}
 .client-card .cc-media img{width:100%;display:block}
 .client-card .cc-media video{width:100%;display:block}
 .client-card .cc-media .no-creative{padding:40px;color:#555;font-size:14px;text-align:center}
@@ -218,13 +220,13 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .sizer button svg{display:block}
 
 /* Client card sizes */
-.client-grid{display:flex;flex-direction:column;gap:20px;align-items:stretch}
-.client-grid.sz-s{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:start}
-.client-grid.sz-m{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:start}
-.client-grid.sz-l{display:flex;flex-direction:column;gap:20px}
+.client-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.client-grid.sz-s{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.client-grid.sz-m{grid-template-columns:repeat(2,1fr)}
+.client-grid.sz-l{grid-template-columns:repeat(3,1fr);gap:16px}
 
 /* Small card overrides */
-.sz-s .client-card .cc-media img,.sz-s .client-card .cc-media video{max-height:200px;object-fit:cover}
+.sz-s .client-card .cc-media img,.sz-s .client-card .cc-media video{max-height:200px;object-fit:contain}
 .sz-s .client-card .cc-meta{padding:10px 12px}
 .sz-s .client-card .cc-meta .cc-day{width:36px;height:36px}
 .sz-s .client-card .cc-meta .cc-day .cc-d{font-size:16px}
@@ -236,7 +238,7 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .sz-s .client-card .cc-comments .cc-comment{font-size:12px}
 
 /* Medium card overrides */
-.sz-m .client-card .cc-media img,.sz-m .client-card .cc-media video{max-height:300px;object-fit:cover}
+.sz-m .client-card .cc-media img,.sz-m .client-card .cc-media video{max-height:300px;object-fit:contain}
 
 /* Admin dashboard */
 .admin-dash{margin-bottom:32px}
@@ -326,7 +328,7 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
   .client-card .cc-meta .cc-platforms{margin-top:4px}
   .cc-approval .btn{font-size:12px;padding:6px 10px;min-width:0}
   .sizer{display:none}
-  .client-grid.sz-s,.client-grid.sz-m{grid-template-columns:1fr}
+  .client-grid.sz-s,.client-grid.sz-m,.client-grid.sz-l{grid-template-columns:1fr}
   .client-view-toggle button{padding:6px 10px;font-size:12px}
 }
 @media(max-width:480px){
@@ -339,8 +341,8 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 }
 /* Tablet */
 @media(min-width:769px) and (max-width:1024px){
-  .client-grid.sz-m{grid-template-columns:repeat(2,1fr)}
-  .client-grid.sz-s{grid-template-columns:repeat(2,1fr)}
+  .client-grid{grid-template-columns:repeat(2,1fr)!important}
+  .client-grid.sz-s{grid-template-columns:repeat(2,1fr)!important}
   .client-cal-day{min-height:90px}
 }
 
@@ -522,8 +524,8 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .carousel-wrap{position:relative;width:100%;background:#0a0a0a;overflow:hidden}
 .carousel-track{display:flex;transition:transform .3s ease;touch-action:pan-y}
 .carousel-track .carousel-slide{flex:0 0 100%;min-width:100%}
-.carousel-track .carousel-slide img{width:100%;display:block}
-.carousel-track .carousel-slide video{width:100%;display:block}
+.carousel-track .carousel-slide img{width:100%;display:block;object-fit:contain;background:#0a0a0a}
+.carousel-track .carousel-slide video{width:100%;display:block;background:#0a0a0a}
 .carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.9);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:2;transition:all .15s}
 .carousel-nav:hover{background:#fff;transform:translateY(-50%) scale(1.1)}
 .carousel-nav.prev{left:8px}
@@ -545,6 +547,12 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
   .client-toolbar .ct-left,.client-toolbar .ct-right{width:100%;justify-content:space-between}
   .client-filter{padding:5px 8px;font-size:11px}
 }
+
+
+/* Approval card media fix */
+.approval-card .card-media img{object-fit:contain;max-height:300px;width:100%;background:#0a0a0a}
+.approval-card .card-media video{max-height:300px;width:100%;background:#0a0a0a}
+.approval-card .card-media .carousel-wrap{width:100%}
 
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
@@ -730,7 +738,7 @@ function renderCalendarList(){
   $('backToListBtn').style.display = 'none';
   $('pdfBtn').style.display = 'none';
   $('lockToggle').style.display = 'none';
-  $('pageTitle').textContent = 'Content Calendar';
+  $('pageTitle').textContent = 'Content Calendar // Admin';
   
   // Global stats
   let totalPosts=0, totalApproved=0, totalPending=0, totalComments=0;
@@ -985,7 +993,7 @@ function openCalendar(id){
 
 function renderCalendarView(){
   const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
-  $('pageTitle').textContent = c.name + (editorLocked?' (Locked)':' - Editor');
+  $('pageTitle').textContent = c.name + ' // ' + (editorLocked?'Locked':'Editor');
   if(viewMode==='year') renderYearView(c);
   else if(viewMode==='approval') renderApprovalView(c);
   else renderMonthView(c);
@@ -1158,13 +1166,21 @@ function renderApprovalView(c){
     const plats = (p.platforms||[]).map(pl=>`<span class="ptag ${PLAT_CLASS[pl]||'other'}">${pl.replace('X (Twitter)','X')}</span>`).join('');
     const fb = (c.feedback&&c.feedback[p.id])||{status:'',comments:[]};
     
-    // Determine media source
+    // Determine media source - carousel or single
     let mediaHTML = '<div class="no-media">No creative</div>';
-    if(p.creativesEN){
+    const aSlides = p.carouselEN||[];
+    if(aSlides.length > 1){
+      const aCarId = 'acar-'+p.id;
+      let aSlidesHTML = aSlides.map((s,i)=>{
+        const src = `/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${i}`;
+        return `<div class="carousel-slide">${s.type==='video'?`<video src="${src}" controls></video>`:`<img src="${src}" alt="">`}</div>`;
+      }).join('');
+      mediaHTML = `<div class="carousel-wrap" style="aspect-ratio:4/5"><div class="carousel-count">${aSlides.length}</div><div class="carousel-track" id="${aCarId}" style="transform:translateX(0)">${aSlidesHTML}</div><button class="carousel-nav prev" onclick="event.stopPropagation();carouselNav('${aCarId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="event.stopPropagation();carouselNav('${aCarId}',1)">&rsaquo;</button><div class="carousel-dots" id="${aCarId}-dots">${aSlides.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="event.stopPropagation();carouselGo('${aCarId}',${i})"></div>`).join('')}</div></div>`;
+    } else if(p.creativesEN){
       mediaHTML = `<img src="${p.creativesEN}" alt="">`;
     } else if(p.hasCreativeEN){
       if(p.creativeENType==='video'){
-        mediaHTML = `<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" controls></video>`;
+        mediaHTML = `<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" controls onclick="event.stopPropagation()"></video>`;
       } else {
         mediaHTML = `<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" alt="">`;
       }
