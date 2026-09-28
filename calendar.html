@@ -638,6 +638,13 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .admin-filter.active{background:#1e1e2e;color:#fff;border-color:#1e1e2e}
 @media(max-width:768px){.admin-toolbar{padding:10px 12px}.admin-toolbar .at-left,.admin-toolbar .at-right{width:100%;justify-content:space-between}}
 
+
+/* Drag reorder creatives */
+.creative-thumb[draggable="true"]{cursor:grab}
+.creative-thumb[draggable="true"]:active{cursor:grabbing}
+.creative-thumb.drag-over{border-color:var(--blue);border-style:solid;transform:scale(1.05);transition:transform .1s}
+.creative-thumb.dragging{opacity:.4}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -1528,7 +1535,7 @@ function editPost(postId){
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--blue)">English creatives</label>
           <div class="creative-grid" id="gridEN">
-            ${(p.carouselEN||[]).map((src,i)=>`<div class="creative-thumb"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${i}" alt=""><div class="thumb-idx">${i+1}</div>${editorLocked?'':`<button class="thumb-remove" onclick="removeSlide('EN',${i})">&times;</button>`}</div>`).join('')}
+            ${(p.carouselEN||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'EN',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'EN',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${i}" alt=""><div class="thumb-idx">${i+1}</div>${editorLocked?'':`<button class="thumb-remove" onclick="event.stopPropagation();removeSlide('EN',${i})">&times;</button>`}</div>`).join('')}
             ${p.creativesEN?`<div class="creative-thumb"><img src="${p.creativesEN}" alt=""><div class="thumb-idx">1</div></div>`:''}
             ${p.hasCreativeEN&&!p.carouselEN?.length&&!p.creativesEN?`<div class="creative-thumb">${p.creativeENType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" alt="">`}<div class="thumb-idx">1</div></div>`:''}
             ${editorLocked?'':`<div class="creative-add-btn" onclick="uploadCreative('EN')"><span class="plus">+</span>Add</div>`}
@@ -1538,7 +1545,7 @@ function editPost(postId){
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--coral)">Arabic creatives</label>
           <div class="creative-grid" id="gridAR">
-            ${(p.carouselAR||[]).map((src,i)=>`<div class="creative-thumb"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR-${i}" alt=""><div class="thumb-idx">${i+1}</div>${editorLocked?'':`<button class="thumb-remove" onclick="removeSlide('AR',${i})">&times;</button>`}</div>`).join('')}
+            ${(p.carouselAR||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'AR',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'AR',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR-${i}" alt=""><div class="thumb-idx">${i+1}</div>${editorLocked?'':`<button class="thumb-remove" onclick="event.stopPropagation();removeSlide('AR',${i})">&times;</button>`}</div>`).join('')}
             ${p.creativesAR?`<div class="creative-thumb"><img src="${p.creativesAR}" alt=""><div class="thumb-idx">1</div></div>`:''}
             ${p.hasCreativeAR&&!p.carouselAR?.length&&!p.creativesAR?`<div class="creative-thumb">${p.creativeARType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR" alt="">`}<div class="thumb-idx">1</div></div>`:''}
             ${editorLocked?'':`<div class="creative-add-btn" onclick="uploadCreative('AR')"><span class="plus">+</span>Add</div>`}
@@ -1776,6 +1783,98 @@ function removeSlide(lang,idx){
   if(!p[key]) return;
   p[key].splice(idx,1);
   saveCalendars();
+  editPost(p.id);
+}
+
+
+let dragSlideInfo = null;
+
+function dragSlide(e, lang, idx){
+  dragSlideInfo = {lang, idx};
+  e.dataTransfer.effectAllowed = 'move';
+  e.target.closest('.creative-thumb').classList.add('dragging');
+}
+
+function dragOverSlide(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function enterSlide(e){
+  e.preventDefault();
+  const thumb = e.target.closest('.creative-thumb');
+  if(thumb) thumb.classList.add('drag-over');
+}
+
+function leaveSlide(e){
+  const thumb = e.target.closest('.creative-thumb');
+  if(thumb) thumb.classList.remove('drag-over');
+}
+
+async function dropSlide(e, lang, targetIdx){
+  e.preventDefault();
+  const thumb = e.target.closest('.creative-thumb');
+  if(thumb) thumb.classList.remove('drag-over');
+  
+  if(!dragSlideInfo || dragSlideInfo.lang !== lang) return;
+  const fromIdx = dragSlideInfo.idx;
+  dragSlideInfo = null;
+  if(fromIdx === targetIdx) return;
+  
+  const postMatch = $('postModalFoot').innerHTML.match(/deletePost\('([^']+)'\)/);
+  if(!postMatch) return;
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postMatch[1]); if(!p) return;
+  const key = 'carousel'+lang;
+  if(!p[key] || !p[key].length) return;
+  
+  // Reorder the array
+  const arr = p[key];
+  const [moved] = arr.splice(fromIdx, 1);
+  arr.splice(targetIdx, 0, moved);
+  
+  // Now we need to swap the actual files in KV too
+  // Approach: rename files by downloading and re-uploading in new order
+  // For now, swap the two affected files via API
+  const swaps = [];
+  const minIdx = Math.min(fromIdx, targetIdx);
+  const maxIdx = Math.max(fromIdx, targetIdx);
+  
+  // Download all affected slides, then re-upload in new order
+  // Since this involves multiple API calls, show a loading state
+  const grid = $('grid'+lang);
+  if(grid) grid.style.opacity = '0.5';
+  
+  try {
+    // Collect all slide data
+    const slideData = [];
+    for(let i = 0; i < arr.length; i++){
+      const resp = await fetch(`/api/creative?calId=${currentCalId}&postId=${p.id}&lang=${lang}-${i===targetIdx?fromIdx:i===fromIdx?targetIdx:i<minIdx||i>maxIdx?i:fromIdx<targetIdx?i+1:i-1}`);
+      if(!resp.ok) continue;
+      const blob = await resp.blob();
+      slideData.push({blob, type: arr[i].type});
+    }
+    
+    // Re-upload in correct order
+    for(let i = 0; i < slideData.length; i++){
+      const mime = slideData[i].type === 'video' ? 'video/mp4' : 'image/jpeg';
+      await fetch(`/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(p.id)}&lang=${encodeURIComponent(lang+'-'+i)}&mime=${encodeURIComponent(mime)}`, {
+        method: 'POST', body: slideData[i].blob, headers: {'content-type': mime}
+      });
+    }
+    
+    // Update first slide as legacy
+    if(slideData[0]){
+      const mime = slideData[0].type === 'video' ? 'video/mp4' : 'image/jpeg';
+      await fetch(`/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(p.id)}&lang=${encodeURIComponent(lang)}&mime=${encodeURIComponent(mime)}`, {
+        method: 'POST', body: slideData[0].blob, headers: {'content-type': mime}
+      });
+    }
+  } catch(e){
+    console.error('Reorder failed:', e);
+  }
+  
+  await saveCalendars();
   editPost(p.id);
 }
 
