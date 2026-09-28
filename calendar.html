@@ -2513,6 +2513,7 @@ function renderClientView(targetMonth){
   let html = `<div class="header" style="display:flex"><img src="${$('logoImg').src}" alt="RICH"><h1>${esc(c.name)}</h1></div>
     <div class="client-wrap">`;
   
+  const totalCreatives = monthPosts.reduce((s,p)=>s+countCreatives(p),0);
   html += `<div style="background:linear-gradient(135deg,#1e1e2e,#2d2b55);color:#fff;border-radius:12px;padding:24px 28px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.15)">
     <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:24px;text-transform:uppercase;margin-bottom:4px;letter-spacing:.02em">${esc(c.name)}</h2>
     <p style="font-size:13px;opacity:.7;margin-bottom:12px">${esc(c.intro||'Content ready for your review.')}</p>
@@ -2551,7 +2552,7 @@ function renderClientView(targetMonth){
   </div>`;
   
   // Summary bar
-  const totalCreatives = monthPosts.reduce((s,p)=>s+countCreatives(p),0);
+  
   
   // ===== CALENDAR TAB =====
   if(clientTab === 'calendar'){
@@ -2628,12 +2629,12 @@ function renderClientView(targetMonth){
           mediaHTML = `<div class="carousel-wrap"><div class="carousel-count">${slides.length} slides</div><div class="carousel-track" id="${carId}" style="transform:translateX(0)">${slidesHTML}</div><button class="carousel-nav prev" onclick="carouselNav('${carId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="carouselNav('${carId}',1)">&rsaquo;</button><div class="carousel-dots" id="${carId}-dots">${slides.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="carouselGo('${carId}',${i})"></div>`).join('')}</div></div>`;
         } else if(slides.length === 1){
           const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=${slideLang}-${slides[0].kvIdx!==undefined?slides[0].kvIdx:0}&pin=${encodeURIComponent(clientPin)}`;
-          mediaHTML = `<div class="cc-media">${slides[0].type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="">`}</div>`;
+          mediaHTML = slides[0].type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="">`;
         } else {
           const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || '';
           const isVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
           if(previewImg){
-            mediaHTML = `<div class="cc-media">${isVideo ? `<video src="${previewImg}" controls playsinline></video>` : `<img src="${previewImg}" alt="">`}</div>`;
+            mediaHTML = isVideo ? `<video src="${previewImg}" controls playsinline></video>` : `<img src="${previewImg}" alt="">`;
           }
         }
         // AR carousel moved to expand section
@@ -2678,12 +2679,7 @@ function renderClientView(targetMonth){
         
         html += `<div class="client-card" id="cpost-${p.id}">
           <div class="cc-media" onclick="openFullView(this)">
-            ${(()=>{
-              // Strip wrapping div from mediaHTML if it has one
-              let m = mediaHTML;
-              if(m.startsWith('<div class="cc-media">')) m = m.slice(21, m.length-6);
-              return m || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#555;font-size:11px">No preview</div>';
-            })()}
+            ${mediaHTML || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#555;font-size:11px">No preview</div>'}
             <div class="plat-icons cc-platforms">${plats}</div>
           </div>
           <div class="cc-meta">
