@@ -885,6 +885,14 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
   .ccd-dot{width:6px;height:6px}
 }
 
+
+/* Fix approval buttons */
+.client-card .cc-approval{padding:8px 12px;gap:6px;flex-wrap:nowrap;overflow:hidden}
+.client-card .cc-approval .btn{padding:6px 8px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
+.client-card .cc-approval .cc-approval-status{font-size:10px;flex:0 0 auto;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+.btn.cc-approve{border-width:1.5px;border-color:var(--green);color:var(--green)}
+.btn.cc-changes{border-width:1.5px;border-color:var(--amber);color:var(--amber)}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
