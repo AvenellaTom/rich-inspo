@@ -276,9 +276,9 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .client-cal-day.empty{background:var(--bg);opacity:.4}
 .client-cal-day .ccd-num{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
 .client-cal-day .ccd-num.today{color:var(--blue);font-weight:700}
-.client-cal-day .ccd-post{background:var(--bg);border-radius:4px;padding:4px 6px;margin-bottom:3px;font-size:10px;cursor:pointer;border-left:3px solid var(--green);transition:background .15s;overflow:hidden}
-.client-cal-day .ccd-post:hover{background:var(--blue-light)}
-.ccd-post .ccd-title{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+
+
 .ccd-post .ccd-plats{display:flex;gap:1px;margin-top:2px;flex-wrap:wrap}
 .ccd-post .ccd-plats .ptag{font-size:8px;padding:0 3px;border-radius:2px}
 .ccd-post .ccd-thumb{width:100%;height:40px;object-fit:cover;border-radius:2px;margin-bottom:2px}
@@ -322,8 +322,8 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
   .client-stat .stat-num{font-size:22px}
   .client-cal-grid{font-size:11px}
   .client-cal-day{min-height:70px;padding:4px}
-  .client-cal-day .ccd-post{font-size:9px;padding:2px 4px}
-  .client-cal-day .ccd-thumb{height:28px}
+  
+  
   .client-card .cc-meta{flex-direction:column;align-items:flex-start}
   .client-card .cc-meta .cc-platforms{margin-top:4px}
   .cc-approval .btn{font-size:12px;padding:6px 10px;min-width:0}
@@ -866,6 +866,24 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 /* Month nav */
 .client-toolbar .month-nav{border:none;background:var(--bg)}
 .client-toolbar .month-nav:hover{background:var(--blue-light);color:var(--blue)}
+
+
+/* Option A calendar - clean count + dots */
+.client-cal-day{min-height:80px;padding:8px;cursor:pointer;transition:background .15s;position:relative}
+.client-cal-day:hover{background:var(--blue-light)}
+.client-cal-day.has-posts{cursor:pointer}
+.client-cal-day .ccd-num{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.client-cal-day .ccd-num.today{color:var(--blue);font-weight:700}
+.ccd-count{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px}
+.ccd-dots{display:flex;gap:3px;flex-wrap:wrap}
+.ccd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ccd-creatives{font-size:9px;color:var(--muted);margin-top:3px}
+@media(max-width:768px){
+  .client-cal-day{min-height:60px;padding:4px}
+  .client-cal-day .ccd-num{font-size:11px;margin-bottom:2px}
+  .ccd-count{font-size:16px}
+  .ccd-dot{width:6px;height:6px}
+}
 
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
@@ -2538,20 +2556,23 @@ function renderClientView(targetMonth){
       const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const isToday = d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
       const dayPosts = monthPosts.filter(p=>p.date===ds);
+      const dayCreatives = dayPosts.reduce((s,p)=>s+countCreatives(p),0);
       
-      html += `<div class="client-cal-day"><div class="ccd-num${isToday?' today':''}">${d}</div>`;
-      dayPosts.forEach(p=>{
-        const sc = STATUS_COLORS[p.status]||'#d1d5db';
-        const plats = (p.platforms||[]).map(pl=>platIcon(pl)).join('');
-        // Thumbnail
-        const thumb = p.creativesEN || (p.hasCreativeEN && p.creativeENType!=='video' ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '');
-        html += `<div class="ccd-post" style="border-left-color:${sc}" onclick="setClientTab('content');setTimeout(()=>{const el=document.getElementById('cpost-${p.id}');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},100)">
-          ${thumb?`<img class="ccd-thumb" src="${thumb}" alt="">`:''}
-          <div class="ccd-title">${esc(p.topic||'Untitled')}</div>
-          <div class="plat-icons">${plats}</div>
-        </div>`;
-      });
-      html += '</div>';
+      // Build dots - one per post, coloured by primary platform
+      const dots = dayPosts.map(p=>{
+        const plat = (p.platforms||[])[0]||'Other';
+        const color = PLAT_COLORS[plat]||'#8b5cf6';
+        return `<div class="ccd-dot" style="background:${color}" title="${(p.topic||'Untitled').replace(/"/g,'&quot;')}"></div>`;
+      }).join('');
+      
+      const clickAction = dayPosts.length ? `onclick="setClientTab('content');setTimeout(()=>{const el=document.getElementById('cpost-${dayPosts[0].id}');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},150)"` : '';
+      
+      html += `<div class="client-cal-day ${dayPosts.length?'has-posts':''}" ${clickAction}>
+        <div class="ccd-num${isToday?' today':''}">${d}</div>
+        ${dayPosts.length ? `<div class="ccd-count">${dayPosts.length}</div>` : ''}
+        ${dots ? `<div class="ccd-dots">${dots}</div>` : ''}
+        ${dayCreatives ? `<div class="ccd-creatives">${dayCreatives} creative${dayCreatives!==1?'s':''}</div>` : ''}
+      </div>`;
     }
     const totalCells = firstDay + daysInMonth;
     const remaining = (7-(totalCells%7))%7;
