@@ -2513,7 +2513,16 @@ function renderClientView(targetMonth){
   let html = `<div class="header" style="display:flex"><img src="${$('logoImg').src}" alt="RICH"><h1>${esc(c.name)}</h1></div>
     <div class="client-wrap">`;
   
-  if(c.intro) html += `<div class="client-intro"><p>${esc(c.intro)}</p></div>`;
+  html += `<div style="background:linear-gradient(135deg,#1e1e2e,#2d2b55);color:#fff;border-radius:12px;padding:24px 28px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.15)">
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:24px;text-transform:uppercase;margin-bottom:4px;letter-spacing:.02em">${esc(c.name)}</h2>
+    <p style="font-size:13px;opacity:.7;margin-bottom:12px">${esc(c.intro||'Content ready for your review.')}</p>
+    <div style="display:flex;gap:16px;font-size:12px">
+      <div><strong style="font-size:20px;display:block">${totalPosts}</strong>posts</div>
+      <div><strong style="font-size:20px;display:block">${totalCreatives}</strong>creatives</div>
+      <div><strong style="font-size:20px;display:block;color:#4ade80">${approved}</strong>approved</div>
+      <div><strong style="font-size:20px;display:block;color:#fbbf24">${totalPosts-approved}</strong>to review</div>
+    </div>
+  </div>`;
   
   // Prominent toolbar
   html += `<div class="client-toolbar">
@@ -2543,12 +2552,6 @@ function renderClientView(targetMonth){
   
   // Summary bar
   const totalCreatives = monthPosts.reduce((s,p)=>s+countCreatives(p),0);
-  html += `<div class="client-summary">
-    <div class="client-stat"><div class="stat-num">${totalPosts}</div><div class="stat-label">Posts</div></div>
-    <div class="client-stat"><div class="stat-num">${totalCreatives}</div><div class="stat-label">Creatives</div></div>
-    <div class="client-stat"><div class="stat-num">${approved}</div><div class="stat-label">Approved</div></div>
-    <div class="client-stat"><div class="stat-num">${totalPosts - approved}</div><div class="stat-label">Awaiting review</div></div>
-  </div>`;
   
   // ===== CALENDAR TAB =====
   if(clientTab === 'calendar'){
@@ -2674,52 +2677,47 @@ function renderClientView(targetMonth){
         });
         
         html += `<div class="client-card" id="cpost-${p.id}">
-          ${p.markedUpdated ? '<div class="post-revision-bar"><span>&#10003; This content has been revised based on your feedback.</span></div>' : ''}
-          ${mediaHTML}
+          <div class="cc-media" onclick="openFullView(this)">
+            ${(()=>{
+              // Strip wrapping div from mediaHTML if it has one
+              let m = mediaHTML;
+              if(m.startsWith('<div class="cc-media">')) m = m.slice(21, m.length-6);
+              return m || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#555;font-size:11px">No preview</div>';
+            })()}
+            <div class="plat-icons cc-platforms">${plats}</div>
+          </div>
           <div class="cc-meta">
             <div class="cc-date-block">
               <div class="cc-day"><span class="cc-d">${dayNum}</span><span class="cc-m">${dayMonth}</span></div>
-              <div>
+              <div style="min-width:0;overflow:hidden">
                 <div class="cc-title">${esc(p.topic||'Untitled')}</div>
-                <div style="font-size:12px;color:var(--muted)">${dayName}${p.creativeType ? ' &middot; '+esc(p.creativeType) : ''}</div>
+                <div style="font-size:10px;color:var(--muted)">${dayName}${p.creativeType ? ' &middot; '+esc(p.creativeType) : ''}</div>
               </div>
             </div>
-            <div class="plat-icons cc-platforms">${plats}</div>
-          </div>
-          <div class="cc-content">
-            ${p.captionEN ? `<div class="cc-section"><h4>Caption (English) <button class="cc-reply-btn" onclick="editClientCaption('${p.id}','captionEN')">Edit</button></h4><p id="cap-${p.id}-en">${esc(p.captionEN)}</p></div>` : ''}
-            ${p.caption && !p.captionEN ? `<div class="cc-section"><h4>Caption <button class="cc-reply-btn" onclick="editClientCaption('${p.id}','caption')">Edit</button></h4><p id="cap-${p.id}-c">${esc(p.caption)}</p></div>` : ''}
-            ${p.captionAR ? `<div class="cc-section"><h4>Caption (Arabic) <button class="cc-reply-btn" onclick="editClientCaption('${p.id}','captionAR')">Edit</button></h4><p dir="rtl" id="cap-${p.id}-ar">${esc(p.captionAR)}</p></div>` : ''}
-            ${(p.assets||[]).filter(a=>a.url).length ? `<div class="cc-section"><h4>Assets</h4><div class="cc-assets">${(p.assets||[]).filter(a=>a.url).map(a=>`<a href="${esc(a.url)}" target="_blank">${esc(a.label||'View file')}</a>`).join('')}</div></div>` : ''}
-            ${(()=>{
-              if(slideLang==='EN' && p.carouselAR && p.carouselAR.length>0){
-                const arCarId = 'arcar-'+p.id;
-                if(p.carouselAR.length > 1){
-                  const arSlides = p.carouselAR.map((s,i)=>{
-                    const src = '/api/creative?calId='+clientCalId_c+'&postId='+p.id+'&lang=AR-'+(s.kvIdx!==undefined?s.kvIdx:i)+'&pin='+encodeURIComponent(clientPin);
-                    return '<div class="carousel-slide">'+(s.type==='video'?'<video src="'+src+'" controls playsinline></video>':'<img src="'+src+'" alt="">')+'</div>';
-                  }).join('');
-                  return '<div class="cc-section"><h4>Arabic version</h4><div style="border-radius:8px;overflow:hidden;background:#0a0a0a;position:relative;aspect-ratio:4/5"><div class="carousel-wrap" style="position:absolute;inset:0"><div class="carousel-track" id="'+arCarId+'" style="height:100%">'+arSlides+'</div><button class="carousel-nav prev" onclick="carouselNav(\''+arCarId+'\',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="carouselNav(\''+arCarId+'\',1)">&rsaquo;</button><div class="carousel-dots" id="'+arCarId+'-dots">'+p.carouselAR.map((_,i)=>'<div class="dot '+(i===0?'active':'')+'" onclick="carouselGo(\''+arCarId+'\','+i+')"></div>').join('')+'</div></div></div></div>';
-                } else {
-                  const src = '/api/creative?calId='+clientCalId_c+'&postId='+p.id+'&lang=AR-'+(p.carouselAR[0].kvIdx!==undefined?p.carouselAR[0].kvIdx:0)+'&pin='+encodeURIComponent(clientPin);
-                  return '<div class="cc-section"><h4>Arabic version</h4><div style="border-radius:8px;overflow:hidden;background:#0a0a0a;aspect-ratio:4/5;display:flex;align-items:center"><img src="'+src+'" style="width:100%;height:100%;object-fit:cover" alt=""></div></div>';
-                }
-              }
-              return '';
-            })()}
           </div>
           <div class="cc-approval">
-            <div class="cc-approval-status"><span class="status-icon" style="background:${statusIcon[p.status]||'#9ca3af'}"></span>${esc(p.status||'Draft')}</div>
+            <span class="status-icon" style="background:${statusIcon[p.status]||'#9ca3af'}"></span>
             <button class="btn sm cc-approve ${fb.status==='approved'?'active':''}" onclick="clientFeedback('${p.id}','approved')">Approve</button>
-            <button class="btn sm cc-changes ${fb.status==='declined'?'active':''}" onclick="clientFeedback('${p.id}','declined')">Request changes</button>
+            <button class="btn sm cc-changes ${fb.status==='declined'?'active':''}" onclick="clientFeedback('${p.id}','declined')">Changes</button>
           </div>
-          <div class="cc-comments" style="padding:0 20px 16px">
+          <div style="padding:6px 10px;border-top:1px solid var(--border)">
+            <div style="display:flex;gap:4px;align-items:center">
+              <input id="cn-${p.id}" value="${esc(savedName)}" placeholder="Name" onchange="saveClientName(this.value)" style="width:50px;padding:4px 5px;border:1px solid var(--border-2);border-radius:4px;font-size:10px;font-family:inherit">
+              <input id="ct-${p.id}" placeholder="Feedback..." style="flex:1;padding:4px 5px;border:1px solid var(--border-2);border-radius:4px;font-size:10px;font-family:inherit" onkeydown="if(event.key==='Enter')clientComment('${p.id}')">
+              <button class="btn sm primary" onclick="clientComment('${p.id}')" style="padding:3px 6px;font-size:9px">Send</button>
+            </div>
+          </div>
+          <div class="cc-expand-btn" onclick="this.closest('.client-card').classList.toggle('expanded')">
+            <span class="expand-arrow" style="transition:transform .2s;display:inline-block;font-size:8px">&#9660;</span>
+            ${(fb.comments||[]).length ? (fb.comments||[]).length+' comment'+((fb.comments||[]).length!==1?'s':'') : 'Details'}
+          </div>
+          <div class="cc-content">
+            ${p.captionEN ? `<div class="cc-section"><h4>Caption (EN)</h4><p style="font-size:11px">${esc(p.captionEN)}</p></div>` : ''}
+            ${p.captionAR ? `<div class="cc-section"><h4>Caption (AR)</h4><p dir="rtl" style="font-size:11px">${esc(p.captionAR)}</p></div>` : ''}
+          </div>
+          <div class="cc-comments" style="padding:0 10px 8px">
             <div class="cc-comment-box">
-              ${commentsHTML||'<div class="cc-no-comments">No comments yet.</div>'}
-              <div class="cc-new-comment">
-                <div class="cc-name-row"><label>Your name</label><input id="cn-${p.id}" value="${esc(savedName)}" placeholder="Enter your name" onchange="saveClientName(this.value)"></div>
-                <div class="cc-msg-row"><textarea id="ct-${p.id}" placeholder="Leave a comment or request changes..." rows="2"></textarea><button class="btn sm primary" onclick="clientComment('${p.id}')">Send</button></div>
-              </div>
+              ${commentsHTML||''}
             </div>
           </div>
         </div>`;
