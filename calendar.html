@@ -669,6 +669,31 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .card-quick-status{display:flex;align-items:center;gap:4px;padding:6px 14px;border-top:1px solid var(--border)}
 .card-quick-status select{flex:1;padding:5px 8px;border:1px solid var(--border-2);border-radius:4px;font-size:12px;font-family:inherit}
 
+
+/* Tighter client comments */
+.cc-comment-header{flex-wrap:wrap;gap:3px;font-size:11px}
+.cc-comment-header strong{font-size:12px}
+.cc-comment-header time{font-size:10px;color:var(--muted-2)}
+.cc-resolved-badge{font-size:9px;padding:1px 4px}
+.cc-reply-btn{font-size:10px}
+.cc-comment-row{gap:6px}
+.cc-comment-avatar{width:24px;height:24px;font-size:10px}
+.cc-comment-text{font-size:12px;line-height:1.4}
+.cc-comment{padding:8px 0}
+.cc-comment-header .cc-reply-btn{margin-left:0}
+.cc-comment-box{padding:8px 10px}
+.cc-new-comment{padding-top:8px;margin-top:8px}
+.cc-name-row{margin-bottom:4px;gap:4px}
+.cc-name-row label{font-size:10px;min-width:0}
+.cc-name-row input{padding:6px 8px;font-size:12px}
+.cc-msg-row textarea{padding:6px 8px;font-size:12px;min-height:32px}
+.cc-msg-row .btn{padding:6px 10px;font-size:11px}
+.cc-replies{margin-left:30px;padding-left:8px}
+.cc-replies .cc-comment-avatar{width:18px;height:18px;font-size:8px}
+
+/* Comment actions inline */
+.cc-comment-actions{display:flex;gap:4px;margin-left:auto;flex-shrink:0}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -2345,7 +2370,7 @@ function renderClientView(targetMonth){
           commentsHTML += `<div class="cc-comment ${cmResolved?'resolved':''}"><div class="cc-comment-row">
             <div class="cc-comment-avatar">${initial}</div>
             <div class="cc-comment-body">
-              <div class="cc-comment-header"><strong>${esc(cm.by||'Anonymous')}</strong>${cmResolved?'<span class="cc-resolved-badge">Addressed</span>':''}<time>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time><button class="cc-reply-btn" style="margin-left:auto" onclick="editClientComment('${p.id}',${ci})">Edit</button><button class="cc-reply-btn" style="color:var(--coral)" onclick="deleteClientComment('${p.id}',${ci})">Delete</button></div>
+              <div class="cc-comment-header"><strong>${esc(cm.by||'Anonymous')}</strong>${cmResolved?'<span class="cc-resolved-badge">Addressed</span>':''}<time>${cm.d?new Date(cm.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</time><span class="cc-comment-actions"><button class="cc-reply-btn" onclick="editClientComment('${p.id}',${ci})">Edit</button><button class="cc-reply-btn" style="color:var(--coral)" onclick="deleteClientComment('${p.id}',${ci})">Del</button></span></div>
               <div class="cc-comment-text">${esc(cm.t)}</div>
               <button class="cc-reply-btn" onclick="showReplyForm('${p.id}',${ci})">Reply</button>
               <div id="reply-${p.id}-${ci}"></div>
