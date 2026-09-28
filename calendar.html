@@ -645,6 +645,30 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 .creative-thumb.drag-over{border-color:var(--blue);border-style:solid;transform:scale(1.05);transition:transform .1s}
 .creative-thumb.dragging{opacity:.4}
 
+
+/* Interactive approval cards */
+.approval-card .card-media{position:relative}
+.card-media-actions{position:absolute;bottom:8px;right:8px;display:flex;gap:4px;z-index:2;opacity:0;transition:opacity .15s}
+.approval-card .card-media:hover .card-media-actions{opacity:1}
+.card-media-actions .btn{background:rgba(0,0,0,.7);color:#fff;border:none;font-size:10px;padding:4px 8px;backdrop-filter:blur(4px)}
+.card-media-actions .btn:hover{background:rgba(79,70,229,.9)}
+.card-media .empty-media{width:100%;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);cursor:pointer;gap:4px;color:var(--muted);font-size:12px;transition:all .15s}
+.card-media .empty-media:hover{background:var(--blue-light);color:var(--blue)}
+.card-media .empty-media .plus{font-size:28px;line-height:1}
+
+/* Inline edit panel on approval cards */
+.card-edit-panel{padding:10px 14px;border-top:1px solid var(--border);background:var(--bg);display:none}
+.card-edit-panel.open{display:block}
+.card-edit-panel textarea{width:100%;padding:6px 8px;border:1px solid var(--border-2);border-radius:4px;font-size:12px;font-family:inherit;resize:vertical;min-height:50px;margin-bottom:6px}
+.card-edit-panel textarea:focus{outline:none;border-color:var(--blue)}
+.card-edit-panel select{padding:4px 8px;border:1px solid var(--border-2);border-radius:4px;font-size:12px;font-family:inherit;margin-bottom:6px}
+.card-edit-panel .ep-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.card-edit-panel .ep-label{font-size:10px;font-weight:600;text-transform:uppercase;color:var(--muted);min-width:50px}
+
+/* Quick status on approval cards */
+.card-quick-status{display:flex;align-items:center;gap:4px;padding:6px 14px;border-top:1px solid var(--border)}
+.card-quick-status select{flex:1;padding:5px 8px;border:1px solid var(--border-2);border-radius:4px;font-size:12px;font-family:inherit}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -1308,7 +1332,7 @@ function renderApprovalView(c){
     const apfbUnresolved = (apfb.comments||[]).filter(cm=>!cm.resolved).length;
     
     // Media - carousel or single
-    let mediaHTML = '<div class="no-media">No creative</div>';
+    let mediaHTML = `<div class="empty-media" onclick="event.stopPropagation();cardUploadCreative('${p.id}')"><span class="plus">+</span>Upload creative</div>`;
     const aSlides = p.carouselEN||[];
     if(aSlides.length > 1){
       const aCarId = 'acar-'+p.id;
@@ -1341,7 +1365,11 @@ function renderApprovalView(c){
         <div class="card-channel">${plats}</div>
         <div class="card-status-badge" style="background:${statusBg[p.status]||'#e5e7eb'};color:${statusFg[p.status]||'#374151'}">${esc(p.status||'Draft')}</div>
         ${apfbBadge}
+        <div class="card-media-actions">
+          <button class="btn" onclick="event.stopPropagation();cardUploadCreative('${p.id}')">+ Add</button>
+        </div>
       </div>
+      <input type="file" id="cardFile-${p.id}" accept="image/*,video/mp4,video/quicktime,video/webm" multiple style="display:none" onchange="handleCardUpload('${p.id}')">
       <div class="card-body">
         <div class="card-topic">${esc(p.topic||'Untitled')}</div>
         <div class="card-date">${fmtDate(p.date)}</div>
@@ -1349,7 +1377,21 @@ function renderApprovalView(c){
         <div class="card-actions">
           <button class="btn sm ${apfb.status==='approved'?'approved-active':''}" onclick="teamApprove('${p.id}','approved')">Approve</button>
           <button class="btn sm ${apfb.status==='declined'?'declined-active':''}" onclick="teamApprove('${p.id}','declined')">Changes</button>
-          <button class="btn sm ghost" onclick="editPost('${p.id}')">Edit</button>
+          <button class="btn sm ghost" onclick="toggleCardEdit('${p.id}')">Quick edit</button>
+          <button class="btn sm ghost" onclick="editPost('${p.id}')">Full edit</button>
+        </div>
+      </div>
+      <div class="card-quick-status">
+        <select onchange="quickStatus('${p.id}',this.value)">${STATUSES.map(s=>`<option ${s===p.status?'selected':''}>${s}</option>`).join('')}</select>
+      </div>
+      <div class="card-edit-panel" id="cardEdit-${p.id}">
+        <div class="ep-row"><span class="ep-label">Topic</span><input value="${esc(p.topic||'')}" onchange="quickField('${p.id}','topic',this.value)" style="flex:1;padding:4px 8px;border:1px solid var(--border-2);border-radius:4px;font-size:12px;font-family:inherit"></div>
+        <div class="ep-row"><span class="ep-label">Caption</span></div>
+        <textarea onchange="quickField('${p.id}','captionEN',this.value)" placeholder="English caption">${esc(p.captionEN||'')}</textarea>
+        <div style="display:flex;gap:4px">
+          <button class="btn sm primary" onclick="toggleCardEdit('${p.id}')">Done</button>
+          <button class="btn sm" onclick="cardUploadCreative('${p.id}')">+ Add creative</button>
+          <input type="file" id="cardFile-${p.id}" accept="image/*,video/mp4,video/quicktime,video/webm" multiple style="display:none" onchange="handleCardUpload('${p.id}')">
         </div>
       </div>
     </div>`;
@@ -1786,6 +1828,77 @@ function removeSlide(lang,idx){
   editPost(p.id);
 }
 
+
+
+function toggleCardEdit(postId){
+  const panel = document.getElementById('cardEdit-'+postId);
+  if(panel) panel.classList.toggle('open');
+}
+
+function quickStatus(postId, status){
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postId); if(!p) return;
+  p.status = status;
+  saveCalendars();
+  renderCalendarView();
+}
+
+function quickField(postId, field, value){
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postId); if(!p) return;
+  p[field] = value;
+  saveCalendars();
+}
+
+function cardUploadCreative(postId){
+  const input = document.getElementById('cardFile-'+postId);
+  if(input) input.click();
+}
+
+function handleCardUpload(postId){
+  const input = document.getElementById('cardFile-'+postId);
+  const files = Array.from(input?.files||[]);
+  if(!files.length) return;
+  
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postId); if(!p) return;
+  
+  // Use the same upload queue as the editor
+  files.forEach(file=>{
+    const isVideo = file.type.startsWith('video/');
+    const maxSize = isVideo ? 24*1024*1024 : 8*1024*1024;
+    if(file.size > maxSize){
+      alert(isVideo ? 'Video too large. Keep under 24MB.' : 'Image too large. Keep under 8MB.');
+      return;
+    }
+    const mime = file.type || (isVideo ? 'video/mp4' : 'image/jpeg');
+    const lang = 'EN';
+    const key = 'carousel'+lang;
+    
+    uploadQueue = uploadQueue.then(async ()=>{
+      if(!p[key]) p[key] = [];
+      const slideIdx = p[key].length;
+      
+      try {
+        const uploadUrl = '/api/creative-upload?calId='+encodeURIComponent(currentCalId)+'&postId='+encodeURIComponent(postId)+'&lang='+encodeURIComponent(lang+'-'+slideIdx)+'&mime='+encodeURIComponent(mime);
+        const r = await fetch(uploadUrl, {method:'POST', body:file, headers:{'content-type':mime}});
+        const d = await r.json();
+        
+        if(d.ok){
+          p[key].push({type:isVideo?'video':'image', idx:slideIdx});
+          if(slideIdx===0){
+            fetch('/api/creative-upload?calId='+encodeURIComponent(currentCalId)+'&postId='+encodeURIComponent(postId)+'&lang='+encodeURIComponent(lang)+'&mime='+encodeURIComponent(mime),{method:'POST',body:file,headers:{'content-type':mime}}).catch(()=>{});
+            p.hasCreativeEN=true;p.creativeENType=isVideo?'video':'image';
+          }
+          p.creativesEN='';
+          await saveCalendars();
+          renderCalendarView();
+        }
+      } catch(e){ console.error('Card upload failed:', e); }
+    });
+  });
+  input.value = '';
+}
 
 let dragSlideInfo = null;
 
