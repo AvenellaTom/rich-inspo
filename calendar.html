@@ -824,6 +824,49 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;lett
 /* Post revision bar compact */
 .client-card .post-revision-bar{font-size:10px;padding:6px 12px}
 
+
+/* ===== CLIENT PORTAL POLISH ===== */
+/* Header */
+.client-wrap .header{background:linear-gradient(135deg,#0a0a0a 0%,#1a1a2e 100%)}
+
+/* Toolbar */
+.client-toolbar{background:#fff;border:none;box-shadow:0 2px 12px rgba(0,0,0,.08);border-radius:12px;padding:16px 20px}
+.client-toolbar h2{font-size:24px!important;letter-spacing:.01em}
+
+/* Stats */
+.client-summary{gap:0;border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow)}
+.client-stat{border-radius:0;box-shadow:none;border-right:1px solid var(--border);padding:16px 12px}
+.client-stat:last-child{border-right:none}
+.client-stat .stat-num{font-size:32px;background:var(--gradient-blue);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.client-stat .stat-label{font-size:10px;letter-spacing:.06em}
+
+/* Cards */
+.client-card{box-shadow:0 1px 4px rgba(0,0,0,.06);transition:all .2s;border-color:transparent}
+.client-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);transform:translateY(-2px)}
+
+/* Approval buttons */
+.btn.cc-approve{border-width:1.5px;font-weight:600;border-radius:6px;transition:all .15s}
+.btn.cc-approve.active{background:var(--gradient-green);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(22,163,74,.3)}
+.btn.cc-changes{border-width:1.5px;font-weight:600;border-radius:6px;transition:all .15s}
+.btn.cc-changes.active{background:var(--gradient-amber);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(245,158,11,.3)}
+
+/* Expand button */
+.cc-expand-btn{font-weight:500;color:var(--blue);background:var(--blue-light);border-top:none;border-radius:0;padding:6px 12px}
+.cc-expand-btn:hover{background:#dbeafe}
+
+/* Intro */
+.client-intro{border:none;box-shadow:0 1px 4px rgba(0,0,0,.06);border-radius:12px;border-left:4px solid var(--blue)}
+
+/* Footer */
+.client-footer{opacity:.6}
+
+/* Filter pills */
+.client-filter.active{box-shadow:0 2px 8px rgba(79,70,229,.3)}
+
+/* Month nav */
+.client-toolbar .month-nav{border:none;background:var(--bg)}
+.client-toolbar .month-nav:hover{background:var(--blue-light);color:var(--blue)}
+
 /* Client view (legacy) */
 .client-gate{max-width:400px;margin:80px auto;text-align:center}
 .client-gate h2{font-size:28px;margin-bottom:8px}
@@ -2212,7 +2255,7 @@ function processFile(file, lang){
 let clientPin = '';
 let clientData = null;
 let clientCalId_c = null;
-let clientViewSize = 'l';
+let clientViewSize = 'm';
 let clientTab = 'content';
 let clientStatusFilter = 'all';
 
@@ -2407,9 +2450,9 @@ function renderClientView(targetMonth){
       <button class="client-filter ${clientStatusFilter==='approved'?'active':''}" onclick="setClientFilter('approved')">Approved</button>
       <button class="client-filter ${clientStatusFilter==='declined'?'active':''}" onclick="setClientFilter('declined')">Changes</button>
       <div class="sizer" id="clientSizer">
-        <button data-sz="l" title="Large" onclick="setClientSize('l')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
-        <button data-sz="m" title="Medium" onclick="setClientSize('m')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/></svg></button>
-        <button data-sz="s" title="Small" onclick="setClientSize('s')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg></button>
+        <button data-sz="s" title="Large cards (2)" onclick="setClientSize('s')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
+        <button data-sz="m" title="Medium cards (4)" onclick="setClientSize('m')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/></svg></button>
+        <button data-sz="l" title="Small cards (6)" onclick="setClientSize('l')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg></button>
       </div>
     </div>
   </div>`;
@@ -2502,20 +2545,7 @@ function renderClientView(targetMonth){
             mediaHTML = `<div class="cc-media">${isVideo ? `<video src="${previewImg}" controls playsinline></video>` : `<img src="${previewImg}" alt="">`}</div>`;
           }
         }
-        // Arabic creatives if available and different from what was shown
-        if(slideLang==='EN' && p.carouselAR && p.carouselAR.length>0){
-          const arCarId = 'arcar-'+p.id;
-          if(p.carouselAR.length > 1){
-            let arSlidesHTML = p.carouselAR.map((s,i)=>{
-              const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=AR-${s.kvIdx!==undefined?s.kvIdx:i}&pin=${encodeURIComponent(clientPin)}`;
-              return `<div class="carousel-slide">${s.type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="">`}</div>`;
-            }).join('');
-            mediaHTML += `<div style="padding:4px 14px 0"><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)">Arabic version</div></div><div class="carousel-wrap"><div class="carousel-count">${p.carouselAR.length}</div><div class="carousel-track" id="${arCarId}">${arSlidesHTML}</div><button class="carousel-nav prev" onclick="carouselNav('${arCarId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="carouselNav('${arCarId}',1)">&rsaquo;</button><div class="carousel-dots" id="${arCarId}-dots">${p.carouselAR.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="carouselGo('${arCarId}',${i})"></div>`).join('')}</div></div>`;
-          } else {
-            const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=AR-${p.carouselAR[0].kvIdx!==undefined?p.carouselAR[0].kvIdx:0}&pin=${encodeURIComponent(clientPin)}`;
-            mediaHTML += `<div style="padding:4px 14px 0"><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)">Arabic version</div></div><div class="cc-media">${p.carouselAR[0].type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="">`}</div>`;
-          }
-        }
+        // AR carousel moved to expand section
         
         const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#dbeafe',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
         const statusFg = {Draft:'#374151','In Production':'#92400e','Ready to Review':'#1e40af',Approved:'#166534',Scheduled:'#1e40af',Published:'#166534'};
@@ -2573,6 +2603,22 @@ function renderClientView(targetMonth){
             ${p.caption && !p.captionEN ? `<div class="cc-section"><h4>Caption <button class="cc-reply-btn" onclick="editClientCaption('${p.id}','caption')">Edit</button></h4><p id="cap-${p.id}-c">${esc(p.caption)}</p></div>` : ''}
             ${p.captionAR ? `<div class="cc-section"><h4>Caption (Arabic) <button class="cc-reply-btn" onclick="editClientCaption('${p.id}','captionAR')">Edit</button></h4><p dir="rtl" id="cap-${p.id}-ar">${esc(p.captionAR)}</p></div>` : ''}
             ${(p.assets||[]).filter(a=>a.url).length ? `<div class="cc-section"><h4>Assets</h4><div class="cc-assets">${(p.assets||[]).filter(a=>a.url).map(a=>`<a href="${esc(a.url)}" target="_blank">${esc(a.label||'View file')}</a>`).join('')}</div></div>` : ''}
+            ${(()=>{
+              if(slideLang==='EN' && p.carouselAR && p.carouselAR.length>0){
+                const arCarId = 'arcar-'+p.id;
+                if(p.carouselAR.length > 1){
+                  const arSlides = p.carouselAR.map((s,i)=>{
+                    const src = '/api/creative?calId='+clientCalId_c+'&postId='+p.id+'&lang=AR-'+(s.kvIdx!==undefined?s.kvIdx:i)+'&pin='+encodeURIComponent(clientPin);
+                    return '<div class="carousel-slide">'+(s.type==='video'?'<video src="'+src+'" controls playsinline></video>':'<img src="'+src+'" alt="">')+'</div>';
+                  }).join('');
+                  return '<div class="cc-section"><h4>Arabic version</h4><div style="border-radius:8px;overflow:hidden;background:#0a0a0a;position:relative;aspect-ratio:4/5"><div class="carousel-wrap" style="position:absolute;inset:0"><div class="carousel-track" id="'+arCarId+'" style="height:100%">'+arSlides+'</div><button class="carousel-nav prev" onclick="carouselNav(\''+arCarId+'\',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="carouselNav(\''+arCarId+'\',1)">&rsaquo;</button><div class="carousel-dots" id="'+arCarId+'-dots">'+p.carouselAR.map((_,i)=>'<div class="dot '+(i===0?'active':'')+'" onclick="carouselGo(\''+arCarId+'\','+i+')"></div>').join('')+'</div></div></div></div>';
+                } else {
+                  const src = '/api/creative?calId='+clientCalId_c+'&postId='+p.id+'&lang=AR-'+(p.carouselAR[0].kvIdx!==undefined?p.carouselAR[0].kvIdx:0)+'&pin='+encodeURIComponent(clientPin);
+                  return '<div class="cc-section"><h4>Arabic version</h4><div style="border-radius:8px;overflow:hidden;background:#0a0a0a;aspect-ratio:4/5;display:flex;align-items:center"><img src="'+src+'" style="width:100%;height:100%;object-fit:cover" alt=""></div></div>';
+                }
+              }
+              return '';
+            })()}
           </div>
           <div class="cc-approval">
             <div class="cc-approval-status"><span class="status-icon" style="background:${statusIcon[p.status]||'#9ca3af'}"></span>${esc(p.status||'Draft')}</div>
