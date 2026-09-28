@@ -1828,53 +1828,49 @@ async function dropSlide(e, lang, targetIdx){
   const key = 'carousel'+lang;
   if(!p[key] || !p[key].length) return;
   
-  // Reorder the array
-  const arr = p[key];
-  const [moved] = arr.splice(fromIdx, 1);
-  arr.splice(targetIdx, 0, moved);
-  
-  // Now we need to swap the actual files in KV too
-  // Approach: rename files by downloading and re-uploading in new order
-  // For now, swap the two affected files via API
-  const swaps = [];
-  const minIdx = Math.min(fromIdx, targetIdx);
-  const maxIdx = Math.max(fromIdx, targetIdx);
-  
-  // Download all affected slides, then re-upload in new order
-  // Since this involves multiple API calls, show a loading state
+  const total = p[key].length;
   const grid = $('grid'+lang);
   if(grid) grid.style.opacity = '0.5';
   
   try {
-    // Collect all slide data
-    const slideData = [];
-    for(let i = 0; i < arr.length; i++){
-      const resp = await fetch(`/api/creative?calId=${currentCalId}&postId=${p.id}&lang=${lang}-${i===targetIdx?fromIdx:i===fromIdx?targetIdx:i<minIdx||i>maxIdx?i:fromIdx<targetIdx?i+1:i-1}`);
-      if(!resp.ok) continue;
+    // Step 1: Download ALL files in their CURRENT order
+    const blobs = [];
+    for(let i = 0; i < total; i++){
+      const resp = await fetch(`/api/creative?calId=${currentCalId}&postId=${p.id}&lang=${lang}-${i}`);
+      if(!resp.ok) throw new Error('Failed to download slide '+i);
       const blob = await resp.blob();
-      slideData.push({blob, type: arr[i].type});
+      const type = p[key][i].type || 'image';
+      blobs.push({blob, type, mime: blob.type || (type==='video'?'video/mp4':'image/jpeg')});
     }
     
-    // Re-upload in correct order
-    for(let i = 0; i < slideData.length; i++){
-      const mime = slideData[i].type === 'video' ? 'video/mp4' : 'image/jpeg';
-      await fetch(`/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(p.id)}&lang=${encodeURIComponent(lang+'-'+i)}&mime=${encodeURIComponent(mime)}`, {
-        method: 'POST', body: slideData[i].blob, headers: {'content-type': mime}
+    // Step 2: Reorder the blobs array the same way we reorder the metadata
+    const [movedBlob] = blobs.splice(fromIdx, 1);
+    blobs.splice(targetIdx, 0, movedBlob);
+    
+    // Step 3: Reorder the metadata array
+    const [movedMeta] = p[key].splice(fromIdx, 1);
+    p[key].splice(targetIdx, 0, movedMeta);
+    
+    // Step 4: Re-upload ALL files in the NEW order
+    for(let i = 0; i < blobs.length; i++){
+      await fetch(`/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(p.id)}&lang=${encodeURIComponent(lang+'-'+i)}&mime=${encodeURIComponent(blobs[i].mime)}`, {
+        method: 'POST', body: blobs[i].blob, headers: {'content-type': blobs[i].mime}
       });
     }
     
-    // Update first slide as legacy
-    if(slideData[0]){
-      const mime = slideData[0].type === 'video' ? 'video/mp4' : 'image/jpeg';
-      await fetch(`/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(p.id)}&lang=${encodeURIComponent(lang)}&mime=${encodeURIComponent(mime)}`, {
-        method: 'POST', body: slideData[0].blob, headers: {'content-type': mime}
-      });
-    }
+    // Step 5: Update legacy first-slide key
+    await fetch(`/api/creative-upload?calId=${encodeURIComponent(currentCalId)}&postId=${encodeURIComponent(p.id)}&lang=${encodeURIComponent(lang)}&mime=${encodeURIComponent(blobs[0].mime)}`, {
+      method: 'POST', body: blobs[0].blob, headers: {'content-type': blobs[0].mime}
+    });
+    
+    await saveCalendars();
   } catch(e){
     console.error('Reorder failed:', e);
+    // Revert the metadata change on failure
+    if(grid) grid.style.opacity = '1';
+    return;
   }
   
-  await saveCalendars();
   editPost(p.id);
 }
 
