@@ -1028,6 +1028,18 @@ let editorLocked = false;
 const $ = id => document.getElementById(id);
 const esc = s => {const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;};
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+function countCreatives(p){
+  let count = 0;
+  const enSlides = (p.carouselEN||[]).length;
+  const arSlides = (p.carouselAR||[]).length;
+  if(enSlides) count += enSlides;
+  else if(p.hasCreativeEN || p.creativesEN) count += 1;
+  if(arSlides) count += arSlides;
+  else if(p.hasCreativeAR || p.creativesAR) count += 1;
+  return count;
+}
+
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function fmtDate(ds){try{return new Date(ds+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}catch(e){return ds;}}
 function fmtDateShort(ds){try{return new Date(ds+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});}catch(e){return ds;}}
@@ -1110,11 +1122,13 @@ function renderCalendarList(){
   let html = '<div class="dash-header"><h2>Content Calendar</h2><p class="dash-sub">Manage client content calendars, track approvals, and review feedback.</p></div>';
   
   // Global stats
+  let totalCreativesAll = 0;
+  calendars.forEach(c=>(c.posts||[]).forEach(p=>{totalCreativesAll+=countCreatives(p);}));
   html += `<div class="global-stats">
     <div class="g-stat gs-cals"><div class="gs-num">${calendars.length}</div><div class="gs-label">Calendars</div></div>
-    <div class="g-stat gs-total"><div class="gs-num">${totalPosts}</div><div class="gs-label">Total posts</div></div>
+    <div class="g-stat gs-total"><div class="gs-num">${totalPosts}</div><div class="gs-label">Posts</div></div>
+    <div class="g-stat gs-pending"><div class="gs-num">${totalCreativesAll}</div><div class="gs-label">Creatives</div></div>
     <div class="g-stat gs-approved"><div class="gs-num">${totalApproved}</div><div class="gs-label">Approved</div></div>
-    <div class="g-stat gs-pending"><div class="gs-num">${totalPending}</div><div class="gs-label">Awaiting review</div></div>
   </div>`;
   
   html += '<div class="dash-layout"><div class="dash-main">';
@@ -1162,8 +1176,8 @@ function renderCalendarList(){
         </div>
         <div class="cal-card-stats">
           <div class="ccs"><div class="ccs-n">${count}</div><div class="ccs-l">Posts</div></div>
+          <div class="ccs"><div class="ccs-n">${posts.reduce((s,p)=>s+countCreatives(p),0)}</div><div class="ccs-l">Creatives</div></div>
           <div class="ccs"><div class="ccs-n" style="color:var(--green)">${approved}</div><div class="ccs-l">Approved</div></div>
-          <div class="ccs"><div class="ccs-n" style="color:${declined?'var(--amber)':'var(--muted-2)'}">${declined}</div><div class="ccs-l">Changes</div></div>
           <div class="ccs"><div class="ccs-n">${pct}%</div><div class="ccs-l">Complete</div></div>
         </div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -1515,7 +1529,7 @@ function renderApprovalView(c){
         <h2 style="font-size:22px;min-width:auto">${MONTH_NAMES[month]} ${year}</h2>
         <button class="month-nav" onclick="monthNav(1)">&rsaquo;</button>
       </div>
-      <div style="font-size:12px;color:var(--muted)">${totalMonth} posts &middot; ${approvedCount} approved${unresolvedTotal ? ` &middot; <span style="color:var(--amber);font-weight:600">${unresolvedTotal} unresolved</span>` : ''}</div>
+      <div style="font-size:12px;color:var(--muted)">${totalMonth} posts &middot; ${allPosts.filter(p=>{const d=new Date(p.date+'T00:00:00');return d.getFullYear()===year&&d.getMonth()===month;}).reduce((s,p)=>s+countCreatives(p),0)} creatives &middot; ${approvedCount} approved${unresolvedTotal ? ` &middot; <span style="color:var(--amber);font-weight:600">${unresolvedTotal} unresolved</span>` : ''}</div>
     </div>
     <div class="at-right">
       <button class="admin-filter ${adminApprovalFilter==='all'?'active':''}" onclick="setAdminFilter('all')">All</button>
@@ -1645,7 +1659,8 @@ function addPost(date){
   if(editorLocked) return;
   const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
   c.posts = c.posts||[];
-  const p = {id:'p_'+uid(), date:date||todayStr(), topic:'', status:'Draft', platforms:['Facebook','Instagram'],
+  const defaultDate = date || (viewMonth ? viewMonth.getFullYear()+'-'+String(viewMonth.getMonth()+1).padStart(2,'0')+'-01' : todayStr());
+  const p = {id:'p_'+uid(), date:defaultDate, topic:'', status:'Draft', platforms:['Facebook','Instagram'],
     creativeType:'', dimensions:'', brief:'', captionEN:'', captionAR:'', visualCopyEN:'', visualCopyAR:'',
     creativeDirection:'', clickupLink:'', assets:[], videoScript:[], creativesEN:'', creativesAR:'',
     comments:[]};
@@ -1993,6 +2008,46 @@ function unmarkUpdated(postId){
   editPost(postId);
 }
 
+
+function saveCurrentForm(){
+  // Save whatever is in the form fields to the post before re-rendering
+  const postMatch = $('postModalFoot')?.innerHTML?.match(/deletePost\('([^']+)'\)/);
+  if(!postMatch) return;
+  const c = calendars.find(x=>x.id===currentCalId); if(!c) return;
+  const p = (c.posts||[]).find(x=>x.id===postMatch[1]); if(!p) return;
+  
+  const getVal = id => { const el = $(id); return el ? el.value : undefined; };
+  
+  const topic = getVal('peTopic');
+  if(topic !== undefined) p.topic = topic.trim();
+  const date = getVal('peDate');
+  if(date !== undefined) p.date = date;
+  const status = getVal('peStatus');
+  if(status !== undefined) p.status = status;
+  const clickup = getVal('peClickup');
+  if(clickup !== undefined) p.clickupLink = clickup.trim();
+  const type = getVal('peType');
+  if(type !== undefined) p.creativeType = type;
+  const dim = getVal('peDim');
+  if(dim !== undefined) p.dimensions = dim;
+  const brief = getVal('peBrief');
+  if(brief !== undefined) p.brief = brief;
+  const capEN = getVal('peCaptionEN');
+  if(capEN !== undefined) p.captionEN = capEN;
+  const capAR = getVal('peCaptionAR');
+  if(capAR !== undefined) p.captionAR = capAR;
+  const visEN = getVal('peVisEN');
+  if(visEN !== undefined) p.visualCopyEN = visEN;
+  const visAR = getVal('peVisAR');
+  if(visAR !== undefined) p.visualCopyAR = visAR;
+  const dir = getVal('peDirection');
+  if(dir !== undefined) p.creativeDirection = dir;
+  
+  // Platforms
+  const platChecks = document.querySelectorAll('input[name="plat"]:checked');
+  if(platChecks.length) p.platforms = [...platChecks].map(x=>x.value);
+}
+
 function editComment(idx){
   const postMatch = $('postModalFoot').innerHTML.match(/deletePost\('([^']+)'\)/);
   if(!postMatch) return;
@@ -2042,6 +2097,7 @@ function removeSlide(lang,idx){
   const p = (c.posts||[]).find(x=>x.id===postMatch[1]); if(!p) return;
   const key = 'carousel'+lang;
   if(!p[key]) return;
+  saveCurrentForm();
   p[key].splice(idx,1);
   saveCalendars();
   editPost(p.id);
@@ -2179,6 +2235,7 @@ async function reorderByNumber(lang, fromIdx, toIdx){
   if(!p[key]) return;
   toIdx = Math.max(0, Math.min(toIdx, p[key].length-1));
   if(fromIdx === toIdx) return;
+  saveCurrentForm();
   const [moved] = p[key].splice(fromIdx, 1);
   p[key].splice(toIdx, 0, moved);
   await saveCalendars();
@@ -2241,6 +2298,7 @@ function processFile(file, lang){
           else{p.hasCreativeAR=true;p.creativeARType=isVideo?'video':'image';}
         }
         p.creativesEN='';p.creativesAR='';
+        saveCurrentForm();
         await saveCalendars();
         editPost(p.id);
       }
@@ -2458,9 +2516,10 @@ function renderClientView(targetMonth){
   </div>`;
   
   // Summary bar
+  const totalCreatives = monthPosts.reduce((s,p)=>s+countCreatives(p),0);
   html += `<div class="client-summary">
-    <div class="client-stat"><div class="stat-num">${totalPosts}</div><div class="stat-label">Posts planned</div></div>
-    <div class="client-stat"><div class="stat-num">${platformSet.length}</div><div class="stat-label">Channels</div></div>
+    <div class="client-stat"><div class="stat-num">${totalPosts}</div><div class="stat-label">Posts</div></div>
+    <div class="client-stat"><div class="stat-num">${totalCreatives}</div><div class="stat-label">Creatives</div></div>
     <div class="client-stat"><div class="stat-num">${approved}</div><div class="stat-label">Approved</div></div>
     <div class="client-stat"><div class="stat-num">${totalPosts - approved}</div><div class="stat-label">Awaiting review</div></div>
   </div>`;
