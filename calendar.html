@@ -1606,7 +1606,7 @@ function renderApprovalView(c){
     } else if(p.creativesEN){
       mediaHTML = `<img src="${p.creativesEN}" alt="">`;
     } else if(p.hasCreativeEN){
-      mediaHTML = p.creativeENType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" controls onclick="event.stopPropagation()"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" alt="">`;
+      mediaHTML = p.creativeENType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN&v=${p.cv||0}" controls onclick="event.stopPropagation()"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN&v=${p.cv||0}" alt="">`;
     }
     
     const statusBg = {Draft:'#e5e7eb','In Production':'#fef3c7','Ready to Review':'#dbeafe',Approved:'#dcfce7',Scheduled:'#dbeafe',Published:'#dcfce7'};
@@ -1837,9 +1837,9 @@ function editPost(postId){
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--blue)">English creatives</label>
           <div class="creative-grid" id="gridEN">
-            ${(p.carouselEN||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'EN',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'EN',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${src.kvIdx!==undefined?src.kvIdx:i}" alt="">${editorLocked?`<div class="thumb-idx">${i+1}</div>`:`<input class="thumb-num" type="number" min="1" max="${(p.carouselEN||[]).length}" value="${i+1}" onchange="reorderByNumber('EN',${i},parseInt(this.value)-1)" onclick="event.stopPropagation()" title="Change position"><button class="thumb-remove" onclick="event.stopPropagation();removeSlide('EN',${i})">&times;</button>`}</div>`).join('')}
+            ${(p.carouselEN||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'EN',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'EN',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${src.kvIdx!==undefined?src.kvIdx:i}&v=${p.cv||0}" alt="">${editorLocked?`<div class="thumb-idx">${i+1}</div>`:`<input class="thumb-num" type="number" min="1" max="${(p.carouselEN||[]).length}" value="${i+1}" onchange="reorderByNumber('EN',${i},parseInt(this.value)-1)" onclick="event.stopPropagation()" title="Change position"><button class="thumb-remove" onclick="event.stopPropagation();removeSlide('EN',${i})">&times;</button>`}</div>`).join('')}
             ${p.creativesEN?`<div class="creative-thumb"><img src="${p.creativesEN}" alt=""><div class="thumb-idx">1</div></div>`:''}
-            ${p.hasCreativeEN&&!p.carouselEN?.length&&!p.creativesEN?`<div class="creative-thumb">${p.creativeENType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN" alt="">`}<div class="thumb-idx">1</div></div>`:''}
+            ${p.hasCreativeEN&&!p.carouselEN?.length&&!p.creativesEN?`<div class="creative-thumb">${p.creativeENType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN&v=${p.cv||0}"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN&v=${p.cv||0}" alt="">`}<div class="thumb-idx">1</div></div>`:''}
             ${editorLocked?'':`<div class="creative-add-btn" onclick="uploadCreative('EN')"><span class="plus">+</span>Add</div>`}
           </div>
           <input type="file" id="fileEN" accept="image/*,video/mp4,video/quicktime,video/webm" multiple style="display:none" onchange="handleUpload('EN')">
@@ -1847,9 +1847,9 @@ function editPost(postId){
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--coral)">Arabic creatives</label>
           <div class="creative-grid" id="gridAR">
-            ${(p.carouselAR||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'AR',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'AR',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR-${src.kvIdx!==undefined?src.kvIdx:i}" alt="">${editorLocked?`<div class="thumb-idx">${i+1}</div>`:`<input class="thumb-num" type="number" min="1" max="${(p.carouselAR||[]).length}" value="${i+1}" onchange="reorderByNumber('AR',${i},parseInt(this.value)-1)" onclick="event.stopPropagation()" title="Change position"><button class="thumb-remove" onclick="event.stopPropagation();removeSlide('AR',${i})">&times;</button>`}</div>`).join('')}
+            ${(p.carouselAR||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'AR',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'AR',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR-${src.kvIdx!==undefined?src.kvIdx:i}&v=${p.cv||0}" alt="">${editorLocked?`<div class="thumb-idx">${i+1}</div>`:`<input class="thumb-num" type="number" min="1" max="${(p.carouselAR||[]).length}" value="${i+1}" onchange="reorderByNumber('AR',${i},parseInt(this.value)-1)" onclick="event.stopPropagation()" title="Change position"><button class="thumb-remove" onclick="event.stopPropagation();removeSlide('AR',${i})">&times;</button>`}</div>`).join('')}
             ${p.creativesAR?`<div class="creative-thumb"><img src="${p.creativesAR}" alt=""><div class="thumb-idx">1</div></div>`:''}
-            ${p.hasCreativeAR&&!p.carouselAR?.length&&!p.creativesAR?`<div class="creative-thumb">${p.creativeARType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR" alt="">`}<div class="thumb-idx">1</div></div>`:''}
+            ${p.hasCreativeAR&&!p.carouselAR?.length&&!p.creativesAR?`<div class="creative-thumb">${p.creativeARType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR&v=${p.cv||0}"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR&v=${p.cv||0}" alt="">`}<div class="thumb-idx">1</div></div>`:''}
             ${editorLocked?'':`<div class="creative-add-btn" onclick="uploadCreative('AR')"><span class="plus">+</span>Add</div>`}
           </div>
           <input type="file" id="fileAR" accept="image/*,video/mp4,video/quicktime,video/webm" multiple style="display:none" onchange="handleUpload('AR')">
@@ -2125,6 +2125,7 @@ function removeSlide(lang,idx){
   if(!p[key]) return;
   saveCurrentForm();
   p[key].splice(idx,1);
+  p.cv=(p.cv||0)+1;
   saveCalendars();
   editPost(p.id);
 }
@@ -2245,7 +2246,7 @@ async function dropSlide(e, lang, targetIdx){
   // Just reorder the metadata array - files stay where they are in KV
   const [moved] = p[key].splice(fromIdx, 1);
   p[key].splice(targetIdx, 0, moved);
-  
+  p.cv=(p.cv||0)+1;
   await saveCalendars();
   editPost(p.id);
 }
@@ -2264,6 +2265,7 @@ async function reorderByNumber(lang, fromIdx, toIdx){
   saveCurrentForm();
   const [moved] = p[key].splice(fromIdx, 1);
   p[key].splice(toIdx, 0, moved);
+  p.cv=(p.cv||0)+1;
   await saveCalendars();
   editPost(p.id);
 }
@@ -2324,6 +2326,7 @@ function processFile(file, lang){
           else{p.hasCreativeAR=true;p.creativeARType=isVideo?'video':'image';}
         }
         p.creativesEN='';p.creativesAR='';
+        p.cv=(p.cv||0)+1;
         saveCurrentForm();
         await saveCalendars();
         editPost(p.id);
@@ -2428,28 +2431,87 @@ function carouselGo(id,idx){
 
 
 function openFullView(mediaEl){
-  // Don't open if clicking carousel nav or video controls
   if(event.target.closest('.carousel-nav') || event.target.closest('.carousel-dots') || event.target.tagName==='VIDEO') return;
-  const img = mediaEl.querySelector('img');
-  const video = mediaEl.querySelector('video');
-  if(!img && !video) return;
+  
+  // Collect all media items in this card
+  const slides = mediaEl.querySelectorAll('.carousel-slide img, .carousel-slide video, :scope > img, :scope > video');
+  if(!slides.length) return;
+  
+  let currentSlide = 0;
+  // Find which slide was clicked
+  const clicked = event.target.closest('.carousel-slide') || event.target;
+  slides.forEach((s,i) => { if(s === clicked || s.contains(event.target) || clicked.contains(s)) currentSlide = i; });
+  
   const overlay = document.createElement('div');
   overlay.className = 'media-fullview';
-  overlay.onclick = ()=>overlay.remove();
   overlay.innerHTML = '<button class="close-full">&times;</button>';
-  if(video){
-    const v = document.createElement('video');
-    v.src = video.src;
-    v.controls = true;
-    v.autoplay = true;
-    v.onclick = e=>e.stopPropagation();
-    overlay.appendChild(v);
-  } else {
-    const i = document.createElement('img');
-    i.src = img.src;
-    overlay.appendChild(i);
+  
+  const container = document.createElement('div');
+  container.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:90vw;height:90vh';
+  
+  function showSlide(idx){
+    currentSlide = ((idx % slides.length) + slides.length) % slides.length;
+    container.querySelectorAll('.fv-media').forEach(m=>m.remove());
+    const src = slides[currentSlide].src;
+    const isVid = slides[currentSlide].tagName === 'VIDEO';
+    
+    if(isVid){
+      const v = document.createElement('video');
+      v.className = 'fv-media';
+      v.src = src;
+      v.controls = true;
+      v.autoplay = true;
+      v.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain';
+      v.onclick = e=>e.stopPropagation();
+      container.appendChild(v);
+    } else {
+      const im = document.createElement('img');
+      im.className = 'fv-media';
+      im.src = src;
+      im.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain';
+      container.appendChild(im);
+    }
+    
+    // Update counter
+    const counter = overlay.querySelector('.fv-counter');
+    if(counter) counter.textContent = (currentSlide+1)+' / '+slides.length;
   }
+  
+  overlay.appendChild(container);
+  
+  if(slides.length > 1){
+    const prev = document.createElement('button');
+    prev.style.cssText = 'position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);border:none;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;z-index:2;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+    prev.textContent = '\u2039';
+    prev.onclick = e=>{e.stopPropagation();showSlide(currentSlide-1);};
+    container.appendChild(prev);
+    
+    const next = document.createElement('button');
+    next.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);border:none;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;z-index:2;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+    next.textContent = '\u203A';
+    next.onclick = e=>{e.stopPropagation();showSlide(currentSlide+1);};
+    container.appendChild(next);
+    
+    const counter = document.createElement('div');
+    counter.className = 'fv-counter';
+    counter.style.cssText = 'position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:500';
+    container.appendChild(counter);
+  }
+  
+  // Keyboard nav
+  overlay.tabIndex = 0;
+  overlay.onkeydown = e=>{
+    if(e.key==='ArrowLeft') showSlide(currentSlide-1);
+    else if(e.key==='ArrowRight') showSlide(currentSlide+1);
+    else if(e.key==='Escape') overlay.remove();
+  };
+  
+  overlay.onclick = e=>{if(e.target===overlay) overlay.remove();};
+  overlay.querySelector('.close-full').onclick = ()=>overlay.remove();
+  
   document.body.appendChild(overlay);
+  overlay.focus();
+  showSlide(currentSlide);
 }
 
 async function clientEnter(){
@@ -2631,7 +2693,7 @@ function renderClientView(targetMonth){
           const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=${slideLang}-${slides[0].kvIdx!==undefined?slides[0].kvIdx:0}&pin=${encodeURIComponent(clientPin)}`;
           mediaHTML = slides[0].type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="">`;
         } else {
-          const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}` : '') || p.screenshot || '';
+          const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}&v=${p.cv||0}` : '') || p.screenshot || '';
           const isVideo = !p.creativesEN && p.hasCreativeEN && p.creativeENType==='video';
           if(previewImg){
             mediaHTML = isVideo ? `<video src="${previewImg}" controls playsinline></video>` : `<img src="${previewImg}" alt="">`;
