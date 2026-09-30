@@ -1093,6 +1093,27 @@ async function sendFeedback(id,pin,postId,data){
 }
 
 /* ========== INIT ========== */
+
+function migrateCarousels(){
+  let changed = false;
+  calendars.forEach(c=>{
+    (c.posts||[]).forEach(p=>{
+      ['carouselEN','carouselAR'].forEach(key=>{
+        if(p[key] && p[key].length){
+          p[key].forEach((slide,i)=>{
+            if(slide.kvIdx === undefined){
+              // Old entries: kvIdx was never set, or was stored as idx
+              slide.kvIdx = (slide.idx !== undefined) ? slide.idx : i;
+              changed = true;
+            }
+          });
+        }
+      });
+    });
+  });
+  if(changed) saveCalendars();
+}
+
 async function init(){
   const params = new URLSearchParams(location.search);
   if(params.get('calendar')){
@@ -1100,6 +1121,7 @@ async function init(){
     return;
   }
   calendars = await loadCalendars();
+  migrateCarousels();
   renderCalendarList();
 }
 
@@ -1596,12 +1618,12 @@ function renderApprovalView(c){
     if(aSlides.length > 1){
       const aCarId = 'acar-'+p.id;
       let aSlidesHTML = aSlides.map((s,i)=>{
-        const src = `/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${s.kvIdx!==undefined?s.kvIdx:i}`;
+        const src = `/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${getSlideKey(s,i)}`;
         return `<div class="carousel-slide">${s.type==='video'?`<video src="${src}" controls onclick="event.stopPropagation()"></video>`:`<img src="${src}" alt="">`}</div>`;
       }).join('');
       mediaHTML = `<div class="carousel-wrap"><div class="carousel-count">${aSlides.length}</div><div class="carousel-track" id="${aCarId}">${aSlidesHTML}</div><button class="carousel-nav prev" onclick="event.stopPropagation();carouselNav('${aCarId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="event.stopPropagation();carouselNav('${aCarId}',1)">&rsaquo;</button><div class="carousel-dots" id="${aCarId}-dots">${aSlides.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="event.stopPropagation();carouselGo('${aCarId}',${i})"></div>`).join('')}</div></div>`;
     } else if(aSlides.length===1){
-      const src = `/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${aSlides[0].kvIdx!==undefined?aSlides[0].kvIdx:0}`;
+      const src = `/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${getSlideKey(aSlides[0],0)}`;
       mediaHTML = aSlides[0].type==='video'?`<video src="${src}" controls onclick="event.stopPropagation()"></video>`:`<img src="${src}" alt="">`;
     } else if(p.creativesEN){
       mediaHTML = `<img src="${p.creativesEN}" alt="">`;
@@ -1837,7 +1859,7 @@ function editPost(postId){
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--blue)">English creatives</label>
           <div class="creative-grid" id="gridEN">
-            ${(p.carouselEN||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'EN',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'EN',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${src.kvIdx!==undefined?src.kvIdx:i}&v=${p.cv||0}" alt="">${editorLocked?`<div class="thumb-idx">${i+1}</div>`:`<input class="thumb-num" type="number" min="1" max="${(p.carouselEN||[]).length}" value="${i+1}" onchange="reorderByNumber('EN',${i},parseInt(this.value)-1)" onclick="event.stopPropagation()" title="Change position"><button class="thumb-remove" onclick="event.stopPropagation();removeSlide('EN',${i})">&times;</button>`}</div>`).join('')}
+            ${(p.carouselEN||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'EN',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'EN',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN-${getSlideKey(src,i)}&v=${p.cv||0}" alt="">${editorLocked?`<div class="thumb-idx">${i+1}</div>`:`<input class="thumb-num" type="number" min="1" max="${(p.carouselEN||[]).length}" value="${i+1}" onchange="reorderByNumber('EN',${i},parseInt(this.value)-1)" onclick="event.stopPropagation()" title="Change position"><button class="thumb-remove" onclick="event.stopPropagation();removeSlide('EN',${i})">&times;</button>`}</div>`).join('')}
             ${p.creativesEN?`<div class="creative-thumb"><img src="${p.creativesEN}" alt=""><div class="thumb-idx">1</div></div>`:''}
             ${p.hasCreativeEN&&!p.carouselEN?.length&&!p.creativesEN?`<div class="creative-thumb">${p.creativeENType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN&v=${p.cv||0}"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=EN&v=${p.cv||0}" alt="">`}<div class="thumb-idx">1</div></div>`:''}
             ${editorLocked?'':`<div class="creative-add-btn" onclick="uploadCreative('EN')"><span class="plus">+</span>Add</div>`}
@@ -1847,7 +1869,7 @@ function editPost(postId){
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--coral)">Arabic creatives</label>
           <div class="creative-grid" id="gridAR">
-            ${(p.carouselAR||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'AR',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'AR',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR-${src.kvIdx!==undefined?src.kvIdx:i}&v=${p.cv||0}" alt="">${editorLocked?`<div class="thumb-idx">${i+1}</div>`:`<input class="thumb-num" type="number" min="1" max="${(p.carouselAR||[]).length}" value="${i+1}" onchange="reorderByNumber('AR',${i},parseInt(this.value)-1)" onclick="event.stopPropagation()" title="Change position"><button class="thumb-remove" onclick="event.stopPropagation();removeSlide('AR',${i})">&times;</button>`}</div>`).join('')}
+            ${(p.carouselAR||[]).map((src,i)=>`<div class="creative-thumb" draggable="${editorLocked?'false':'true'}" ondragstart="dragSlide(event,'AR',${i})" ondragover="dragOverSlide(event)" ondragenter="enterSlide(event)" ondragleave="leaveSlide(event)" ondrop="dropSlide(event,'AR',${i})"><${src.type==='video'?'video src':'img src'}="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR-${getSlideKey(src,i)}&v=${p.cv||0}" alt="">${editorLocked?`<div class="thumb-idx">${i+1}</div>`:`<input class="thumb-num" type="number" min="1" max="${(p.carouselAR||[]).length}" value="${i+1}" onchange="reorderByNumber('AR',${i},parseInt(this.value)-1)" onclick="event.stopPropagation()" title="Change position"><button class="thumb-remove" onclick="event.stopPropagation();removeSlide('AR',${i})">&times;</button>`}</div>`).join('')}
             ${p.creativesAR?`<div class="creative-thumb"><img src="${p.creativesAR}" alt=""><div class="thumb-idx">1</div></div>`:''}
             ${p.hasCreativeAR&&!p.carouselAR?.length&&!p.creativesAR?`<div class="creative-thumb">${p.creativeARType==='video'?`<video src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR&v=${p.cv||0}"></video>`:`<img src="/api/creative?calId=${currentCalId}&postId=${p.id}&lang=AR&v=${p.cv||0}" alt="">`}<div class="thumb-idx">1</div></div>`:''}
             ${editorLocked?'':`<div class="creative-add-btn" onclick="uploadCreative('AR')"><span class="plus">+</span>Add</div>`}
@@ -2270,6 +2292,13 @@ async function reorderByNumber(lang, fromIdx, toIdx){
   editPost(p.id);
 }
 
+
+function getSlideKey(slide, fallbackIdx){
+  if(slide && slide.kvIdx !== undefined) return slide.kvIdx;
+  if(slide && slide.idx !== undefined) return slide.idx;
+  return fallbackIdx;
+}
+
 function slideKvKey(lang, slide, arrayIdx){
   // Use stored kvIdx if available, otherwise fall back to array index
   const ki = (slide && slide.kvIdx !== undefined) ? slide.kvIdx : arrayIdx;
@@ -2685,12 +2714,12 @@ function renderClientView(targetMonth){
         if(slides.length > 1){
           const carId = 'car-'+p.id;
           let slidesHTML = slides.map((s,i)=>{
-            const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=${slideLang}-${s.kvIdx!==undefined?s.kvIdx:i}&pin=${encodeURIComponent(clientPin)}`;
+            const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=${slideLang}-${getSlideKey(s,i)}&pin=${encodeURIComponent(clientPin)}`;
             return `<div class="carousel-slide">${s.type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="Slide ${i+1}">`}</div>`;
           }).join('');
           mediaHTML = `<div class="carousel-wrap"><div class="carousel-count">${slides.length} slides</div><div class="carousel-track" id="${carId}" style="transform:translateX(0)">${slidesHTML}</div><button class="carousel-nav prev" onclick="carouselNav('${carId}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="carouselNav('${carId}',1)">&rsaquo;</button><div class="carousel-dots" id="${carId}-dots">${slides.map((_,i)=>`<div class="dot ${i===0?'active':''}" onclick="carouselGo('${carId}',${i})"></div>`).join('')}</div></div>`;
         } else if(slides.length === 1){
-          const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=${slideLang}-${slides[0].kvIdx!==undefined?slides[0].kvIdx:0}&pin=${encodeURIComponent(clientPin)}`;
+          const src = `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=${slideLang}-${getSlideKey(slides[0],0)}&pin=${encodeURIComponent(clientPin)}`;
           mediaHTML = slides[0].type==='video'?`<video src="${src}" controls playsinline></video>`:`<img src="${src}" alt="">`;
         } else {
           const previewImg = p.creativesEN || (p.hasCreativeEN ? `/api/creative?calId=${clientCalId_c}&postId=${p.id}&lang=EN&pin=${encodeURIComponent(clientPin)}&v=${p.cv||0}` : '') || p.screenshot || '';
