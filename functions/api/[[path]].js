@@ -57,7 +57,7 @@ export async function onRequest(context) {
           screenshot:p.screenshot||'', assetLink:p.assetLink||'', assets:p.assets||[],
           hasCreativeEN:!!(p.creativesEN||p.hasCreativeEN), hasCreativeAR:!!(p.creativesAR||p.hasCreativeAR),
           creativeENType:p.creativeENType||'image', creativeARType:p.creativeARType||'image',
-          carouselEN:p.carouselEN||[], carouselAR:p.carouselAR||[], markedUpdated:!!p.markedUpdated,
+          carouselEN:p.carouselEN||[], carouselAR:p.carouselAR||[], markedUpdated:!!p.markedUpdated, cv:p.cv||0,
           ref: r?{platform:r.platform,embedId:r.embedId,shortcode:r.shortcode,url:r.url,short:r.short,mtype:r.mtype,cover:r.cover||''}:null,
           feedback:(c.feedback&&c.feedback[p.id])||{status:'',comments:[]} }; });
       return json({ name:c.name, intro:c.intro||'', calId:id, posts });
@@ -111,7 +111,7 @@ export async function onRequest(context) {
       const { value, metadata } = await kv.getWithMetadata(key, { type: 'arrayBuffer' });
       if (!value) return new Response('Not found', { status: 404 });
       const mime = (metadata && metadata.mimeType) || 'application/octet-stream';
-      return new Response(value, { status: 200, headers: { 'content-type': mime, 'cache-control': 'public, max-age=3600' } });
+      return new Response(value, { status: 200, headers: { 'content-type': mime, 'cache-control': 'public, max-age=31536000, immutable' } });
     }
 
 
