@@ -233,6 +233,20 @@ input,textarea,select{font-family:inherit}
 .day-post .plat-icon{width:14px;height:14px}
 .day-post .plat-icon svg{width:10px;height:10px}
 
+
+/* Internal calendar day - matches client */
+.int-cal-day{min-height:90px;padding:8px;cursor:pointer;transition:background .15s}
+.int-cal-day:hover{background:var(--blue-light)}
+.int-cal-day .big{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1;margin:2px 0 4px}
+.int-cal-day .dots{display:flex;gap:3px;flex-wrap:wrap}
+.int-cal-day .dots .dot{width:9px;height:9px;border-radius:50%;cursor:pointer;transition:transform .15s}
+.int-cal-day .dots .dot:hover{transform:scale(1.4)}
+.int-cal-day .sub{font-size:9px;color:var(--muted);margin-top:3px}
+.int-cal-day .fbs{display:flex;gap:4px;margin-top:3px;font-size:9px;font-weight:700}
+.int-cal-day .fbs .ok{color:var(--green)}.int-cal-day .fbs .ch{color:var(--amber)}.int-cal-day .fbs .un{color:var(--red)}
+.int-cal-day .add{display:none;font-size:10px;color:var(--blue);margin-top:4px}
+.int-cal-day:hover .add{display:block}
+
 /* Review board (internal) */
 .board-grid{display:grid;gap:14px;align-items:start}
 .board-grid.sz-l{grid-template-columns:repeat(2,1fr)}
@@ -740,14 +754,15 @@ function monthView(c) {
   for (let d = 1; d <= dim; d++) {
     const ds = monthKey(y, m) + '-' + String(d).padStart(2, '0');
     const dp = (c.posts || []).filter(p => p.date === ds);
+    const cr = dp.reduce((s, p) => s + countCreatives(p), 0);
     const isT = d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
-    h += `<div class="cal-day" ondragover="event.preventDefault()" ondrop="dropPost(event,'${ds}')"><div class="dn ${isT ? 'today' : ''}">${d}</div>`;
-    dp.forEach(p => {
-      const fb = getFb(c, p.id); const un = unresolved(fb);
-      const ind = fb.status === 'approved' ? '<span class="fb ok">&#10003;</span>' : fb.status === 'declined' ? '<span class="fb ch">!</span>' : un ? `<span class="fb un">${un}</span>` : '';
-      h += `<div class="day-post" draggable="true" ondragstart="dragPostStart(event,'${p.id}')" onclick="editPost('${p.id}')" style="border-left-color:${STATUS_COLOR[p.status] || '#d1d5db'}"><div class="t">${esc(p.topic || 'Untitled')}${ind}</div><div class="plat-icons">${platIcons(p.platforms)}</div></div>`;
-    });
-    h += `<div class="add" onclick="addPost('${ds}')">+ Add</div></div>`;
+    const ap = dp.filter(p => getFb(c, p.id).status === 'approved').length;
+    const ch = dp.filter(p => getFb(c, p.id).status === 'declined').length;
+    const un = dp.reduce((s, p) => s + unresolved(getFb(c, p.id)), 0);
+    h += `<div class="cal-day int-cal-day" ondragover="event.preventDefault()" ondrop="dropPost(event,'${ds}')" ${dp.length ? `onclick="viewMode='board';boardFilter='all';renderCalView();setTimeout(()=>document.querySelector('[data-pid=\'${dp[0].id}\']')?.scrollIntoView({behavior:'smooth',block:'start'}),100)"` : ''}>
+      <div class="dn ${isT ? 'today' : ''}">${d}</div>
+      ${dp.length ? `<div class="big">${dp.length}</div><div class="dots">${dp.map(p => `<div class="dot" draggable="true" ondragstart="event.stopPropagation();dragPostStart(event,'${p.id}')" onclick="event.stopPropagation();editPost('${p.id}')" style="background:${PLAT_COLORS[(p.platforms || [])[0]] || '#8b5cf6'}" title="${esc(p.topic || 'Untitled')}"></div>`).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div><div class="fbs">${ap ? `<span class="ok">${ap}&#10003;</span>` : ''}${ch ? `<span class="ch">${ch}!</span>` : ''}${un ? `<span class="un">${un}</span>` : ''}</div>` : ''}
+      <div class="add" onclick="event.stopPropagation();addPost('${ds}')">+ Add</div></div>`;
   }
   const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
   return h + '</div></div>';
@@ -769,7 +784,7 @@ function boardView(c) {
     const fb = getFb(c, p.id); const un = unresolved(fb); const last = (fb.comments || []).slice(-1)[0];
     const media = mediaHTML(c.id, p, 'EN', p.cv, null, { prefix: 'b' }) || mediaHTML(c.id, p, 'AR', p.cv, null, { prefix: 'b' });
     const fbBadge = fb.status === 'approved' ? '<div class="fb-badge ok">&#10003; Client approved</div>' : fb.status === 'declined' ? '<div class="fb-badge ch">! Changes requested</div>' : un ? `<div class="fb-badge un">${un} unresolved</div>` : '';
-    h += `<div class="board-card">
+    h += `<div class="board-card" data-pid="${p.id}">
       <div class="media" onclick="${media ? `openFullView(this,'${esc(p.topic || '')}')` : `$('bf-${p.id}').click()`}">${media || '<div class="empty"><span class="plus">+</span>Upload creative</div>'}<div class="plat-icons">${platIcons(p.platforms)}</div><span class="badge status-badge ${STATUS_CLASS[p.status] || 'draft'}">${esc(p.status || 'Draft')}</span>${fbBadge}${media ? `<div class="upload-overlay"><button class="btn" onclick="event.stopPropagation();$('bf-${p.id}').click()">+ Add</button></div>` : ''}</div>
       <input type="file" id="bf-${p.id}" accept="image/*,video/*" multiple style="display:none" onchange="boardUpload('${p.id}',this)">
       <div class="body"><h4>${esc(p.topic || 'Untitled')}</h4><div class="date">${fmtDate(p.date)} &middot; ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div>
