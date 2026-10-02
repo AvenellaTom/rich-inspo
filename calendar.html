@@ -185,6 +185,23 @@ input,textarea,select{font-family:inherit}
 .activity-item .ai-text{font-size:12px;line-height:1.4}
 .activity-item .ai-meta{font-size:10px;color:var(--muted-2);margin-top:2px}
 
+
+/* Internal hero (mirrors client hero in dark theme) */
+.int-hero{background:linear-gradient(135deg,#0f0f14,#2d2b55);color:#fff;border-radius:14px;padding:28px 32px;margin-bottom:22px;box-shadow:0 6px 20px rgba(0,0,0,.25);border-left:5px solid var(--internal-accent)}
+.int-hero h2{font-size:26px;margin-bottom:6px}
+.int-hero p{font-size:14px;opacity:.75;margin-bottom:16px;max-width:640px}
+.int-hero .steps{display:flex;gap:20px;flex-wrap:wrap;font-size:13px}
+.int-hero .steps div{display:flex;align-items:center;gap:8px}
+.int-hero .steps .n{width:24px;height:24px;border-radius:50%;background:var(--internal-accent);color:var(--internal);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.int-hero .stats{display:flex;gap:28px;margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,.15);flex-wrap:wrap}
+.int-hero .stats strong{display:block;font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1}
+.int-hero .stats span{font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.75}
+/* Internal toolbar matches client toolbar structure */
+.int-cal-toolbar{position:sticky;top:76px;z-index:50;border-top:none;border-left:4px solid var(--internal)}
+.int-cal-toolbar .view-tabs button.active{background:var(--internal)}
+.int-cal-toolbar .sizer button.on{background:var(--internal)}
+@media(max-width:600px){.int-cal-toolbar{top:66px}}
+
 /* Internal calendar editor */
 .int-cal-toolbar{background:var(--card);border-radius:10px;padding:14px 18px;box-shadow:var(--shadow);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid var(--border);border-top:3px solid var(--internal)}
 .int-cal-toolbar .left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -224,15 +241,8 @@ input,textarea,select{font-family:inherit}
 .cal-day .dn.today{color:var(--blue)}
 .cal-day .add{font-size:11px;color:var(--blue);cursor:pointer;display:none;padding:2px}
 .cal-day:hover .add{display:block}
-.day-post{background:var(--bg);border-radius:5px;padding:4px 6px;margin-bottom:3px;font-size:10px;cursor:pointer;border-left:3px solid var(--border-2);transition:background .15s}
 .day-post:hover{background:var(--blue-light)}
-.day-post .t{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
-.day-post .t .fb{margin-left:auto;font-size:9px;font-weight:700;flex-shrink:0}
-.day-post .fb.ok{color:var(--green)}.day-post .fb.ch{color:var(--amber)}.day-post .fb.un{color:var(--red)}
-.day-post .plat-icons{margin-top:3px}
-.day-post .plat-icon{width:14px;height:14px}
-.day-post .plat-icon svg{width:10px;height:10px}
-
+.day-post .fb.ok{color:var(--green)}.day-post .fb.ch{color:var(--amber)}
 
 /* Internal calendar day - matches client */
 .int-cal-day{min-height:90px;padding:8px;cursor:pointer;transition:background .15s}
@@ -711,27 +721,34 @@ function openCalendarToPost(calId, pid) { openCalendar(calId); viewMode = 'board
 /* ================================================================
    INTERNAL: CALENDAR VIEW (year / month / board)
 ================================================================ */
-function openCalendar(id) { currentCalId = id; viewMode = 'month'; const c = getCal(); const dates = (c.posts || []).map(p => p.date).filter(Boolean).sort(); if (dates.length) { const now = new Date(); const nk = monthKey(now.getFullYear(), now.getMonth()); viewMonth = dates.some(d => d.startsWith(nk)) ? new Date(now.getFullYear(), now.getMonth(), 1) : new Date(dates[0] + 'T00:00:00'); } else viewMonth = new Date(); renderCalView(); }
+function openCalendar(id) { currentCalId = id; viewMode = 'board'; const c = getCal(); const dates = (c.posts || []).map(p => p.date).filter(Boolean).sort(); if (dates.length) { const now = new Date(); const nk = monthKey(now.getFullYear(), now.getMonth()); viewMonth = dates.some(d => d.startsWith(nk)) ? new Date(now.getFullYear(), now.getMonth(), 1) : new Date(dates[0] + 'T00:00:00'); } else viewMonth = new Date(); renderCalView(); }
 function renderCalView() {
   const c = getCal(); if (!c) { renderDashboard(); return; }
+  const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
+  const mp = (c.posts || []).filter(p => inMonth(p, y, m));
+  const cr = mp.reduce((s, p) => s + countCreatives(p), 0);
+  const ap = mp.filter(p => getFb(c, p.id).status === 'approved').length;
+  const ch = mp.filter(p => getFb(c, p.id).status === 'declined').length;
+  const un = mp.reduce((s, p) => s + unresolved(getFb(c, p.id)), 0);
+  const withClient = mp.filter(p => p.status === 'Ready for Review' || p.status === 'Revised').length;
   let h = intHeader(c.name, `<button class="btn sm" onclick="renderDashboard()">&lsaquo; Dashboard</button><button class="btn sm" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')">Client view</button><button class="btn sm" onclick="copyLink('${c.id}')">Copy link</button><button class="btn sm" onclick="calSettings('${c.id}')">Settings</button>`);
   h += '<div class="int-wrap">';
+  h += `<div class="int-hero"><h2>${esc(c.name)}</h2><p>Internal workspace. Upload content, send for client review, action their feedback, and re-submit revisions. PIN ${esc(c.pin || '')}.</p>
+    <div class="steps"><div><span class="n">1</span>Build &amp; upload</div><div><span class="n">2</span>Send for review</div><div><span class="n">3</span>Action feedback</div><div><span class="n">4</span>Re-submit</div></div>
+    <div class="stats"><div><strong>${mp.length}</strong><span>Posts</span></div><div><strong>${cr}</strong><span>Creatives</span></div><div><strong style="color:#60a5fa">${withClient}</strong><span>With client</span></div><div><strong style="color:#4ade80">${ap}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${ch}</strong><span>Changes</span></div><div><strong style="color:#f87171">${un}</strong><span>Unresolved</span></div></div></div>`;
   if (viewMode === 'year') h += yearView(c); else if (viewMode === 'board') h += boardView(c); else h += monthView(c);
   h += '</div>';
   $('app').innerHTML = h;
 }
 function calToolbar(c, extra) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
-  const mp = (c.posts || []).filter(p => inMonth(p, y, m));
-  const cr = mp.reduce((s, p) => s + countCreatives(p), 0);
-  const un = mp.reduce((s, p) => s + unresolved(getFb(c, p.id)), 0);
-  return `<div class="int-cal-toolbar"><div class="left"><button class="btn sm" onclick="viewMode='year';renderCalView()">Year</button><button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button><h2>${MONTHS[m]} ${y}</h2><button class="month-nav" onclick="monthNav(1)">&rsaquo;</button><span style="font-size:12px;color:var(--muted)">${mp.length} posts &middot; ${cr} creatives${un ? ` &middot; <b style="color:var(--red)">${un} unresolved</b>` : ''}</span></div><div class="right">${extra || ''}<button class="btn sm primary" onclick="addPost()">+ Add post</button><div class="view-tabs"><button class="${viewMode === 'month' ? 'active' : ''}" onclick="viewMode='month';renderCalView()">Calendar</button><button class="${viewMode === 'board' ? 'active' : ''}" onclick="viewMode='board';renderCalView()">Review board</button></div></div></div>`;
+  return `<div class="int-cal-toolbar"><div class="left"><button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button><h2>${MONTHS[m]} ${y}</h2><button class="month-nav" onclick="monthNav(1)">&rsaquo;</button><div class="view-tabs"><button class="${viewMode === 'board' ? 'active' : ''}" onclick="viewMode='board';renderCalView()">Review board</button><button class="${viewMode === 'month' ? 'active' : ''}" onclick="viewMode='month';renderCalView()">Calendar</button><button class="${viewMode === 'year' ? 'active' : ''}" onclick="viewMode='year';renderCalView()">Year</button></div></div><div class="right">${extra || ''}<button class="btn sm primary" onclick="addPost()">+ Add post</button></div></div>`;
 }
 function monthNav(d) { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + d, 1); renderCalView(); }
 
 function yearView(c) {
   const y = viewMonth.getFullYear(), today = new Date();
-  let h = `<div class="int-cal-toolbar"><div class="left"><button class="month-nav" onclick="viewMonth=new Date(${y - 1},0,1);renderCalView()">&lsaquo;</button><h2 style="font-size:28px">${y}</h2><button class="month-nav" onclick="viewMonth=new Date(${y + 1},0,1);renderCalView()">&rsaquo;</button></div><div class="right"><button class="btn sm primary" onclick="addPost()">+ Add post</button></div></div>`;
+  let h = `<div class="int-cal-toolbar"><div class="left"><button class="month-nav" onclick="viewMonth=new Date(${y - 1},0,1);renderCalView()">&lsaquo;</button><h2 style="font-size:28px">${y}</h2><button class="month-nav" onclick="viewMonth=new Date(${y + 1},0,1);renderCalView()">&rsaquo;</button><div class="view-tabs"><button onclick="viewMode='board';renderCalView()">Review board</button><button onclick="viewMode='month';renderCalView()">Calendar</button><button class="active">Year</button></div></div><div class="right"><button class="btn sm primary" onclick="addPost()">+ Add post</button></div></div>`;
   h += '<div class="year-grid">';
   for (let m = 0; m < 12; m++) {
     const dim = new Date(y, m + 1, 0).getDate(), fd = (new Date(y, m, 1).getDay() + 6) % 7;
@@ -966,7 +983,7 @@ function renderClient() {
   h += `<div class="cl-hero"><h2>${esc(c.name)}</h2><p>${esc(c.intro || 'Please review the content below. Approve what works, or request changes and tell us what to adjust.')}</p>
     <div class="steps"><div><span class="n">1</span>Review each post</div><div><span class="n">2</span>Approve or request changes</div><div><span class="n">3</span>Leave specific feedback</div></div>
     <div class="stats"><div><strong>${allMonth.length}</strong><span>Posts</span></div><div><strong>${creatives}</strong><span>Creatives</span></div><div><strong style="color:#4ade80">${approved}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${pending}</strong><span>To review</span></div>${changes ? `<div><strong style="color:#fca5a5">${changes}</strong><span>Changes</span></div>` : ''}</div></div>`;
-  h += `<div class="cl-toolbar"><div class="left">${prevM ? `<button class="month-nav" onclick="clientGo('${prevM}')">&lsaquo;</button>` : '<span style="width:34px"></span>'}<h2>${MONTHS[m]} ${y}</h2>${nextM ? `<button class="month-nav" onclick="clientGo('${nextM}')">&rsaquo;</button>` : '<span style="width:34px"></span>'}<div class="view-tabs"><button class="${clientTab === 'review' ? 'active' : ''}" onclick="clientTab='review';renderClient()">Review content</button><button class="${clientTab === 'calendar' ? 'active' : ''}" onclick="clientTab='calendar';renderClient()">Calendar</button></div></div>
+  h += `<div class="cl-toolbar"><div class="left">${prevM ? `<button class="month-nav" onclick="clientGo('${prevM}')">&lsaquo;</button>` : '<span style="width:34px"></span>'}<h2>${MONTHS[m]} ${y}</h2>${nextM ? `<button class="month-nav" onclick="clientGo('${nextM}')">&rsaquo;</button>` : '<span style="width:34px"></span>'}<div class="view-tabs"><button class="${clientTab === 'review' ? 'active' : ''}" onclick="clientTab='review';renderClient()">Review board</button><button class="${clientTab === 'calendar' ? 'active' : ''}" onclick="clientTab='calendar';renderClient()">Calendar</button></div></div>
     <div class="right"><div class="filter-pills">${[['all', 'All'], ['pending', 'To review'], ['approved', 'Approved'], ['changes', 'Changes']].map(([k, l]) => `<button class="filter-pill ${clientFilter === k ? 'active' : ''}" onclick="clientFilter='${k}';renderClient()">${l}</button>`).join('')}</div>
     <div class="sizer">${[['l', 'Large', '<rect x="5" y="5" width="14" height="14" rx="2"/>'], ['m', 'Medium', '<rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/>'], ['s', 'Small', '<rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/>']].map(([k, t, svg]) => `<button class="${clientSize === k ? 'on' : ''}" title="${t}" onclick="clientSize='${k}';localStorage.setItem('rich_cl_sz','${k}');renderClient()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></button>`).join('')}</div></div></div>`;
 
