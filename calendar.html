@@ -1134,15 +1134,14 @@ function nextPickup(d) {
 }
 function addWorkDays(d, n) { d = new Date(d); let c = 0; while (c < n) { d.setDate(d.getDate() + 1); if (!isWeekend(d)) c++; } d.setHours(WORK_END, 0, 0, 0); return d; }
 function briefCreativeCount(b) { const f = (b.formats || []).length + (b.customFormats || []).length; const l = (b.langs?.ar ? 1 : 0) + (b.langs?.en ? 1 : 0); return f * Math.max(l, 1); }
+// Each stage: by 18:00 same working day if it starts before midday, otherwise 18:00 the next working day.
+function stageDue(from) { const p = nextPickup(from); if (p.getHours() < 12) { const d = new Date(p); d.setHours(WORK_END, 0, 0, 0); return d; } return addWorkDays(p, 1); }
 function briefEstimate(b, from) {
   const per = briefCreativeCount(b); const concepts = b.concepts || 1;
-  const conceptDays = concepts + (per > 4 ? 1 : 0);
-  const finalDays = 1 + (per > 4 ? 1 : 0);
   const pickup = nextPickup(from || new Date());
-  const conceptDue = addWorkDays(pickup, conceptDays);
-  const earliestApproval = conceptDue; // if approved immediately
-  const finalDue = addWorkDays(nextPickup(earliestApproval), finalDays);
-  return { pickup, conceptDue, finalDue, conceptDays, finalDays, per, total: per * concepts };
+  const conceptDue = stageDue(pickup);
+  const finalDue = stageDue(conceptDue); // assumes approval as soon as concepts land
+  return { pickup, conceptDue, finalDue, per, total: per * concepts, hours: Math.round((finalDue - pickup) / 36e5) };
 }
 const fmtDT = d => d ? new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 const fmtD = d => d ? new Date(d + (String(d).length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
@@ -1192,7 +1191,7 @@ function ganttHTML(briefs, onClick, opts = {}) {
     let bars = '';
     bars += bar('concept', pickup, b.conceptDueAt, 'Concept', 'Concept due ' + fmtDT(b.conceptDueAt));
     if (st === 'Concepts ready') bars += bar('wait', b.conceptDueAt, b.conceptApprovedAt || now, 'Awaiting approval');
-    if (idx >= 3) { const fs = b.conceptApprovedAt || b.conceptDueAt; bars += bar('final', fs, b.finalDueAt || addWorkDays(nextPickup(new Date(fs)), 1), 'Final', 'Final due ' + fmtDT(b.finalDueAt)); if (st === 'Final ready') bars += bar('wait', b.finalDueAt, b.finalApprovedAt || now, 'Awaiting approval'); }
+    if (idx >= 3) { const fs = b.conceptApprovedAt || b.conceptDueAt; bars += bar('final', fs, b.finalDueAt || stageDue(new Date(fs)), 'Final', 'Final due ' + fmtDT(b.finalDueAt)); if (st === 'Final ready') bars += bar('wait', b.finalDueAt, b.finalApprovedAt || now, 'Awaiting approval'); }
     if (b.startDate && b.endDate) { const live = idx >= 6; bars += bar('live ' + (st === 'Complete' ? 'done' : live ? '' : 'planned'), b.startDate + 'T00:00:00', b.endDate + 'T23:59:59', (live ? 'Live ' : 'Planned ') + fmtD(b.startDate) + ' to ' + fmtD(b.endDate)); }
     return `<div class="g-label" onclick="${onClick}('${b.id}')"><b>${esc(b.campaignName || 'Untitled')} ${b.carModel ? '· ' + esc(b.carModel) : ''}</b><span class="sub"><span class="badge ${BRIEF_CLASS[st] || 'b-submitted'}" style="font-size:9px;padding:1px 6px">${esc(opts.client ? BRIEF_CLIENT_LABEL[st] || st : st)}</span> ${briefCreativeCount(b)} cr</span></div><div class="g-row"><div class="g-rowbg">${bgs}</div><div class="g-today" style="left:${pct(now)}%"></div>${bars}</div>`;
   };
@@ -1217,7 +1216,7 @@ function briefTimelineHTML(b) {
     ${step(idx >= 1, idx === 0, 'Picked up', fmtDT(pickup))}
     ${step(idx >= 2, idx === 1, 'Concepts ready', 'by ' + fmtDT(b.conceptDueAt))}
     ${step(idx >= 3, idx === 2, 'Concept approved', b.conceptApprovedAt ? fmtDT(b.conceptApprovedAt) : 'awaiting your approval')}
-    ${step(idx >= 5, idx === 3 || idx === 4, 'Final ready', b.finalDueAt ? 'by ' + fmtDT(b.finalDueAt) : '1 working day after approval')}
+    ${step(idx >= 5, idx === 3 || idx === 4, 'Final ready', b.finalDueAt ? 'by ' + fmtDT(b.finalDueAt) : 'same day if approved before noon, otherwise next working day')}
     ${step(idx >= 6, idx === 5, 'Final approved', b.finalApprovedAt ? fmtDT(b.finalApprovedAt) + (b.approvedBy ? ' by ' + esc(b.approvedBy) : '') : 'awaiting your approval')}
     ${b.startDate ? step(idx >= 8, idx === 6 || idx === 7, 'Live', fmtD(b.startDate) + (b.endDate ? ' to ' + fmtD(b.endDate) : '')) : ''}
   </div>`;
@@ -1320,8 +1319,8 @@ function renderBriefForm() {
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn sm" onclick="$('bfRefFile').click()">+ Upload image</button><input type="file" id="bfRefFile" accept="image/*" multiple style="display:none" onchange="bfUploadRefs(this)"><input id="bfRefUrl" placeholder="or paste a link" style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--border-2);border-radius:6px;font-size:12px"><button class="btn sm" onclick="bfAddLink()">Add link</button></div>
     </div>
     <div class="bf-group"><h4><span class="n">5</span>How many concepts?</h4>
-      <div class="concept-pick"><label class="${b.concepts === 1 ? 'on' : ''}"><input type="radio" name="bfc" ${b.concepts === 1 ? 'checked' : ''} onchange="bfDraft.concepts=1;renderBriefForm()" style="display:none"><b>1</b>Fastest turnaround<small>Recommended</small></label><label class="${b.concepts === 2 ? 'on' : ''}"><input type="radio" name="bfc" ${b.concepts === 2 ? 'checked' : ''} onchange="bfDraft.concepts=2;renderBriefForm()" style="display:none"><b>2</b>Two directions<small>Adds a working day</small></label></div>
-      <p style="font-size:11px;color:var(--muted);margin-top:8px">Our team can produce a maximum of 2 concepts per brief. One concept is quickest. Each concept is produced in every format and language you selected.</p>
+      <div class="concept-pick"><label class="${b.concepts === 1 ? 'on' : ''}"><input type="radio" name="bfc" ${b.concepts === 1 ? 'checked' : ''} onchange="bfDraft.concepts=1;renderBriefForm()" style="display:none"><b>1</b>Fastest turnaround<small>Recommended</small></label><label class="${b.concepts === 2 ? 'on' : ''}"><input type="radio" name="bfc" ${b.concepts === 2 ? 'checked' : ''} onchange="bfDraft.concepts=2;renderBriefForm()" style="display:none"><b>2</b>Two directions<small>Same turnaround</small></label></div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px">Our team can produce a maximum of 2 concepts per brief. Each concept is produced in every format and language you selected.</p>
     </div>
     <div id="bfEstBox"></div>`;
   $('pmFoot').innerHTML = `<div class="left"></div><div class="right"><button class="btn" onclick="$('postModal').classList.remove('show')">Cancel</button><button class="btn primary" onclick="clSubmitBrief()">${b.editing ? 'Save changes' : 'Submit request'}</button></div>`;
@@ -1334,10 +1333,8 @@ function bfEst() {
   const e = briefEstimate(b, b.editing ? new Date(b.createdAt) : new Date());
   const perList = briefFormats(b).length + ' format' + (briefFormats(b).length !== 1 ? 's' : '') + ' × ' + ((b.langs.ar ? 1 : 0) + (b.langs.en ? 1 : 0)) + ' language' + (((b.langs.ar ? 1 : 0) + (b.langs.en ? 1 : 0)) !== 1 ? 's' : '');
   let warn = '';
-  if (e.per > 4) warn += `<div class="warn">This brief is ${e.per} creatives per concept. Briefs over 4 creatives add a working day to each stage.</div>`;
-  if (b.concepts === 2) warn += `<div class="warn">Two concepts adds a working day before concepts are ready.</div>`;
   if (b.startDate && new Date(b.startDate + 'T00:00:00') < e.finalDue) warn += `<div class="warn">Your start date is before the earliest possible final delivery (${fmtDT(e.finalDue)}). Please allow more runway or expect a later start.</div>`;
-  $('bfEstBox').innerHTML = `<div class="est-box"><h4>Estimated timeline</h4><div class="est-row"><div class="est"><small>Picked up</small><b>${fmtDT(e.pickup)}</b></div><div class="est"><small>Concepts ready by</small><b>${fmtDT(e.conceptDue)}</b></div><div class="est"><small>Final ready by</small><b>${fmtDT(e.finalDue)}</b></div></div><div class="note">${perList} = <b>${e.per} creative${e.per !== 1 ? 's' : ''}</b> per concept, ${e.total} in total. Our studio works Monday to Friday, 9am to 6pm. Concepts take ${e.conceptDays} working day${e.conceptDays !== 1 ? 's' : ''}. The final takes ${e.finalDays} working day${e.finalDays !== 1 ? 's' : ''} from the moment you approve a concept, so "Final ready by" assumes same-day approval.</div>${warn}</div>`;
+  $('bfEstBox').innerHTML = `<div class="est-box"><h4>Estimated timeline</h4><div class="est-row"><div class="est"><small>Picked up</small><b>${fmtDT(e.pickup)}</b></div><div class="est"><small>Concepts ready by</small><b>${fmtDT(e.conceptDue)}</b></div><div class="est"><small>Final ready by</small><b>${fmtDT(e.finalDue)}</b></div></div><div class="note">${perList} = <b>${e.per} creative${e.per !== 1 ? 's' : ''}</b> per concept, ${e.total} in total. Our studio works Monday to Friday, 9am to 6pm. Each stage is ready by 6pm the same working day if it starts before midday, otherwise by 6pm the next working day. "Final ready by" assumes you approve the concept as soon as it lands, so quick feedback keeps this to around ${e.hours} hours end to end.</div>${warn}</div>`;
 }
 function bfUploadRefs(input) {
   const files = [...input.files]; input.value = ''; const b = bfDraft;
@@ -1366,7 +1363,7 @@ async function clBriefDecide(id, kind, s) {
   const b = clientData.briefs.find(x => x.id === id); if (!b) return; b.fb = b.fb || {}; b.fb[kind] = b.fb[kind] || { status: '', comments: [] };
   const was = b.fb[kind].status; b.fb[kind].status = was === s ? '' : s;
   const name = localStorage.getItem('rich_cl_name') || 'Client';
-  if (b.fb[kind].status === 'approved') { if (kind === 'concept') { b.status = 'Concept approved'; b.conceptApprovedAt = new Date().toISOString(); b.finalDueAt = addWorkDays(nextPickup(new Date()), 1 + (briefCreativeCount(b) > 4 ? 1 : 0)).toISOString(); } else { b.status = 'Approved'; b.finalApprovedAt = new Date().toISOString(); b.approvedBy = name; } (b.history = b.history || []).push({ status: b.status, at: new Date().toISOString(), by: name }); }
+  if (b.fb[kind].status === 'approved') { if (kind === 'concept') { b.status = 'Concept approved'; b.conceptApprovedAt = new Date().toISOString(); b.finalDueAt = stageDue(new Date()).toISOString(); } else { b.status = 'Approved'; b.finalApprovedAt = new Date().toISOString(); b.approvedBy = name; } (b.history = b.history || []).push({ status: b.status, at: new Date().toISOString(), by: name }); }
   else if (was === 'approved') { if (kind === 'concept') { b.status = 'Concepts ready'; b.conceptApprovedAt = null; b.finalDueAt = null; } else { b.status = 'Final ready'; b.finalApprovedAt = null; b.approvedBy = null; } }
   renderClient(); await clientBriefSend({ action: 'feedback', briefId: id, kind, status: b.fb[kind].status, by: name, briefStatus: b.status, conceptApprovedAt: b.conceptApprovedAt, finalApprovedAt: b.finalApprovedAt, finalDueAt: b.finalDueAt, approvedBy: b.approvedBy });
 }
@@ -1443,7 +1440,7 @@ Concepts requested: ${b.concepts || 1}
 
 DEADLINES (studio hours Mon-Fri 9-6)
 Concepts due: ${fmtDT(b.conceptDueAt)}
-Final due: ${b.finalDueAt ? fmtDT(b.finalDueAt) : '1 working day after concept approval'}
+Final due: ${b.finalDueAt ? fmtDT(b.finalDueAt) : 'by 6pm same day if approved before noon, otherwise next working day'}
 Campaign: ${b.startDate ? fmtD(b.startDate) : 'TBC'}${b.endDate ? ' to ' + fmtD(b.endDate) : ''}${b.showDates ? ' (SHOW DATES ON CREATIVE)' : ''}
 
 COPY / CAPTIONS
@@ -1504,7 +1501,7 @@ function renderClient() {
   let savedName = ''; try { savedName = localStorage.getItem('rich_cl_name') || ''; } catch (e) { }
 
   let h = `<div class="cl-header"><img src="${LOGO}" alt="RICH"><span class="cl-badge">Client review</span><h1>${esc(c.name)}</h1></div><div class="cl-wrap">`;
-  h += `<div class="cl-hero"><h2>${esc(c.name)}</h2><p>${esc(c.intro || 'Please review the content below. Approve what works, or request changes and tell us what to adjust.')}</p>
+  h += `<div class="cl-hero"><h2>${esc(c.name)}</h2><p>${esc(c.intro || 'Please review the content below. Approve what works, or request changes and tell us what to adjust. Need an ad? Send a brief and we turn concepts and finals around within 36 hours when feedback is quick.')}</p>
     <div class="steps"><div><span class="n">1</span>Review each post</div><div><span class="n">2</span>Approve or request changes</div><div><span class="n">3</span>Leave specific feedback</div><div><span class="n">4</span>Need an ad? Send us a brief</div></div><div class="cta"><button class="btn" onclick="clNewBrief()">&#128227; Request an ad</button>${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill" style="margin-left:8px;background:#fff;color:var(--client)">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length} ad${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length !== 1 ? 's' : ''} awaiting your approval</span>` : ''}</div>
     <div class="stats"><div><strong>${allMonth.length}</strong><span>Posts</span></div><div><strong>${creatives}</strong><span>Creatives</span></div><div><strong style="color:#4ade80">${approved}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${pending}</strong><span>To review</span></div>${changes ? `<div><strong style="color:#fca5a5">${changes}</strong><span>Changes</span></div>` : ''}<div><strong>${(c.briefs || []).filter(briefIsActive).length}</strong><span>Ad requests</span></div></div></div>`;
   h += ganttHTML(c.briefs || [], 'clOpenBrief', { client: true, showDone: false, cta: ' <a href="#" onclick="event.preventDefault();clNewBrief()">Request an ad</a>' });
