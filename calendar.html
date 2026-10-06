@@ -139,7 +139,7 @@ input,textarea,select{font-family:inherit}
 .int-dash-head{margin-bottom:24px}
 .int-dash-head h2{font-size:32px;font-weight:700;margin-bottom:4px}
 .int-dash-head p{color:var(--muted);font-size:14px}
-.int-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.int-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
 @media(max-width:900px){.int-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:600px){.int-stats{grid-template-columns:repeat(2,1fr)}}
 .int-stat{background:var(--card);border-radius:10px;padding:16px;box-shadow:var(--shadow);border-left:4px solid var(--border-2)}
@@ -444,6 +444,157 @@ input,textarea,select{font-family:inherit}
 .cl-gate input:focus{outline:none;border-color:var(--client);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
 .cl-gate .err{color:var(--red);font-size:13px;margin-top:10px;min-height:20px}
 
+
+/* ============ AD BRIEFS ============ */
+.badge.b-submitted{background:#f3f4f6;color:#374151}
+.badge.b-progress{background:#dbeafe;color:#1d4ed8}
+.badge.b-ready{background:#fef3c7;color:#92400e}
+.badge.b-approved{background:#dcfce7;color:#166534}
+.badge.b-live{background:#d1fae5;color:#065f46}
+.badge.b-complete{background:#e5e7eb;color:#6b7280}
+.badge.b-changes{background:#fee2e2;color:#991b1b}
+
+/* Gantt */
+.gantt-wrap{background:var(--card);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px;overflow:hidden}
+.gantt-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;cursor:pointer;gap:12px;flex-wrap:wrap}
+.gantt-head h3{font-size:16px;display:flex;align-items:center;gap:8px}
+.gantt-head .arrow{font-size:10px;transition:transform .2s;display:inline-block}
+.gantt-wrap.open .gantt-head .arrow{transform:rotate(180deg)}
+.gantt-head .legend{display:flex;gap:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.gantt-head .legend span{display:flex;align-items:center;gap:4px}
+.gantt-head .legend i{width:14px;height:8px;border-radius:2px;display:inline-block}
+.gantt-body{display:none;border-top:1px solid var(--border)}
+.gantt-wrap.open .gantt-body{display:block}
+.gantt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.gantt{display:grid;grid-template-columns:220px 1fr;min-width:720px}
+.gantt .g-label{padding:8px 12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:12px;display:flex;flex-direction:column;justify-content:center;gap:3px;position:sticky;left:0;background:var(--card);z-index:2;cursor:pointer}
+.gantt .g-label:hover{background:var(--bg)}
+.gantt .g-label b{font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt .g-label .sub{font-size:10px;color:var(--muted)}
+.gantt .g-row{position:relative;border-bottom:1px solid var(--border);height:46px}
+.gantt .g-axis{display:flex;border-bottom:2px solid var(--border);height:34px;position:relative}
+.gantt .g-axis-lbl{position:sticky;left:0;background:var(--card);z-index:2;border-right:1px solid var(--border);font-size:10px;color:var(--muted);display:flex;align-items:center;padding:0 12px;text-transform:uppercase;letter-spacing:.05em}
+.gantt .g-day{position:absolute;top:0;bottom:0;border-left:1px solid var(--border);font-size:9px;color:var(--muted-2);padding:3px 0 0 3px;white-space:nowrap}
+.gantt .g-day.wk{background:rgba(0,0,0,.025)}
+.gantt .g-day.first{font-weight:700;color:var(--text)}
+.gantt .g-today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:1}
+.gantt .g-today::after{content:'Today';position:absolute;top:-16px;left:-16px;font-size:9px;color:var(--red);font-weight:700}
+.gantt .g-rowbg{position:absolute;inset:0}
+.gantt .g-rowbg .wk{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.025)}
+.gantt .bar{position:absolute;height:12px;border-radius:3px;top:8px;font-size:9px;color:#fff;padding:0 5px;line-height:12px;white-space:nowrap;overflow:hidden;cursor:pointer}
+.gantt .bar.concept{background:#3b82f6}
+.gantt .bar.wait{background:repeating-linear-gradient(45deg,#d1d5db,#d1d5db 3px,#e5e7eb 3px,#e5e7eb 6px);color:#374151}
+.gantt .bar.final{background:#6366f1}
+.gantt .bar.live{background:#16a34a;top:26px}
+.gantt .bar.live.planned{background:transparent;border:2px dashed #16a34a;color:#16a34a;line-height:8px}
+.gantt .bar.live.done{background:#9ca3af}
+.gantt-empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}
+.gantt-section{padding:6px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--bg);grid-column:1/-1;border-bottom:1px solid var(--border)}
+
+/* Brief cards */
+.brief-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;align-items:start}
+@media(max-width:560px){.brief-grid{grid-template-columns:1fr}}
+.brief-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column}
+.brief-card .bc-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px}
+.brief-card .bc-head .ic{width:40px;height:40px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.brief-card .bc-head h4{font-size:15px;line-height:1.2;margin-bottom:2px}
+.brief-card .bc-head .sub{font-size:11px;color:var(--muted)}
+.brief-card .bc-media{aspect-ratio:4/5;background:#0a0a0a;position:relative;cursor:pointer;overflow:hidden;max-height:320px}
+.brief-card .bc-media img,.brief-card .bc-media video{width:100%;height:100%;object-fit:cover}
+.brief-card .bc-media .carousel{position:absolute;inset:0}
+.brief-card .bc-media .tag{position:absolute;top:8px;left:8px;z-index:3;background:rgba(0,0,0,.7);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+.brief-card .bc-body{padding:12px 16px;font-size:12px}
+.brief-card .bc-row{display:flex;gap:8px;margin-bottom:6px}
+.brief-card .bc-row .k{color:var(--muted);flex:0 0 80px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding-top:1px}
+.brief-card .bc-row .v{flex:1;min-width:0}
+.brief-card .timeline{background:var(--bg);border-radius:8px;padding:10px 12px;margin:8px 0;font-size:11px}
+.brief-card .timeline .tl{display:flex;align-items:center;gap:8px;padding:3px 0}
+.brief-card .timeline .tl .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--border-2)}
+.brief-card .timeline .tl.done .dot{background:var(--green)}
+.brief-card .timeline .tl.now .dot{background:var(--blue);box-shadow:0 0 0 3px rgba(79,70,229,.2)}
+.brief-card .timeline .tl b{min-width:110px}
+.brief-card .timeline .tl span{color:var(--muted)}
+.brief-card .bc-actions{padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap}
+.brief-card .bc-actions .btn{flex:1;min-width:0;font-size:12px}
+.brief-card .bc-feedback{padding:8px 16px;border-top:1px solid var(--border)}
+.brief-card .bc-feedback .fb-row{display:flex;gap:5px}
+.brief-card .bc-feedback input.nm{flex:0 0 64px;padding:6px 7px;border:1px solid var(--border-2);border-radius:5px;font-size:11px}
+.brief-card .bc-feedback input.msg{flex:1;padding:6px 8px;border:1px solid var(--border-2);border-radius:5px;font-size:11px;min-width:0}
+.brief-card .bc-feedback .btn{padding:5px 9px;font-size:11px}
+.brief-card .expand{display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;font-size:11px;font-weight:500;color:var(--client);background:var(--blue-light);cursor:pointer;border-top:1px solid var(--border)}
+.brief-card .expand .arrow{font-size:8px;transition:transform .2s;display:inline-block}
+.brief-card.open .expand .arrow{transform:rotate(180deg)}
+.brief-card .detail{max-height:0;overflow:hidden;transition:max-height .3s}
+.brief-card.open .detail{max-height:2000px}
+.brief-card .detail-inner{padding:12px 16px;border-top:1px solid var(--border);font-size:12px}
+.brief-card .detail-inner h5{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:10px 0 4px}
+.brief-card .detail-inner h5:first-child{margin-top:0}
+.brief-card .detail-inner p{white-space:pre-wrap;line-height:1.5}
+.refs{display:flex;gap:6px;flex-wrap:wrap}
+.refs .ref{width:64px;height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--border);position:relative;background:#0a0a0a;cursor:pointer}
+.refs .ref img{width:100%;height:100%;object-fit:cover}
+.refs .ref.link{display:flex;align-items:center;justify-content:center;background:var(--bg);font-size:20px;text-decoration:none}
+.refs .ref .rm{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:1;padding:0}
+.fmt-chips{display:flex;gap:4px;flex-wrap:wrap}
+.fmt-chip{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg);border:1px solid var(--border);white-space:nowrap}
+.fmt-chip.print{background:#fef3c7;border-color:#fde68a}
+
+/* Brief form */
+.bf-group{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;background:var(--card)}
+.bf-group h4{font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.bf-group h4 .n{width:22px;height:22px;border-radius:50%;background:var(--client);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Inter',sans-serif}
+.fmt-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+@media(max-width:600px){.fmt-list{grid-template-columns:1fr}}
+.fmt-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border-2);border-radius:7px;cursor:pointer;font-size:12px;transition:all .15s}
+.fmt-opt:hover{border-color:var(--client)}
+.fmt-opt.on{border-color:var(--client);background:var(--blue-light)}
+.fmt-opt input{accent-color:var(--client)}
+.fmt-opt .sz{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+.fmt-opt .grp{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted-2);display:block}
+.fmt-grp-title{grid-column:1/-1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:6px}
+.est-box{background:linear-gradient(135deg,var(--client),var(--purple));color:#fff;border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.est-box h4{font-size:14px;margin-bottom:8px}
+.est-box .est-row{display:flex;gap:12px;flex-wrap:wrap}
+.est-box .est{flex:1;min-width:140px;background:rgba(255,255,255,.12);border-radius:7px;padding:8px 10px}
+.est-box .est small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;opacity:.8}
+.est-box .est b{font-size:14px;display:block;margin-top:2px}
+.est-box .note{font-size:11px;opacity:.85;margin-top:10px;line-height:1.5}
+.est-box .warn{background:rgba(251,191,36,.25);border:1px solid rgba(251,191,36,.6);border-radius:6px;padding:6px 10px;font-size:11px;margin-top:8px}
+.lang-toggle{display:flex;gap:6px}
+.lang-toggle label{display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--border-2);border-radius:7px;cursor:pointer;font-size:12px}
+.lang-toggle label.on{border-color:var(--client);background:var(--blue-light)}
+.concept-pick{display:flex;gap:6px}
+.concept-pick label{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px;border:1px solid var(--border-2);border-radius:7px;cursor:pointer;font-size:12px;text-align:center}
+.concept-pick label.on{border-color:var(--client);background:var(--blue-light)}
+.concept-pick label b{font-size:18px;font-family:'Barlow Condensed',sans-serif}
+.concept-pick label small{font-size:10px;color:var(--muted)}
+
+/* Calendar ad bars */
+.ad-bar{display:block;margin-top:3px;font-size:9px;font-weight:600;padding:2px 5px;border-radius:3px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;background:#6366f1}
+.ad-bar.approved{background:#16a34a}
+.ad-bar.pending{background:#9ca3af}
+.ad-bar.start{border-left:3px solid #fff}
+.ad-bar.end{border-right:3px solid #fff}
+
+/* Internal brief modal */
+.bm-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;font-size:13px}
+@media(max-width:700px){.bm-fields{grid-template-columns:1fr}}
+.bm-fields .f{padding:8px 0;border-bottom:1px solid var(--border)}
+.bm-fields .f.wide{grid-column:1/-1}
+.bm-fields .f .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:2px}
+.bm-fields .f .v{white-space:pre-wrap;line-height:1.5}
+.bm-fields .f .v[dir=rtl]{text-align:right}
+.status-stepper{display:flex;gap:2px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.status-stepper .st{flex:1;min-width:84px;padding:6px 4px;font-size:10px;text-align:center;border:1px solid var(--border-2);background:var(--card);cursor:pointer;line-height:1.2;color:var(--muted);transition:all .15s}
+.status-stepper .st:first-child{border-radius:6px 0 0 6px}.status-stepper .st:last-child{border-radius:0 6px 6px 0}
+.status-stepper .st.done{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+.status-stepper .st.now{background:var(--internal);color:#fff;border-color:var(--internal);font-weight:600}
+.status-stepper .st:hover{border-color:var(--blue)}
+.cl-hero .cta{margin-top:16px}
+.cl-hero .cta .btn{background:#fff;color:var(--client);border:none;font-weight:700;padding:10px 20px;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.cl-hero .cta .btn:hover{transform:translateY(-1px);color:var(--client)}
+.ad-pill{display:inline-flex;align-items:center;gap:4px;background:#fbbf24;color:#000;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em}
+
 /* Print */
 @media print{.int-header,.cl-header,.int-cal-toolbar,.cl-toolbar,.month-nav,.btn{display:none!important}body{background:#fff}}
 
@@ -638,9 +789,10 @@ function intHeader(title, actions) {
 ================================================================ */
 function renderDashboard() {
   currentCalId = null;
-  let totalPosts = 0, review = 0, changes = 0, approved = 0, unres = 0;
+  let totalPosts = 0, review = 0, changes = 0, approved = 0, unres = 0, openBriefs = 0, newBriefs = 0;
   const activity = [];
   calendars.forEach(c => {
+    getBriefs(c).forEach(b => { if (briefIsActive(b)) openBriefs++; if (b.status === 'Submitted') newBriefs++; unres += briefUnresolved(b); activity.push({ type: 'brief', calId: c.id, calName: c.name, bid: b.id, pn: b.campaignName || 'Ad brief', d: b.createdAt, by: b.submittedBy || 'Client', text: b.status }); ['concept', 'final'].forEach(k => { const fb = briefFb(b, k); (fb.comments || []).forEach(cm => activity.push({ type: 'comment', calId: c.id, calName: c.name, bid: b.id, pn: (b.campaignName || 'Ad brief') + ' (' + k + ')', d: cm.d, by: cm.by || 'Client', text: cm.t || '', resolved: cm.resolved })); if (fb.status) activity.push({ type: fb.status === 'approved' ? 'approved' : 'changes', calId: c.id, calName: c.name, bid: b.id, pn: (b.campaignName || 'Ad brief') + ' ' + k, d: (fb.comments || []).slice(-1)[0]?.d || b.conceptApprovedAt || b.finalApprovedAt }); }); });
     (c.posts || []).forEach(p => { totalPosts++; if (p.status === 'Ready for Review' || p.status === 'Revised') review++; });
     Object.entries(c.feedback || {}).forEach(([pid, f]) => {
       const post = getPost(c, pid); const pn = post ? (post.topic || 'Untitled') : 'Deleted post';
@@ -661,6 +813,7 @@ function renderDashboard() {
     <div class="int-stat s-changes"><div class="n">${changes}</div><div class="l">Changes requested</div></div>
     <div class="int-stat s-unresolved"><div class="n">${unres}</div><div class="l">Unresolved notes</div></div>
     <div class="int-stat s-approved"><div class="n">${approved}</div><div class="l">Approved</div></div>
+    <div class="int-stat s-changes" style="border-left-color:#fbbf24"><div class="n">${openBriefs}${newBriefs ? ` <span class="ad-pill">${newBriefs} new</span>` : ''}</div><div class="l">Ad briefs</div></div>
   </div>`;
   h += `<div class="int-layout"><div>`;
   h += `<div class="int-toolbar"><input type="search" id="dashSearch" placeholder="Search calendars..." oninput="filterDash()"><div class="filter-pills"><button class="filter-pill ${dashFilter === 'all' ? 'active' : ''}" onclick="dashFilter='all';filterDash(true)">All</button><button class="filter-pill ${dashFilter === 'attention' ? 'active' : ''}" onclick="dashFilter='attention';filterDash(true)">Needs attention</button></div><button class="btn primary" onclick="createCalendar()">+ New calendar</button></div>`;
@@ -680,7 +833,7 @@ function renderDashboard() {
         <div class="banner" onclick="openCalendar('${c.id}')">${c.banner ? `<img src="${c.banner}" alt="">` : ''}<button class="banner-btn" onclick="event.stopPropagation();$('bn-${c.id}').click()">Change image</button></div>
         <input type="file" id="bn-${c.id}" accept="image/*" style="display:none" onchange="setBanner('${c.id}',this)">
         <div class="body"><h3>${esc(c.name)}</h3><div class="meta">PIN ${esc(c.pin || '')} &middot; ${n} posts &middot; ${cr} creatives</div>
-          <div class="pills">${ap ? `<span class="badge approved">${ap} approved</span>` : ''}${ch ? `<span class="badge changes">${ch} changes</span>` : ''}${un ? `<span class="badge" style="background:var(--red-light);color:var(--red)">${un} unresolved</span>` : ''}${!ap && !ch && !un ? '<span class="badge draft">No feedback yet</span>' : ''}</div>
+          <div class="pills">${ap ? `<span class="badge approved">${ap} approved</span>` : ''}${ch ? `<span class="badge changes">${ch} changes</span>` : ''}${un ? `<span class="badge" style="background:var(--red-light);color:var(--red)">${un} unresolved</span>` : ''}${getBriefs(c).filter(b => b.status === 'Submitted').length ? `<span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted').length} new ad brief${getBriefs(c).filter(b => b.status === 'Submitted').length !== 1 ? 's' : ''}</span>` : ''}${!ap && !ch && !un ? '<span class="badge draft">No feedback yet</span>' : ''}</div>
           <div class="progress"><div style="width:${pct}%"></div></div>
           <div class="actions"><button class="btn primary" onclick="openCalendar('${c.id}')">Open</button><button class="btn" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')">Client view</button><button class="btn" onclick="copyLink('${c.id}')">Link</button><button class="btn ghost" onclick="calSettings('${c.id}')">&#9881;</button></div>
         </div></div>`;
@@ -692,10 +845,11 @@ function renderDashboard() {
   if (!activity.length) h += '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No client activity yet.</div>';
   else activity.slice(0, 25).forEach(a => {
     let icon, text;
-    if (a.type === 'approved') { icon = '<div class="ai-icon approved">&#10003;</div>'; text = `<strong>${esc(a.pn)}</strong> approved`; }
+    if (a.type === 'brief') { icon = '<div class="ai-icon changes" style="background:#fbbf24;color:#000">AD</div>'; text = `<strong>${esc(a.by)}</strong> requested an ad: <strong>${esc(a.pn)}</strong> <span class="badge ${BRIEF_CLASS[a.text] || 'b-submitted'}" style="font-size:9px">${esc(a.text)}</span>`; }
+    else if (a.type === 'approved') { icon = '<div class="ai-icon approved">&#10003;</div>'; text = `<strong>${esc(a.pn)}</strong> approved`; }
     else if (a.type === 'changes') { icon = '<div class="ai-icon changes">!</div>'; text = `Changes requested on <strong>${esc(a.pn)}</strong>`; }
     else { icon = `<div class="ai-icon comment">${(a.by || '?')[0].toUpperCase()}</div>`; text = `<strong>${esc(a.by)}</strong>: ${esc(a.text.slice(0, 90))}${a.text.length > 90 ? '…' : ''}${a.resolved ? ' <span class="badge approved" style="font-size:9px">resolved</span>' : ''}`; }
-    h += `<div class="activity-item" onclick="openCalendarToPost('${a.calId}','${a.pid}')">${icon}<div><div class="ai-text">${text}</div><div class="ai-meta">${esc(a.calName)}${a.d ? ' &middot; ' + timeAgo(a.d) : ''}</div></div></div>`;
+    h += `<div class="activity-item" onclick="${a.bid ? `openCalendarToBrief('${a.calId}','${a.bid}')` : `openCalendarToPost('${a.calId}','${a.pid}')`}">${icon}<div><div class="ai-text">${text}</div><div class="ai-meta">${esc(a.calName)}${a.d ? ' &middot; ' + timeAgo(a.d) : ''}</div></div></div>`;
   });
   h += '</div></div></div></div>';
   $('app').innerHTML = h;
@@ -710,11 +864,11 @@ function copyLink(id) { const u = location.origin + location.pathname + '?calend
 function setBanner(id, input) { const f = input.files[0]; if (!f) return; if (f.size > 3e6) { alert('Keep banner under 3MB'); return; } const r = new FileReader(); r.onload = e => { const c = calendars.find(x => x.id === id); if (c) { c.banner = e.target.result; saveCalendars(); renderDashboard(); } }; r.readAsDataURL(f); }
 function calSettings(id) {
   const c = calendars.find(x => x.id === id); if (!c) return;
-  $('smBody').innerHTML = `<div class="field"><label>Calendar name</label><input id="sName" value="${esc(c.name)}"></div><div class="field"><label>Client PIN</label><input id="sPin" value="${esc(c.pin || '')}"></div><div class="field"><label>Message to client (shown at top of their view)</label><textarea id="sIntro" rows="3" placeholder="e.g. Please review and approve by Friday.">${esc(c.intro || '')}</textarea></div>`;
+  $('smBody').innerHTML = `<div class="field"><label>Calendar name</label><input id="sName" value="${esc(c.name)}"></div><div class="field"><label>Client PIN</label><input id="sPin" value="${esc(c.pin || '')}"></div><div class="field"><label>Message to client (shown at top of their view)</label><textarea id="sIntro" rows="3" placeholder="e.g. Please review and approve by Friday.">${esc(c.intro || '')}</textarea></div><div class="field"><label>Products / car models for ad briefs <span style="font-weight:400;text-transform:none;color:var(--muted-2)">(one per line, shown as a dropdown)</span></label><textarea id="sModels" rows="4" placeholder="BJ30 Hybrid\nBJ40 Honor\nBJ40 Pro\nX55\nArcFox T1">${esc((c.carModels || []).join('\n'))}</textarea></div>`;
   $('smFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deleteCalendar('${id}')">Delete calendar</button></div><div class="right"><button class="btn" onclick="$('settingsModal').classList.remove('show')">Cancel</button><button class="btn primary" onclick="saveSettings('${id}')">Save</button></div>`;
   $('settingsModal').classList.add('show'); $('smClose').onclick = () => $('settingsModal').classList.remove('show');
 }
-function saveSettings(id) { const c = calendars.find(x => x.id === id); if (!c) return; c.name = $('sName').value.trim() || c.name; c.pin = $('sPin').value.trim() || c.pin; c.intro = $('sIntro').value.trim(); saveCalendars(); $('settingsModal').classList.remove('show'); currentCalId === id ? renderCalView() : renderDashboard(); }
+function saveSettings(id) { const c = calendars.find(x => x.id === id); if (!c) return; c.name = $('sName').value.trim() || c.name; c.pin = $('sPin').value.trim() || c.pin; c.intro = $('sIntro').value.trim(); c.carModels = $('sModels').value.split('\n').map(x => x.trim()).filter(Boolean); saveCalendars(); $('settingsModal').classList.remove('show'); currentCalId === id ? renderCalView() : renderDashboard(); }
 function deleteCalendar(id) { if (!confirm('Delete this calendar and all its posts permanently?')) return; calendars = calendars.filter(x => x.id !== id); saveCalendars(); $('settingsModal').classList.remove('show'); renderDashboard(); }
 function openCalendarToPost(calId, pid) { openCalendar(calId); viewMode = 'board'; renderCalView(); setTimeout(() => editPost(pid), 200); }
 
@@ -735,14 +889,15 @@ function renderCalView() {
   h += '<div class="int-wrap">';
   h += `<div class="int-hero"><h2>${esc(c.name)}</h2><p>Internal workspace. Upload content, send for client review, action their feedback, and re-submit revisions. PIN ${esc(c.pin || '')}.</p>
     <div class="steps"><div><span class="n">1</span>Build &amp; upload</div><div><span class="n">2</span>Send for review</div><div><span class="n">3</span>Action feedback</div><div><span class="n">4</span>Re-submit</div></div>
-    <div class="stats"><div><strong>${mp.length}</strong><span>Posts</span></div><div><strong>${cr}</strong><span>Creatives</span></div><div><strong style="color:#60a5fa">${withClient}</strong><span>With client</span></div><div><strong style="color:#4ade80">${ap}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${ch}</strong><span>Changes</span></div><div><strong style="color:#f87171">${un}</strong><span>Unresolved</span></div></div></div>`;
-  if (viewMode === 'year') h += yearView(c); else if (viewMode === 'board') h += boardView(c); else h += monthView(c);
+    <div class="stats"><div><strong>${mp.length}</strong><span>Posts</span></div><div><strong>${cr}</strong><span>Creatives</span></div><div><strong style="color:#60a5fa">${withClient}</strong><span>With client</span></div><div><strong style="color:#4ade80">${ap}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${ch}</strong><span>Changes</span></div><div><strong style="color:#f87171">${un}</strong><span>Unresolved</span></div><div><strong style="color:#fbbf24">${getBriefs(c).filter(briefIsActive).length}</strong><span>Ad briefs</span></div></div></div>`;
+  h += ganttHTML(getBriefs(c), 'openBrief', { showDone: false });
+  if (viewMode === 'year') h += yearView(c); else if (viewMode === 'board') h += boardView(c); else if (viewMode === 'briefs') h += briefsView(c); else h += monthView(c);
   h += '</div>';
   $('app').innerHTML = h;
 }
 function calToolbar(c, extra) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
-  return `<div class="int-cal-toolbar"><div class="left"><button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button><h2>${MONTHS[m]} ${y}</h2><button class="month-nav" onclick="monthNav(1)">&rsaquo;</button><div class="view-tabs"><button class="${viewMode === 'board' ? 'active' : ''}" onclick="viewMode='board';renderCalView()">Review board</button><button class="${viewMode === 'month' ? 'active' : ''}" onclick="viewMode='month';renderCalView()">Calendar</button><button class="${viewMode === 'year' ? 'active' : ''}" onclick="viewMode='year';renderCalView()">Year</button></div></div><div class="right">${extra || ''}<button class="btn sm primary" onclick="addPost()">+ Add post</button></div></div>`;
+  return `<div class="int-cal-toolbar"><div class="left"><button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button><h2>${MONTHS[m]} ${y}</h2><button class="month-nav" onclick="monthNav(1)">&rsaquo;</button><div class="view-tabs"><button class="${viewMode === 'board' ? 'active' : ''}" onclick="viewMode='board';renderCalView()">Review board</button><button class="${viewMode === 'month' ? 'active' : ''}" onclick="viewMode='month';renderCalView()">Calendar</button><button class="${viewMode === 'year' ? 'active' : ''}" onclick="viewMode='year';renderCalView()">Year</button><button class="${viewMode === 'briefs' ? 'active' : ''}" onclick="viewMode='briefs';renderCalView()">Ad requests${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length ? ` <span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length}</span>` : ''}</button></div></div><div class="right">${extra || ''}<button class="btn sm primary" onclick="addPost()">+ Add post</button></div></div>`;
 }
 function monthNav(d) { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + d, 1); renderCalView(); }
 
@@ -779,7 +934,7 @@ function monthView(c) {
     h += `<div class="cal-day int-cal-day" ondragover="event.preventDefault()" ondrop="dropPost(event,'${ds}')" ${dp.length ? `onclick="viewMode='board';boardFilter='all';renderCalView();setTimeout(()=>document.querySelector('[data-pid=\'${dp[0].id}\']')?.scrollIntoView({behavior:'smooth',block:'start'}),100)"` : ''}>
       <div class="dn ${isT ? 'today' : ''}">${d}</div>
       ${dp.length ? `<div class="big">${dp.length}</div><div class="dots">${dp.map(p => `<div class="dot" draggable="true" ondragstart="event.stopPropagation();dragPostStart(event,'${p.id}')" onclick="event.stopPropagation();editPost('${p.id}')" style="background:${PLAT_COLORS[(p.platforms || [])[0]] || '#8b5cf6'}" title="${esc(p.topic || 'Untitled')}"></div>`).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div><div class="fbs">${ap ? `<span class="ok">${ap}&#10003;</span>` : ''}${ch ? `<span class="ch">${ch}!</span>` : ''}${un ? `<span class="un">${un}</span>` : ''}</div>` : ''}
-      <div class="add" onclick="event.stopPropagation();addPost('${ds}')">+ Add</div></div>`;
+      ${adBarsHTML(getBriefs(c), ds, 'openBrief')}<div class="add" onclick="event.stopPropagation();addPost('${ds}')">+ Add</div></div>`;
   }
   const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
   return h + '</div></div>';
@@ -943,6 +1098,375 @@ function reorderNum(lang, from, to) { const pid = curPid(); const c = getCal(); 
 function dragStart(e, lang, i) { dragSlide = { lang, i }; e.dataTransfer.effectAllowed = 'move'; e.target.closest('.creative-thumb').classList.add('dragging'); }
 function dropSlide(e, lang, to) { e.preventDefault(); e.target.closest('.creative-thumb')?.classList.remove('drag-over'); if (!dragSlide || dragSlide.lang !== lang) { dragSlide = null; return; } const from = dragSlide.i; dragSlide = null; if (from !== to) reorderNum(lang, from, to); }
 
+
+/* ================================================================
+   AD BRIEFS: CONFIG & HELPERS
+================================================================ */
+const AD_FORMATS = [
+  { key: 'meta_sq', grp: 'Meta Ads + Google Display', label: 'Square 1:1', size: '1080 x 1080 px' },
+  { key: 'meta_ls', grp: 'Meta Ads + Google Display', label: 'Landscape', size: '1200 x 628 px' },
+  { key: 'meta_st', grp: 'Meta Ads + Google Display', label: 'Story / Reel 9:16', size: '1080 x 1920 px' },
+  { key: 'gdn_pt', grp: 'Google Display only', label: 'Portrait', size: '960 x 1200 px' },
+  { key: 'print_sun', grp: 'GDN Newspaper', label: 'Sunday', size: '26 x 36 cm', print: true },
+  { key: 'print_mon', grp: 'GDN Newspaper', label: 'Monday', size: '26 x 18 cm', print: true },
+  { key: 'print_tue', grp: 'GDN Newspaper', label: 'Tuesday', size: '26 x 18 cm', print: true },
+  { key: 'print_wed', grp: 'GDN Newspaper', label: 'Wednesday', size: '26 x 36 cm', print: true },
+  { key: 'print_thu', grp: 'GDN Newspaper', label: 'Thursday', size: '26 x 34 cm', print: true },
+  { key: 'print_fri', grp: 'GDN Newspaper', label: 'Friday', size: '26 x 36 cm', print: true },
+  { key: 'print_sat', grp: 'GDN Newspaper', label: 'Saturday', size: '26 x 18 cm', print: true },
+];
+const BRIEF_STATUSES = ['Submitted', 'Concepts in progress', 'Concepts ready', 'Concept approved', 'Final in progress', 'Final ready', 'Approved', 'Scheduled', 'Live', 'Complete'];
+const BRIEF_CLIENT_LABEL = { 'Submitted': 'Received, awaiting pickup', 'Concepts in progress': 'Concepts in progress', 'Concepts ready': 'Concepts ready for your review', 'Concept approved': 'Concept approved, final in progress', 'Final in progress': 'Final in progress', 'Final ready': 'Final ready for your approval', 'Approved': 'Approved', 'Scheduled': 'Approved and scheduled', 'Live': 'Live', 'Complete': 'Complete' };
+const BRIEF_CLASS = { 'Submitted': 'b-submitted', 'Concepts in progress': 'b-progress', 'Concepts ready': 'b-ready', 'Concept approved': 'b-progress', 'Final in progress': 'b-progress', 'Final ready': 'b-ready', 'Approved': 'b-approved', 'Scheduled': 'b-approved', 'Live': 'b-live', 'Complete': 'b-complete' };
+const WORK_START = 9, WORK_END = 18;
+const DEFAULT_TERMS_EN = '*Terms and conditions apply.';
+const DEFAULT_TERMS_AR = '*تطبق الشروط والأحكام.';
+let briefTab = 'active', clBriefTab = 'active', briefGanttOpen = true;
+
+const isWeekend = d => d.getDay() === 0 || d.getDay() === 6;
+function nextPickup(d) {
+  d = new Date(d);
+  const at = (x, h) => { const r = new Date(x); r.setHours(h, 0, 0, 0); return r; };
+  while (isWeekend(d)) { d.setDate(d.getDate() + 1); d = at(d, WORK_START); }
+  if (d.getHours() < WORK_START) return at(d, WORK_START);
+  if (d.getHours() >= WORK_END) { d.setDate(d.getDate() + 1); while (isWeekend(d)) d.setDate(d.getDate() + 1); return at(d, WORK_START); }
+  return d;
+}
+function addWorkDays(d, n) { d = new Date(d); let c = 0; while (c < n) { d.setDate(d.getDate() + 1); if (!isWeekend(d)) c++; } d.setHours(WORK_END, 0, 0, 0); return d; }
+function briefCreativeCount(b) { const f = (b.formats || []).length + (b.customFormats || []).length; const l = (b.langs?.ar ? 1 : 0) + (b.langs?.en ? 1 : 0); return f * Math.max(l, 1); }
+function briefEstimate(b, from) {
+  const per = briefCreativeCount(b); const concepts = b.concepts || 1;
+  const conceptDays = concepts + (per > 4 ? 1 : 0);
+  const finalDays = 1 + (per > 4 ? 1 : 0);
+  const pickup = nextPickup(from || new Date());
+  const conceptDue = addWorkDays(pickup, conceptDays);
+  const earliestApproval = conceptDue; // if approved immediately
+  const finalDue = addWorkDays(nextPickup(earliestApproval), finalDays);
+  return { pickup, conceptDue, finalDue, conceptDays, finalDays, per, total: per * concepts };
+}
+const fmtDT = d => d ? new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+const fmtD = d => d ? new Date(d + (String(d).length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+const briefFormats = b => [...(b.formats || []).map(k => AD_FORMATS.find(f => f.key === k)).filter(Boolean), ...(b.customFormats || []).map(c => ({ key: 'custom', label: c.label || 'Custom', size: c.size || '', custom: true }))];
+const briefFmtChips = b => briefFormats(b).map(f => `<span class="fmt-chip ${f.print ? 'print' : ''}" title="${esc(f.size)}">${f.print ? 'GDN ' : ''}${esc(f.label)} <span style="opacity:.6">${esc(f.size)}</span></span>`).join('') || '<span class="fmt-chip">No formats</span>';
+const briefLangs = b => [b.langs?.ar ? 'Arabic' : '', b.langs?.en ? 'English' : ''].filter(Boolean).join(' + ') || 'Arabic';
+const getBriefs = c => c.briefs || [];
+const briefFb = (b, kind) => (b.fb && b.fb[kind]) || { status: '', comments: [] };
+const briefUnresolved = b => ['concept', 'final'].reduce((s, k) => s + (briefFb(b, k).comments || []).filter(c => !c.resolved).length, 0);
+const briefIsActive = b => !['Complete'].includes(b.status);
+const briefIsPlanned = b => b.startDate && b.startDate > todayStr();
+const briefIsLive = b => b.startDate && b.endDate && b.startDate <= todayStr() && b.endDate >= todayStr() && ['Approved', 'Scheduled', 'Live'].includes(b.status);
+function briefMediaHTML(calId, b, kind, pin, prefix) {
+  const arr = b[kind + 'Media'] || []; const id = (prefix || 'bm') + '-' + kind + '-' + b.id;
+  if (!arr.length) return '';
+  if (arr.length === 1) { const src = creativeUrl(calId, b.id, kind, arr[0].kvIdx, b.cv, pin); return arr[0].type === 'video' ? `<video src="${src}" controls playsinline onclick="event.stopPropagation()"></video>` : `<img src="${src}" alt="">`; }
+  const inner = arr.map((s, i) => { const src = creativeUrl(calId, b.id, kind, s.kvIdx, b.cv, pin); return `<div class="carousel-slide">${s.type === 'video' ? `<video src="${src}" controls playsinline onclick="event.stopPropagation()"></video>` : `<img src="${src}" alt="">`}</div>`; }).join('');
+  return `<div class="carousel"><div class="carousel-count">${arr.length}</div><div class="carousel-track" id="${id}">${inner}</div><button class="carousel-nav prev" onclick="event.stopPropagation();carNav('${id}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="event.stopPropagation();carNav('${id}',1)">&rsaquo;</button><div class="carousel-dots" id="${id}-dots">${arr.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" onclick="event.stopPropagation();carGo('${id}',${i})"></div>`).join('')}</div></div>`;
+}
+function briefRefsHTML(calId, b, pin, editable) {
+  return `<div class="refs">${(b.refs || []).map((r, i) => r.url ? `<a class="ref link" href="${esc(r.url)}" target="_blank" title="${esc(r.url)}">&#128279;${editable ? `<button class="rm" onclick="event.preventDefault();removeRef(${i})">&times;</button>` : ''}</a>` : `<div class="ref" onclick="openFullView(this,'Reference')"><img src="${creativeUrl(calId, b.id, 'ref', r.kvIdx, b.cv, pin)}" alt="">${editable ? `<button class="rm" onclick="event.stopPropagation();removeRef(${i})">&times;</button>` : ''}</div>`).join('')}</div>`;
+}
+
+/* ================================================================
+   AD BRIEFS: GANTT (shared)
+================================================================ */
+function ganttHTML(briefs, onClick, opts = {}) {
+  const active = briefs.filter(briefIsActive).sort((a, b) => (a.startDate || a.createdAt || '').localeCompare(b.startDate || b.createdAt || ''));
+  const done = briefs.filter(b => !briefIsActive(b));
+  const rows = [...active, ...(opts.showDone ? done : [])];
+  const head = `<div class="gantt-head" onclick="briefGanttOpen=!briefGanttOpen;this.closest('.gantt-wrap').classList.toggle('open')"><h3><span class="arrow">&#9660;</span>Ad timeline <span class="badge b-progress" style="font-size:10px">${active.length} active</span>${done.length ? `<span class="badge b-complete" style="font-size:10px">${done.length} complete</span>` : ''}</h3><div class="legend"><span><i style="background:#3b82f6"></i>Concept</span><span><i style="background:repeating-linear-gradient(45deg,#d1d5db,#d1d5db 3px,#e5e7eb 3px,#e5e7eb 6px)"></i>Awaiting approval</span><span><i style="background:#6366f1"></i>Final</span><span><i style="background:#16a34a"></i>Live</span><span><i style="border:1.5px dashed #16a34a"></i>Planned</span></div></div>`;
+  if (!rows.length) return `<div class="gantt-wrap ${briefGanttOpen ? 'open' : ''}">${head}<div class="gantt-body"><div class="gantt-empty">No ad briefs yet.${opts.cta || ''}</div></div></div>`;
+  const now = new Date(); const day0 = new Date(now); day0.setHours(0, 0, 0, 0);
+  let min = new Date(day0); min.setDate(min.getDate() - 3); let max = new Date(day0); max.setDate(max.getDate() + 14);
+  rows.forEach(b => { [b.createdAt, b.conceptDueAt, b.finalDueAt, b.startDate ? b.startDate + 'T00:00:00' : null, b.endDate ? b.endDate + 'T23:59:59' : null].filter(Boolean).forEach(x => { const d = new Date(x); if (d < min) min = new Date(d); if (d > max) max = new Date(d); }); });
+  min.setHours(0, 0, 0, 0); min.setDate(min.getDate() - 1); max.setHours(23, 59, 59, 999); max.setDate(max.getDate() + 2);
+  const span = max - min; const days = Math.ceil(span / 864e5); const pct = d => Math.max(0, Math.min(100, (new Date(d) - min) / span * 100));
+  const colW = 34; const totalW = days * colW;
+  let axis = `<div class="g-axis"><div class="g-axis-lbl" style="width:220px;flex:0 0 220px">Brief</div><div style="position:relative;flex:1;min-width:${totalW}px">`;
+  let bgs = '';
+  for (let i = 0; i < days; i++) { const d = new Date(min); d.setDate(d.getDate() + i); const l = i / days * 100, w = 100 / days; const wk = isWeekend(d); axis += `<div class="g-day ${wk ? 'wk' : ''} ${d.getDate() === 1 || i === 0 ? 'first' : ''}" style="left:${l}%;width:${w}%">${d.getDate() === 1 || i === 0 ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : d.getDate()}</div>`; if (wk) bgs += `<div class="wk" style="left:${l}%;width:${w}%"></div>`; }
+  axis += `<div class="g-today" style="left:${pct(now)}%"></div></div></div>`;
+  const bar = (cls, s, e, txt, title) => { if (!s || !e) return ''; const l = pct(s), r = pct(e); if (r <= l) return ''; return `<div class="bar ${cls}" style="left:${l}%;width:${Math.max(r - l, 0.6)}%" title="${esc(title || txt)}">${esc(txt)}</div>`; };
+  const row = b => {
+    const st = b.status; const idx = BRIEF_STATUSES.indexOf(st);
+    const pickup = nextPickup(new Date(b.createdAt));
+    let bars = '';
+    bars += bar('concept', pickup, b.conceptDueAt, 'Concept', 'Concept due ' + fmtDT(b.conceptDueAt));
+    if (st === 'Concepts ready') bars += bar('wait', b.conceptDueAt, b.conceptApprovedAt || now, 'Awaiting approval');
+    if (idx >= 3) { const fs = b.conceptApprovedAt || b.conceptDueAt; bars += bar('final', fs, b.finalDueAt || addWorkDays(nextPickup(new Date(fs)), 1), 'Final', 'Final due ' + fmtDT(b.finalDueAt)); if (st === 'Final ready') bars += bar('wait', b.finalDueAt, b.finalApprovedAt || now, 'Awaiting approval'); }
+    if (b.startDate && b.endDate) { const live = idx >= 6; bars += bar('live ' + (st === 'Complete' ? 'done' : live ? '' : 'planned'), b.startDate + 'T00:00:00', b.endDate + 'T23:59:59', (live ? 'Live ' : 'Planned ') + fmtD(b.startDate) + ' to ' + fmtD(b.endDate)); }
+    return `<div class="g-label" onclick="${onClick}('${b.id}')"><b>${esc(b.campaignName || 'Untitled')} ${b.carModel ? '· ' + esc(b.carModel) : ''}</b><span class="sub"><span class="badge ${BRIEF_CLASS[st] || 'b-submitted'}" style="font-size:9px;padding:1px 6px">${esc(opts.client ? BRIEF_CLIENT_LABEL[st] || st : st)}</span> ${briefCreativeCount(b)} cr</span></div><div class="g-row"><div class="g-rowbg">${bgs}</div><div class="g-today" style="left:${pct(now)}%"></div>${bars}</div>`;
+  };
+  let body = `<div class="gantt-scroll"><div class="gantt" style="min-width:${220 + totalW}px">${axis}`;
+  const live = active.filter(briefIsLive), inprod = active.filter(b => !briefIsLive(b) && !briefIsPlanned(b)), planned = active.filter(b => briefIsPlanned(b) && !briefIsLive(b));
+  if (live.length) body += `<div class="gantt-section">Live now</div>` + live.map(row).join('');
+  if (inprod.length) body += `<div class="gantt-section">In production</div>` + inprod.map(row).join('');
+  if (planned.length) body += `<div class="gantt-section">Planned</div>` + planned.map(row).join('');
+  if (opts.showDone && done.length) body += `<div class="gantt-section">Complete</div>` + done.map(row).join('');
+  body += '</div></div>';
+  return `<div class="gantt-wrap ${briefGanttOpen ? 'open' : ''}">${head}<div class="gantt-body">${body}</div></div>`;
+}
+
+/* ================================================================
+   AD BRIEFS: CARD (shared, role-aware)
+================================================================ */
+function briefTimelineHTML(b) {
+  const idx = BRIEF_STATUSES.indexOf(b.status); const pickup = nextPickup(new Date(b.createdAt));
+  const step = (done, now, label, when) => `<div class="tl ${done ? 'done' : ''} ${now ? 'now' : ''}"><div class="dot"></div><b>${label}</b><span>${when}</span></div>`;
+  return `<div class="timeline">
+    ${step(true, false, 'Submitted', fmtDT(b.createdAt) + (b.submittedBy ? ' by ' + esc(b.submittedBy) : ''))}
+    ${step(idx >= 1, idx === 0, 'Picked up', fmtDT(pickup))}
+    ${step(idx >= 2, idx === 1, 'Concepts ready', 'by ' + fmtDT(b.conceptDueAt))}
+    ${step(idx >= 3, idx === 2, 'Concept approved', b.conceptApprovedAt ? fmtDT(b.conceptApprovedAt) : 'awaiting your approval')}
+    ${step(idx >= 5, idx === 3 || idx === 4, 'Final ready', b.finalDueAt ? 'by ' + fmtDT(b.finalDueAt) : '1 working day after approval')}
+    ${step(idx >= 6, idx === 5, 'Final approved', b.finalApprovedAt ? fmtDT(b.finalApprovedAt) + (b.approvedBy ? ' by ' + esc(b.approvedBy) : '') : 'awaiting your approval')}
+    ${b.startDate ? step(idx >= 8, idx === 6 || idx === 7, 'Live', fmtD(b.startDate) + (b.endDate ? ' to ' + fmtD(b.endDate) : '')) : ''}
+  </div>`;
+}
+function briefCardHTML(calId, b, role, pin) {
+  const client = role === 'client'; const st = b.status; const idx = BRIEF_STATUSES.indexOf(st);
+  const kind = idx >= 5 ? 'final' : idx >= 2 ? 'concept' : null;
+  const media = kind ? (briefMediaHTML(calId, b, kind, pin, 'bc') || (idx >= 5 ? briefMediaHTML(calId, b, 'concept', pin, 'bc') : '')) : '';
+  const fb = kind ? briefFb(b, kind) : { status: '', comments: [] };
+  let savedName = ''; try { savedName = localStorage.getItem(client ? 'rich_cl_name' : 'rich_team_name') || ''; } catch (e) { }
+  const label = client ? (BRIEF_CLIENT_LABEL[st] || st) : st;
+  const un = briefUnresolved(b);
+  let actions = '';
+  if (client) {
+    if (st === 'Submitted') actions = `<button class="btn" onclick="clEditBrief('${b.id}')">Edit brief</button><button class="btn danger" onclick="clCancelBrief('${b.id}')">Cancel</button>`;
+    else if (st === 'Concepts ready') actions = `<button class="btn outline-green ${fb.status === 'approved' ? 'active' : ''}" onclick="clBriefDecide('${b.id}','concept','approved')">&#10003; Approve concept</button><button class="btn outline-amber ${fb.status === 'declined' ? 'active' : ''}" onclick="clBriefDecide('${b.id}','concept','declined')">Request changes</button>`;
+    else if (st === 'Final ready') actions = `<button class="btn outline-green ${fb.status === 'approved' ? 'active' : ''}" onclick="clBriefDecide('${b.id}','final','approved')">&#10003; Approve final</button><button class="btn outline-amber ${fb.status === 'declined' ? 'active' : ''}" onclick="clBriefDecide('${b.id}','final','declined')">Request changes</button>`;
+    else if (idx >= 6) actions = `<button class="btn" onclick="clDuplicateBrief('${b.id}')">Duplicate brief</button>`;
+  } else {
+    actions = `<button class="btn primary" onclick="openBrief('${b.id}')">Open brief</button><button class="btn" onclick="copyBriefForClickUp('${b.id}')">Copy for ClickUp</button>`;
+  }
+  const comments = kind ? (fb.comments || []).map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'Client')}</strong>${cm.resolved ? '<span class="badge approved" style="font-size:9px">Actioned</span>' : ''}<time>${fmtTime(cm.d)}</time>${client ? `<div class="comment-actions"><button onclick="clBriefEditComment('${b.id}','${kind}',${i})">Edit</button><button class="del" onclick="clBriefDeleteComment('${b.id}','${kind}',${i})">Delete</button></div>` : ''}</div><div class="comment-text">${esc(cm.t)}</div></div></div>`).join('') : '';
+  return `<div class="brief-card ${st === 'Submitted' ? 'open' : ''}" id="bc-${b.id}">
+    <div class="bc-head"><div class="ic">&#128227;</div><div style="min-width:0;flex:1"><h4>${esc(b.campaignName || 'Untitled')}</h4><div class="sub">${esc(b.carModel || '')}${b.carModel ? ' · ' : ''}${briefCreativeCount(b)} creative${briefCreativeCount(b) !== 1 ? 's' : ''} · ${b.concepts || 1} concept${(b.concepts || 1) !== 1 ? 's' : ''}</div></div><span class="badge ${fb.status === 'declined' ? 'b-changes' : BRIEF_CLASS[st] || 'b-submitted'}">${fb.status === 'declined' ? 'Changes requested' : esc(label)}</span></div>
+    ${media ? `<div class="bc-media" onclick="openFullView(this,'${esc(b.campaignName || '')}')"><div class="tag">${kind === 'final' ? 'Final' : 'Concept'}${(b[kind + 'Media'] || []).length > 1 ? 's' : ''}</div>${media}</div>` : ''}
+    <div class="bc-body">
+      <div class="bc-row"><div class="k">Formats</div><div class="v"><div class="fmt-chips">${briefFmtChips(b)}</div></div></div>
+      <div class="bc-row"><div class="k">Languages</div><div class="v">${briefLangs(b)}</div></div>
+      ${b.startDate ? `<div class="bc-row"><div class="k">Campaign</div><div class="v">${fmtD(b.startDate)}${b.endDate ? ' to ' + fmtD(b.endDate) : ''}${b.showDates ? ' <span class="badge draft" style="font-size:9px">shown on ad</span>' : ''}</div></div>` : ''}
+      ${!client && un ? `<div class="bc-row"><div class="k">Feedback</div><div class="v"><span class="badge b-changes">${un} unresolved</span></div></div>` : ''}
+      ${briefTimelineHTML(b)}
+    </div>
+    ${actions ? `<div class="bc-actions">${actions}</div>` : ''}
+    ${client && kind && (st === 'Concepts ready' || st === 'Final ready') ? `<div class="bc-feedback"><div class="fb-row"><input class="nm" id="bnm-${b.id}" value="${esc(savedName)}" placeholder="Name" onchange="localStorage.setItem('rich_cl_name',this.value)"><input class="msg" id="bmsg-${b.id}" placeholder="What should we change?" onkeydown="if(event.key==='Enter')clBriefComment('${b.id}','${kind}')"><button class="btn primary" onclick="clBriefComment('${b.id}','${kind}')">Send</button></div></div>` : ''}
+    <div class="expand" onclick="this.closest('.brief-card').classList.toggle('open')"><span class="arrow">&#9660;</span>${comments ? (fb.comments || []).length + ' comment' + ((fb.comments || []).length !== 1 ? 's' : '') + ' &amp; ' : ''}Brief details</div>
+    <div class="detail"><div class="detail-inner">
+      <h5>Copy / captions</h5><p>${esc(b.copy || '')}</p>
+      <h5>USPs</h5><p>${esc(b.usps || '')}</p>
+      <h5>Price &amp; offers</h5><p>${esc(b.price || '')}</p>
+      <h5>Terms</h5><p>${esc(b.termsEN || '')}</p>${b.termsAR ? `<p dir="rtl">${esc(b.termsAR)}</p>` : ''}
+      ${(b.refs || []).length ? `<h5>References</h5>${briefRefsHTML(calId, b, pin, false)}` : ''}
+      ${comments ? `<h5>Feedback on ${kind}</h5><div class="comments-box">${comments}</div>` : ''}
+    </div></div>
+  </div>`;
+}
+function briefsListHTML(calId, briefs, role, pin, tab) {
+  const active = briefs.filter(briefIsActive), done = briefs.filter(b => !briefIsActive(b));
+  const list = tab === 'done' ? done : active;
+  const sorted = [...list].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  if (!sorted.length) return `<div style="text-align:center;padding:40px;color:var(--muted)">${tab === 'done' ? 'No completed ads yet.' : 'No active ad requests.'}</div>`;
+  return `<div class="brief-grid">${sorted.map(b => briefCardHTML(calId, b, role, pin)).join('')}</div>`;
+}
+function briefTabs(role) {
+  const t = role === 'client' ? clBriefTab : briefTab; const set = role === 'client' ? "clBriefTab='X';renderClient()" : "briefTab='X';renderCalView()";
+  return `<div class="filter-pills"><button class="filter-pill ${t === 'active' ? 'active' : ''}" onclick="${set.replace('X', 'active')}">Active</button><button class="filter-pill ${t === 'done' ? 'active' : ''}" onclick="${set.replace('X', 'done')}">Past ads</button></div>`;
+}
+function adBarsHTML(briefs, ds, onClick) {
+  return briefs.filter(b => b.startDate && b.endDate && b.startDate <= ds && b.endDate >= ds && briefIsActive(b)).map(b => { const idx = BRIEF_STATUSES.indexOf(b.status); return `<div class="ad-bar ${idx >= 6 ? 'approved' : idx < 2 ? 'pending' : ''} ${b.startDate === ds ? 'start' : ''} ${b.endDate === ds ? 'end' : ''}" onclick="event.stopPropagation();${onClick}('${b.id}')" title="${esc(b.campaignName)} ${fmtD(b.startDate)} to ${fmtD(b.endDate)}">${b.startDate === ds ? '&#9654; ' : ''}AD: ${esc(b.campaignName || '')}</div>`; }).join('');
+}
+
+/* ================================================================
+   AD BRIEFS: CLIENT FORM
+================================================================ */
+let bfDraft = null;
+function clNewBrief(dup) {
+  const base = dup ? JSON.parse(JSON.stringify(dup)) : {};
+  bfDraft = { id: 'b_' + uid(), campaignName: base.campaignName || '', carModel: base.carModel || '', formats: base.formats || ['meta_sq', 'meta_st'], customFormats: [], langs: { ar: true, en: base.langs ? !!base.langs.en : false }, startDate: '', endDate: '', showDates: base.showDates || false, copy: base.copy || '', usps: base.usps || '', price: base.price || '', termsEN: base.termsEN || DEFAULT_TERMS_EN, termsAR: base.termsAR || DEFAULT_TERMS_AR, refs: [], concepts: 1, submittedBy: (localStorage.getItem('rich_cl_name') || ''), editing: false };
+  renderBriefForm();
+}
+function clEditBrief(id) { const b = clientData.briefs.find(x => x.id === id); if (!b || b.status !== 'Submitted') return; bfDraft = JSON.parse(JSON.stringify(b)); bfDraft.customFormats = bfDraft.customFormats || []; bfDraft.editing = true; renderBriefForm(); }
+function clDuplicateBrief(id) { const b = clientData.briefs.find(x => x.id === id); if (b) clNewBrief(b); }
+async function clCancelBrief(id) { if (!confirm('Cancel this ad request? This cannot be undone.')) return; clientData.briefs = clientData.briefs.filter(b => b.id !== id); renderClient(); await clientBriefSend({ action: 'delete', briefId: id }); }
+function renderBriefForm() {
+  const b = bfDraft; const models = clientData.carModels || [];
+  const grps = [...new Set(AD_FORMATS.map(f => f.grp))];
+  $('pmTitle').textContent = b.editing ? 'Edit ad request' : 'Request an ad';
+  let fmts = '';
+  grps.forEach(g => { fmts += `<div class="fmt-grp-title">${g}</div>` + AD_FORMATS.filter(f => f.grp === g).map(f => `<label class="fmt-opt ${b.formats.includes(f.key) ? 'on' : ''}"><input type="checkbox" ${b.formats.includes(f.key) ? 'checked' : ''} onchange="bfToggleFmt('${f.key}',this.checked)"><span>${f.label}</span><span class="sz">${f.size}</span></label>`).join(''); });
+  fmts += `<div class="fmt-grp-title">Custom</div>` + (b.customFormats || []).map((c, i) => `<div class="fmt-opt on" style="grid-column:1/-1;gap:6px"><input type="text" value="${esc(c.label)}" placeholder="Name (e.g. Billboard)" oninput="bfDraft.customFormats[${i}].label=this.value;bfEst()" style="flex:1;border:1px solid var(--border-2);border-radius:4px;padding:4px 6px;font-size:12px"><input type="text" value="${esc(c.size)}" placeholder="Size (e.g. 300 x 250 px)" oninput="bfDraft.customFormats[${i}].size=this.value" style="flex:1;border:1px solid var(--border-2);border-radius:4px;padding:4px 6px;font-size:12px"><button class="btn xs danger" onclick="bfDraft.customFormats.splice(${i},1);renderBriefForm()">&times;</button></div>`).join('') + `<button class="btn sm" style="grid-column:1/-1;justify-content:center" onclick="bfDraft.customFormats.push({label:'',size:''});renderBriefForm()">+ Add custom format</button>`;
+  $('pmBody').innerHTML = `
+    <div class="bf-group"><h4><span class="n">1</span>What are we advertising?</h4>
+      <div class="field-row"><div class="field"><label>Campaign name</label><input id="bfName" value="${esc(b.campaignName)}" placeholder="e.g. BJ40 Honor October offer" oninput="bfDraft.campaignName=this.value"></div>
+      <div class="field"><label>Car model</label>${models.length ? `<select id="bfModelSel" onchange="bfDraft.carModel=this.value==='__other'?'':this.value;$('bfModelOther').style.display=this.value==='__other'?'':'none'"><option value="">Select a model</option>${models.map(m => `<option ${b.carModel === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}<option value="__other" ${b.carModel && !models.includes(b.carModel) ? 'selected' : ''}>Other (type below)</option></select><input id="bfModelOther" value="${!models.includes(b.carModel) ? esc(b.carModel) : ''}" placeholder="Type the model" style="margin-top:6px;display:${b.carModel && !models.includes(b.carModel) ? '' : 'none'}" oninput="bfDraft.carModel=this.value">` : `<input id="bfModel" value="${esc(b.carModel)}" placeholder="e.g. BJ40 Honor" oninput="bfDraft.carModel=this.value">`}</div></div>
+      <div class="field"><label>Submitted by</label><input value="${esc(b.submittedBy)}" placeholder="Your name" oninput="bfDraft.submittedBy=this.value;localStorage.setItem('rich_cl_name',this.value)"></div>
+    </div>
+    <div class="bf-group"><h4><span class="n">2</span>Where will it run?</h4>
+      <div class="fmt-list">${fmts}</div>
+      <div class="field" style="margin-top:12px"><label>Languages <span style="font-weight:400;text-transform:none;color:var(--muted-2)">(Arabic is always included)</span></label><div class="lang-toggle"><label class="on"><input type="checkbox" checked disabled>Arabic</label><label class="${b.langs.en ? 'on' : ''}"><input type="checkbox" ${b.langs.en ? 'checked' : ''} onchange="bfDraft.langs.en=this.checked;this.parentElement.classList.toggle('on',this.checked);bfEst()">English</label></div></div>
+      <div class="field-row"><div class="field"><label>Campaign start</label><input type="date" value="${b.startDate}" onchange="bfDraft.startDate=this.value;bfEst()"></div><div class="field"><label>Campaign end</label><input type="date" value="${b.endDate}" onchange="bfDraft.endDate=this.value"></div></div>
+      <div class="check-row"><label><input type="checkbox" ${b.showDates ? 'checked' : ''} onchange="bfDraft.showDates=this.checked">Show campaign dates on the creative</label></div>
+    </div>
+    <div class="bf-group"><h4><span class="n">3</span>What should it say?</h4>
+      <div class="field"><label>Advert copy / captions</label><textarea rows="3" placeholder="Headline, key message, call to action" oninput="bfDraft.copy=this.value">${esc(b.copy)}</textarea></div>
+      <div class="field"><label>USPs to include</label><textarea rows="3" placeholder="e.g. Off-road aesthetic, top off, lights on" oninput="bfDraft.usps=this.value">${esc(b.usps)}</textarea></div>
+      <div class="field"><label>Price and offers</label><textarea rows="2" placeholder="e.g. 10,999 with VAT, registration, insurance, 3 years / 60K km service" oninput="bfDraft.price=this.value">${esc(b.price)}</textarea></div>
+      <div class="field-row"><div class="field"><label>Terms (English)</label><textarea rows="2" oninput="bfDraft.termsEN=this.value">${esc(b.termsEN)}</textarea></div><div class="field"><label>Terms (Arabic)</label><textarea rows="2" dir="rtl" oninput="bfDraft.termsAR=this.value">${esc(b.termsAR)}</textarea></div></div>
+    </div>
+    <div class="bf-group"><h4><span class="n">4</span>References <span style="font-size:11px;font-weight:400;color:var(--muted);font-family:'Inter',sans-serif;text-transform:none;letter-spacing:0">Optional. Photos of the car, examples you like, or links.</span></h4>
+      <div id="bfRefs">${briefRefsHTML(clientCalId, b, clientPin, true)}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn sm" onclick="$('bfRefFile').click()">+ Upload image</button><input type="file" id="bfRefFile" accept="image/*" multiple style="display:none" onchange="bfUploadRefs(this)"><input id="bfRefUrl" placeholder="or paste a link" style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--border-2);border-radius:6px;font-size:12px"><button class="btn sm" onclick="bfAddLink()">Add link</button></div>
+    </div>
+    <div class="bf-group"><h4><span class="n">5</span>How many concepts?</h4>
+      <div class="concept-pick"><label class="${b.concepts === 1 ? 'on' : ''}"><input type="radio" name="bfc" ${b.concepts === 1 ? 'checked' : ''} onchange="bfDraft.concepts=1;renderBriefForm()" style="display:none"><b>1</b>Fastest turnaround<small>Recommended</small></label><label class="${b.concepts === 2 ? 'on' : ''}"><input type="radio" name="bfc" ${b.concepts === 2 ? 'checked' : ''} onchange="bfDraft.concepts=2;renderBriefForm()" style="display:none"><b>2</b>Two directions<small>Adds a working day</small></label></div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px">Our team can produce a maximum of 2 concepts per brief. One concept is quickest. Each concept is produced in every format and language you selected.</p>
+    </div>
+    <div id="bfEstBox"></div>`;
+  $('pmFoot').innerHTML = `<div class="left"></div><div class="right"><button class="btn" onclick="$('postModal').classList.remove('show')">Cancel</button><button class="btn primary" onclick="clSubmitBrief()">${b.editing ? 'Save changes' : 'Submit request'}</button></div>`;
+  $('postModal').classList.add('show'); $('pmClose').onclick = () => $('postModal').classList.remove('show');
+  bfEst();
+}
+function bfToggleFmt(k, on) { const b = bfDraft; if (on && !b.formats.includes(k)) b.formats.push(k); if (!on) b.formats = b.formats.filter(x => x !== k); document.querySelectorAll('.fmt-opt input[type=checkbox]').forEach(i => { i.parentElement.classList.toggle('on', i.checked); }); bfEst(); }
+function bfEst() {
+  const b = bfDraft; if (!$('bfEstBox')) return;
+  const e = briefEstimate(b, b.editing ? new Date(b.createdAt) : new Date());
+  const perList = briefFormats(b).length + ' format' + (briefFormats(b).length !== 1 ? 's' : '') + ' × ' + ((b.langs.ar ? 1 : 0) + (b.langs.en ? 1 : 0)) + ' language' + (((b.langs.ar ? 1 : 0) + (b.langs.en ? 1 : 0)) !== 1 ? 's' : '');
+  let warn = '';
+  if (e.per > 4) warn += `<div class="warn">This brief is ${e.per} creatives per concept. Briefs over 4 creatives add a working day to each stage.</div>`;
+  if (b.concepts === 2) warn += `<div class="warn">Two concepts adds a working day before concepts are ready.</div>`;
+  if (b.startDate && new Date(b.startDate + 'T00:00:00') < e.finalDue) warn += `<div class="warn">Your start date is before the earliest possible final delivery (${fmtDT(e.finalDue)}). Please allow more runway or expect a later start.</div>`;
+  $('bfEstBox').innerHTML = `<div class="est-box"><h4>Estimated timeline</h4><div class="est-row"><div class="est"><small>Picked up</small><b>${fmtDT(e.pickup)}</b></div><div class="est"><small>Concepts ready by</small><b>${fmtDT(e.conceptDue)}</b></div><div class="est"><small>Final ready by</small><b>${fmtDT(e.finalDue)}</b></div></div><div class="note">${perList} = <b>${e.per} creative${e.per !== 1 ? 's' : ''}</b> per concept, ${e.total} in total. Our studio works Monday to Friday, 9am to 6pm. Concepts take ${e.conceptDays} working day${e.conceptDays !== 1 ? 's' : ''}. The final takes ${e.finalDays} working day${e.finalDays !== 1 ? 's' : ''} from the moment you approve a concept, so "Final ready by" assumes same-day approval.</div>${warn}</div>`;
+}
+function bfUploadRefs(input) {
+  const files = [...input.files]; input.value = ''; const b = bfDraft;
+  files.forEach(f => { if (f.size > 8e6) { alert('Keep reference images under 8MB'); return; } const mime = f.type || 'image/jpeg'; const kvIdx = (b.refs || []).length ? Math.max(...b.refs.map(r => r.kvIdx || 0)) + 1 : 0; b.refs = b.refs || []; b.refs.push({ kvIdx, type: 'image', pending: true }); const slot = b.refs.length - 1; $('bfRefs').innerHTML = briefRefsHTML(clientCalId, b, clientPin, true); fetch(`/api/creative-upload?calId=${encodeURIComponent(clientCalId)}&postId=${encodeURIComponent(b.id)}&lang=ref-${kvIdx}&mime=${encodeURIComponent(mime)}`, { method: 'POST', body: f, headers: { 'content-type': mime } }).then(r => r.json()).then(d => { if (d.ok) { delete b.refs[slot].pending; b.cv = (b.cv || 0) + 1; } else b.refs.splice(slot, 1); $('bfRefs').innerHTML = briefRefsHTML(clientCalId, b, clientPin, true); }).catch(() => { b.refs.splice(slot, 1); $('bfRefs').innerHTML = briefRefsHTML(clientCalId, b, clientPin, true); }); });
+}
+function bfAddLink() { const u = $('bfRefUrl').value.trim(); if (!u) return; bfDraft.refs = bfDraft.refs || []; bfDraft.refs.push({ url: u }); $('bfRefUrl').value = ''; $('bfRefs').innerHTML = briefRefsHTML(clientCalId, bfDraft, clientPin, true); }
+function removeRef(i) { bfDraft.refs.splice(i, 1); $('bfRefs').innerHTML = briefRefsHTML(clientCalId, bfDraft, clientPin, true); }
+async function clSubmitBrief() {
+  const b = bfDraft;
+  if (!b.campaignName.trim()) { alert('Please give the campaign a name.'); return; }
+  if (!b.carModel.trim()) { alert('Please tell us which car model.'); return; }
+  if (!briefFormats(b).length) { alert('Please pick at least one ad format.'); return; }
+  if (!b.copy.trim() && !b.price.trim()) { alert('Please add some copy or an offer so we know what to say.'); return; }
+  b.refs = (b.refs || []).filter(r => !r.pending); b.customFormats = (b.customFormats || []).filter(c => c.label || c.size);
+  if (!b.submittedBy) b.submittedBy = 'Client';
+  localStorage.setItem('rich_cl_name', b.submittedBy);
+  if (b.editing) { const e = briefEstimate(b, new Date(b.createdAt)); b.conceptDueAt = e.conceptDue.toISOString(); delete b.editing; const i = clientData.briefs.findIndex(x => x.id === b.id); clientData.briefs[i] = b; $('postModal').classList.remove('show'); clBriefTab = 'active'; clientTab = 'briefs'; renderClient(); await clientBriefSend({ action: 'update', briefId: b.id, brief: b }); return; }
+  b.createdAt = new Date().toISOString(); const e = briefEstimate(b, new Date(b.createdAt)); b.conceptDueAt = e.conceptDue.toISOString(); b.status = 'Submitted'; b.history = [{ status: 'Submitted', at: b.createdAt, by: b.submittedBy }]; b.conceptMedia = []; b.finalMedia = []; b.fb = { concept: { status: '', comments: [] }, final: { status: '', comments: [] } }; delete b.editing;
+  clientData.briefs = clientData.briefs || []; clientData.briefs.unshift(b);
+  $('postModal').classList.remove('show'); clBriefTab = 'active'; clientTab = 'briefs'; renderClient();
+  setTimeout(() => $('bc-' + b.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  await clientBriefSend({ action: 'create', brief: b });
+}
+async function clientBriefSend(data) { try { const r = await fetch('/api/brief-client', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: clientCalId, pin: clientPin, ...data }) }); if (!r.ok) alert('Something went wrong saving your request. Please try again.'); } catch (e) { alert('Could not reach the server. Please check your connection and try again.'); } }
+async function clBriefDecide(id, kind, s) {
+  const b = clientData.briefs.find(x => x.id === id); if (!b) return; b.fb = b.fb || {}; b.fb[kind] = b.fb[kind] || { status: '', comments: [] };
+  const was = b.fb[kind].status; b.fb[kind].status = was === s ? '' : s;
+  const name = localStorage.getItem('rich_cl_name') || 'Client';
+  if (b.fb[kind].status === 'approved') { if (kind === 'concept') { b.status = 'Concept approved'; b.conceptApprovedAt = new Date().toISOString(); b.finalDueAt = addWorkDays(nextPickup(new Date()), 1 + (briefCreativeCount(b) > 4 ? 1 : 0)).toISOString(); } else { b.status = 'Approved'; b.finalApprovedAt = new Date().toISOString(); b.approvedBy = name; } (b.history = b.history || []).push({ status: b.status, at: new Date().toISOString(), by: name }); }
+  else if (was === 'approved') { if (kind === 'concept') { b.status = 'Concepts ready'; b.conceptApprovedAt = null; b.finalDueAt = null; } else { b.status = 'Final ready'; b.finalApprovedAt = null; b.approvedBy = null; } }
+  renderClient(); await clientBriefSend({ action: 'feedback', briefId: id, kind, status: b.fb[kind].status, by: name, briefStatus: b.status, conceptApprovedAt: b.conceptApprovedAt, finalApprovedAt: b.finalApprovedAt, finalDueAt: b.finalDueAt, approvedBy: b.approvedBy });
+}
+async function clBriefComment(id, kind) { const name = $('bnm-' + id).value.trim() || 'Client', t = $('bmsg-' + id).value.trim(); if (!t) return; localStorage.setItem('rich_cl_name', name); const b = clientData.briefs.find(x => x.id === id); b.fb = b.fb || {}; b.fb[kind] = b.fb[kind] || { status: '', comments: [] }; b.fb[kind].comments.push({ t, by: name, d: new Date().toISOString() }); renderClient(); $('bc-' + id)?.classList.add('open'); await clientBriefSend({ action: 'feedback', briefId: id, kind, comment: t, by: name }); }
+async function clBriefEditComment(id, kind, i) { const b = clientData.briefs.find(x => x.id === id); const cm = b.fb[kind].comments[i]; const t = prompt('Edit your comment:', cm.t); if (t === null) return; if (t.trim()) cm.t = t.trim(); else b.fb[kind].comments.splice(i, 1); renderClient(); $('bc-' + id)?.classList.add('open'); await clientBriefSend({ action: 'feedback', briefId: id, kind, replaceComments: b.fb[kind].comments }); }
+async function clBriefDeleteComment(id, kind, i) { if (!confirm('Delete this comment?')) return; const b = clientData.briefs.find(x => x.id === id); b.fb[kind].comments.splice(i, 1); renderClient(); $('bc-' + id)?.classList.add('open'); await clientBriefSend({ action: 'feedback', briefId: id, kind, replaceComments: b.fb[kind].comments }); }
+function clOpenBrief(id) { clientTab = 'briefs'; const b = clientData.briefs.find(x => x.id === id); clBriefTab = b && !briefIsActive(b) ? 'done' : 'active'; renderClient(); setTimeout(() => { const el = $('bc-' + id); if (el) { el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, 100); }
+
+/* ================================================================
+   AD BRIEFS: INTERNAL
+================================================================ */
+function briefsView(c) {
+  const briefs = getBriefs(c);
+  let h = calToolbar(c, briefTabs('internal'));
+  h += briefsListHTML(c.id, briefs, 'internal', null, briefTab);
+  return h;
+}
+function openBrief(id) {
+  const c = getCal(); const b = getBriefs(c).find(x => x.id === id); if (!b) return;
+  const idx = BRIEF_STATUSES.indexOf(b.status);
+  $('pmTitle').textContent = 'Ad brief: ' + (b.campaignName || 'Untitled');
+  const stepper = `<div class="status-stepper">${BRIEF_STATUSES.map((s, i) => `<div class="st ${i < idx ? 'done' : ''} ${i === idx ? 'now' : ''}" onclick="setBriefStatus('${id}','${s}')">${s}</div>`).join('')}</div>`;
+  const fbPanel = kind => { const fb = briefFb(b, kind); const un = (fb.comments || []).filter(x => !x.resolved).length; const cls = fb.status === 'approved' ? 'st-approved' : fb.status === 'declined' ? 'st-changes' : 'st-pending'; const tag = fb.status === 'approved' ? '<span class="badge approved">Client approved</span>' : fb.status === 'declined' ? '<span class="badge changes">Client requested changes</span>' : '<span class="badge draft">No decision yet</span>'; return `<div class="fb-panel ${cls}"><div class="fb-head"><h3>Client feedback on ${kind}</h3>${tag}${un ? `<span class="badge" style="background:var(--red);color:#fff">${un} to action</span>` : ''}</div>${(fb.comments || []).length ? fb.comments.map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'Client')}</strong><time>${fmtTime(cm.d)}</time><div class="comment-actions"><button class="fb-resolve ${cm.resolved ? 'done' : ''}" onclick="toggleBriefResolve('${id}','${kind}',${i})">${cm.resolved ? '&#10003; Actioned' : 'Mark actioned'}</button></div></div><div class="comment-text">${esc(cm.t)}</div></div></div>`).join('') + (!un ? '<div class="fb-done">&#10003; All notes actioned</div>' : '') : '<div class="fb-empty">No feedback yet.</div>'}</div>`; };
+  const mediaGrid = kind => { const arr = b[kind + 'Media'] || []; return `<div class="creative-grid" id="bgrid-${kind}">${arr.map((s, i) => `<div class="creative-thumb" style="cursor:pointer" onclick="openFullView(this.parentElement,'${kind}')">${s.type === 'video' ? `<video src="${creativeUrl(c.id, b.id, kind, s.kvIdx, b.cv)}"></video>` : `<img src="${creativeUrl(c.id, b.id, kind, s.kvIdx, b.cv)}" alt="">`}<button class="rm" onclick="event.stopPropagation();removeBriefMedia('${id}','${kind}',${i})">&times;</button></div>`).join('')}<div class="creative-add" onclick="$('bf-${kind}').click()"><span class="plus">+</span>Add</div></div><input type="file" id="bf-${kind}" accept="image/*,video/*" multiple style="display:none" onchange="briefUpload('${id}','${kind}',this)">`; };
+  const f = (k, v, wide, rtl) => `<div class="f ${wide ? 'wide' : ''}"><div class="k">${k}</div><div class="v" ${rtl ? 'dir="rtl"' : ''}>${v || '<span style="color:var(--muted-2)">—</span>'}</div></div>`;
+  $('pmBody').innerHTML = `${stepper}
+    ${idx >= 2 ? fbPanel('concept') : ''}${idx >= 5 ? fbPanel('final') : ''}
+    ${b.status === 'Submitted' ? `<div class="revision-bar needs"><div class="rb-text"><strong>New request</strong>Due for pickup ${fmtDT(nextPickup(new Date(b.createdAt)))}. Concepts due ${fmtDT(b.conceptDueAt)}.</div><button class="btn success" onclick="setBriefStatus('${id}','Concepts in progress')">Start concepts</button></div>` : ''}
+    ${b.status === 'Concepts in progress' ? `<div class="revision-bar sent"><div class="rb-text"><strong>Concepts due ${fmtDT(b.conceptDueAt)}</strong>Upload concept creatives below, then mark ready so the client can review.</div><button class="btn success" onclick="setBriefStatus('${id}','Concepts ready')" ${(b.conceptMedia || []).length ? '' : 'disabled title="Upload at least one concept first"'}>Mark concepts ready</button></div>` : ''}
+    ${b.status === 'Concept approved' ? `<div class="revision-bar needs"><div class="rb-text"><strong>Concept approved ${fmtDT(b.conceptApprovedAt)}</strong>Final due ${fmtDT(b.finalDueAt)}. Only minor changes allowed now (copy, colour, not direction).</div><button class="btn success" onclick="setBriefStatus('${id}','Final in progress')">Start final</button></div>` : ''}
+    ${b.status === 'Final in progress' ? `<div class="revision-bar sent"><div class="rb-text"><strong>Final due ${fmtDT(b.finalDueAt)}</strong>Upload the final creatives, then mark ready for sign-off.</div><button class="btn success" onclick="setBriefStatus('${id}','Final ready')" ${(b.finalMedia || []).length ? '' : 'disabled title="Upload the final first"'}>Mark final ready</button></div>` : ''}
+    ${b.status === 'Approved' ? `<div class="revision-bar sent"><div class="rb-text"><strong>Approved by ${esc(b.approvedBy || 'client')} ${fmtDT(b.finalApprovedAt)}</strong>Agency sign-off: ${b.agencySignoff ? esc(b.agencySignoff.by) + ' ' + fmtDT(b.agencySignoff.at) : 'not yet'}.</div>${b.agencySignoff ? `<button class="btn success" onclick="setBriefStatus('${id}','Scheduled')">Mark scheduled</button>` : `<button class="btn success" onclick="agencySignoff('${id}')">Sign off (agency)</button>`}</div>` : ''}
+    <div class="ed-section"><div class="ed-section-title">Concepts <span class="hint">${(b.conceptMedia || []).length} uploaded</span></div>${mediaGrid('concept')}</div>
+    <div class="ed-section"><div class="ed-section-title">Final creatives <span class="hint">${(b.finalMedia || []).length} uploaded</span></div>${mediaGrid('final')}</div>
+    <div class="ed-section"><div class="ed-section-title">Brief <span class="hint">Submitted ${fmtDT(b.createdAt)} by ${esc(b.submittedBy || 'client')}</span></div>
+      <div class="bm-fields">
+        ${f('Campaign', esc(b.campaignName))}${f('Car model', esc(b.carModel))}
+        ${f('Formats', `<div class="fmt-chips">${briefFmtChips(b)}</div>`, true)}
+        ${f('Languages', briefLangs(b))}${f('Concepts requested', b.concepts || 1)}
+        ${f('Campaign dates', (b.startDate ? fmtD(b.startDate) : '') + (b.endDate ? ' to ' + fmtD(b.endDate) : '') + (b.showDates ? ' (show on creative)' : ''))}${f('Creatives per concept', briefCreativeCount(b))}
+        ${f('Copy / captions', esc(b.copy), true)}${f('USPs', esc(b.usps), true)}${f('Price & offers', esc(b.price), true)}
+        ${f('Terms (EN)', esc(b.termsEN))}${f('Terms (AR)', esc(b.termsAR), false, true)}
+        ${(b.refs || []).length ? f('References', briefRefsHTML(c.id, b, null, false), true) : ''}
+        ${f('ClickUp task', `<div style="display:flex;gap:6px"><input id="bmClickup" value="${esc(b.clickupLink || '')}" placeholder="Paste ClickUp task link" style="flex:1;padding:6px 8px;border:1px solid var(--border-2);border-radius:5px;font-size:12px" onchange="saveBriefField('${id}','clickupLink',this.value)">${b.clickupLink ? `<a href="${esc(b.clickupLink)}" target="_blank" class="btn xs">Open</a>` : ''}</div>`, true)}
+      </div>
+    </div>
+    <div class="ed-section"><div class="ed-section-title">Campaign dates <span class="hint">Edit if the client's dates need to move</span></div><div class="field-row"><div class="field"><label>Start</label><input type="date" value="${b.startDate || ''}" onchange="saveBriefField('${id}','startDate',this.value)"></div><div class="field"><label>End</label><input type="date" value="${b.endDate || ''}" onchange="saveBriefField('${id}','endDate',this.value)"></div></div></div>`;
+  $('pmFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deleteBrief('${id}')">Delete brief</button></div><div class="right"><button class="btn" onclick="copyBriefForClickUp('${id}')">&#128203; Copy for ClickUp</button><button class="btn primary" onclick="$('postModal').classList.remove('show');renderCalView()">Done</button></div>`;
+  $('postModal').classList.add('show'); $('pmClose').onclick = () => { $('postModal').classList.remove('show'); renderCalView(); };
+}
+function setBriefStatus(id, s) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); if (!b) return; b.status = s; (b.history = b.history || []).push({ status: s, at: new Date().toISOString(), by: localStorage.getItem('rich_team_name') || 'Agency' }); if (s === 'Concepts ready') { b.fb = b.fb || {}; b.fb.concept = b.fb.concept || { status: '', comments: [] }; b.fb.concept.status = ''; } if (s === 'Final ready') { b.fb = b.fb || {}; b.fb.final = b.fb.final || { status: '', comments: [] }; b.fb.final.status = ''; } saveCalendars(); openBrief(id); }
+function agencySignoff(id) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); const by = prompt('Sign off as:', localStorage.getItem('rich_team_name') || 'Tom'); if (!by) return; localStorage.setItem('rich_team_name', by); b.agencySignoff = { by, at: new Date().toISOString() }; saveCalendars(); openBrief(id); }
+function saveBriefField(id, k, v) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); if (b) { b[k] = v; saveCalendars(); } }
+function toggleBriefResolve(id, kind, i) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); const cm = briefFb(b, kind).comments[i]; if (cm) cm.resolved = !cm.resolved; saveCalendars(); openBrief(id); }
+function deleteBrief(id) { if (!confirm('Delete this ad brief permanently?')) return; const c = getCal(); c.briefs = getBriefs(c).filter(b => b.id !== id); saveCalendars(); $('postModal').classList.remove('show'); renderCalView(); }
+function removeBriefMedia(id, kind, i) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); b[kind + 'Media'].splice(i, 1); b.cv = (b.cv || 0) + 1; saveCalendars(); openBrief(id); }
+function briefUpload(id, kind, input) {
+  const files = [...input.files]; input.value = ''; const c = getCal();
+  files.forEach(f => { const isVid = f.type.startsWith('video/'); if (f.size > (isVid ? 24e6 : 8e6)) { alert('File too large'); return; } const mime = f.type || 'image/jpeg';
+    uploadQueue = uploadQueue.then(async () => { const b = getBriefs(c).find(x => x.id === id); if (!b) return; const key = kind + 'Media'; b[key] = b[key] || []; const kvIdx = b[key].length ? Math.max(...b[key].map(s => s.kvIdx || 0)) + 1 : 0; const grid = $('bgrid-' + kind); let ph; if (grid) { ph = document.createElement('div'); ph.className = 'creative-thumb uploading'; ph.textContent = 'Uploading…'; grid.insertBefore(ph, grid.querySelector('.creative-add')); } try { const r = await fetch(`/api/creative-upload?calId=${encodeURIComponent(c.id)}&postId=${encodeURIComponent(id)}&lang=${kind}-${kvIdx}&mime=${encodeURIComponent(mime)}`, { method: 'POST', body: f, headers: { 'content-type': mime } }); const d = await r.json(); if (d.ok) { b[key].push({ type: isVid ? 'video' : 'image', kvIdx }); b.cv = (b.cv || 0) + 1; await saveCalendars(); } } catch (e) { console.error(e); } if (ph) ph.remove(); openBrief(id); }); });
+}
+function copyBriefForClickUp(id) {
+  const c = getCal(); const b = getBriefs(c).find(x => x.id === id); if (!b) return;
+  const link = location.origin + location.pathname + '?calendar=' + c.id;
+  const t = `AD BRIEF: ${b.campaignName} | ${b.carModel}
+Client: ${c.name}
+Submitted: ${fmtDT(b.createdAt)} by ${b.submittedBy || 'client'}
+Status: ${b.status}
+
+FORMATS (${briefCreativeCount(b)} creatives per concept)
+${briefFormats(b).map(f => `- ${f.print ? 'GDN Newspaper ' : ''}${f.label}: ${f.size}`).join('\n')}
+Languages: ${briefLangs(b)}
+Concepts requested: ${b.concepts || 1}
+
+DEADLINES (studio hours Mon-Fri 9-6)
+Concepts due: ${fmtDT(b.conceptDueAt)}
+Final due: ${b.finalDueAt ? fmtDT(b.finalDueAt) : '1 working day after concept approval'}
+Campaign: ${b.startDate ? fmtD(b.startDate) : 'TBC'}${b.endDate ? ' to ' + fmtD(b.endDate) : ''}${b.showDates ? ' (SHOW DATES ON CREATIVE)' : ''}
+
+COPY / CAPTIONS
+${b.copy || '-'}
+
+USPs
+${b.usps || '-'}
+
+PRICE & OFFERS
+${b.price || '-'}
+
+TERMS
+EN: ${b.termsEN || '-'}
+AR: ${b.termsAR || '-'}
+
+REFERENCES
+${(b.refs || []).map(r => r.url ? '- ' + r.url : '- ' + location.origin + creativeUrl(c.id, b.id, 'ref', r.kvIdx, b.cv)).join('\n') || '- none'}
+
+Client portal: ${link}`;
+  navigator.clipboard.writeText(t).then(() => alert('Brief copied. Paste it into the ClickUp task description.')).catch(() => prompt('Copy this:', t));
+}
+function openCalendarToBrief(calId, bid) { openCalendar(calId); viewMode = 'briefs'; renderCalView(); setTimeout(() => openBrief(bid), 200); }
+
 /* ================================================================
    CLIENT: GATE
 ================================================================ */
@@ -981,20 +1505,23 @@ function renderClient() {
 
   let h = `<div class="cl-header"><img src="${LOGO}" alt="RICH"><span class="cl-badge">Client review</span><h1>${esc(c.name)}</h1></div><div class="cl-wrap">`;
   h += `<div class="cl-hero"><h2>${esc(c.name)}</h2><p>${esc(c.intro || 'Please review the content below. Approve what works, or request changes and tell us what to adjust.')}</p>
-    <div class="steps"><div><span class="n">1</span>Review each post</div><div><span class="n">2</span>Approve or request changes</div><div><span class="n">3</span>Leave specific feedback</div></div>
-    <div class="stats"><div><strong>${allMonth.length}</strong><span>Posts</span></div><div><strong>${creatives}</strong><span>Creatives</span></div><div><strong style="color:#4ade80">${approved}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${pending}</strong><span>To review</span></div>${changes ? `<div><strong style="color:#fca5a5">${changes}</strong><span>Changes</span></div>` : ''}</div></div>`;
-  h += `<div class="cl-toolbar"><div class="left">${prevM ? `<button class="month-nav" onclick="clientGo('${prevM}')">&lsaquo;</button>` : '<span style="width:34px"></span>'}<h2>${MONTHS[m]} ${y}</h2>${nextM ? `<button class="month-nav" onclick="clientGo('${nextM}')">&rsaquo;</button>` : '<span style="width:34px"></span>'}<div class="view-tabs"><button class="${clientTab === 'review' ? 'active' : ''}" onclick="clientTab='review';renderClient()">Review board</button><button class="${clientTab === 'calendar' ? 'active' : ''}" onclick="clientTab='calendar';renderClient()">Calendar</button></div></div>
-    <div class="right"><div class="filter-pills">${[['all', 'All'], ['pending', 'To review'], ['approved', 'Approved'], ['changes', 'Changes']].map(([k, l]) => `<button class="filter-pill ${clientFilter === k ? 'active' : ''}" onclick="clientFilter='${k}';renderClient()">${l}</button>`).join('')}</div>
+    <div class="steps"><div><span class="n">1</span>Review each post</div><div><span class="n">2</span>Approve or request changes</div><div><span class="n">3</span>Leave specific feedback</div><div><span class="n">4</span>Need an ad? Send us a brief</div></div><div class="cta"><button class="btn" onclick="clNewBrief()">&#128227; Request an ad</button>${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill" style="margin-left:8px;background:#fff;color:var(--client)">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length} ad${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length !== 1 ? 's' : ''} awaiting your approval</span>` : ''}</div>
+    <div class="stats"><div><strong>${allMonth.length}</strong><span>Posts</span></div><div><strong>${creatives}</strong><span>Creatives</span></div><div><strong style="color:#4ade80">${approved}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${pending}</strong><span>To review</span></div>${changes ? `<div><strong style="color:#fca5a5">${changes}</strong><span>Changes</span></div>` : ''}<div><strong>${(c.briefs || []).filter(briefIsActive).length}</strong><span>Ad requests</span></div></div></div>`;
+  h += ganttHTML(c.briefs || [], 'clOpenBrief', { client: true, showDone: false, cta: ' <a href="#" onclick="event.preventDefault();clNewBrief()">Request an ad</a>' });
+  h += `<div class="cl-toolbar"><div class="left">${prevM ? `<button class="month-nav" onclick="clientGo('${prevM}')">&lsaquo;</button>` : '<span style="width:34px"></span>'}<h2>${MONTHS[m]} ${y}</h2>${nextM ? `<button class="month-nav" onclick="clientGo('${nextM}')">&rsaquo;</button>` : '<span style="width:34px"></span>'}<div class="view-tabs"><button class="${clientTab === 'review' ? 'active' : ''}" onclick="clientTab='review';renderClient()">Review board</button><button class="${clientTab === 'calendar' ? 'active' : ''}" onclick="clientTab='calendar';renderClient()">Calendar</button><button class="${clientTab === 'briefs' ? 'active' : ''}" onclick="clientTab='briefs';renderClient()">Ad requests${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length}</span>` : ''}</button></div></div>
+    <div class="right">${clientTab === 'briefs' ? `<button class="btn sm primary" onclick="clNewBrief()">+ Request an ad</button>` + briefTabs('client') : ''}<div class="filter-pills" style="${clientTab === 'briefs' ? 'display:none' : ''}">${[['all', 'All'], ['pending', 'To review'], ['approved', 'Approved'], ['changes', 'Changes']].map(([k, l]) => `<button class="filter-pill ${clientFilter === k ? 'active' : ''}" onclick="clientFilter='${k}';renderClient()">${l}</button>`).join('')}</div>
     <div class="sizer">${[['l', 'Large', '<rect x="5" y="5" width="14" height="14" rx="2"/>'], ['m', 'Medium', '<rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/>'], ['s', 'Small', '<rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/>']].map(([k, t, svg]) => `<button class="${clientSize === k ? 'on' : ''}" title="${t}" onclick="clientSize='${k}';localStorage.setItem('rich_cl_sz','${k}');renderClient()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></button>`).join('')}</div></div></div>`;
 
-  if (clientTab === 'calendar') {
+  if (clientTab === 'briefs') {
+    h += briefsListHTML(clientCalId, c.briefs || [], 'client', clientPin, clBriefTab);
+  } else if (clientTab === 'calendar') {
     const dim = new Date(y, m + 1, 0).getDate(), fd = (new Date(y, m, 1).getDay() + 6) % 7, today = new Date();
     h += '<div class="cal-scroll"><div class="cal-grid">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-head">${d}</div>`).join('');
     for (let i = 0; i < fd; i++) h += '<div class="cal-day empty"></div>';
     for (let d = 1; d <= dim; d++) {
       const ds = mk + '-' + String(d).padStart(2, '0'); const dp = allMonth.filter(p => p.date === ds); const cr = dp.reduce((s, p) => s + countCreatives(p), 0);
       const isT = d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
-      h += `<div class="cal-day cl-cal-day" ${dp.length ? `onclick="clientTab='review';clientFilter='all';renderClient();setTimeout(()=>$('cp-${dp[0].id}')?.scrollIntoView({behavior:'smooth',block:'start'}),150)"` : ''}><div class="dn ${isT ? 'today' : ''}">${d}</div>${dp.length ? `<div class="big">${dp.length}</div><div class="dots">${dp.map(p => `<div class="dot" style="background:${PLAT_COLORS[(p.platforms || [])[0]] || '#8b5cf6'}" title="${esc(p.topic || '')}"></div>`).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div>` : ''}</div>`;
+      h += `<div class="cal-day cl-cal-day" ${dp.length ? `onclick="clientTab='review';clientFilter='all';renderClient();setTimeout(()=>$('cp-${dp[0].id}')?.scrollIntoView({behavior:'smooth',block:'start'}),150)"` : ''}><div class="dn ${isT ? 'today' : ''}">${d}</div>${dp.length ? `<div class="big">${dp.length}</div><div class="dots">${dp.map(p => `<div class="dot" style="background:${PLAT_COLORS[(p.platforms || [])[0]] || '#8b5cf6'}" title="${esc(p.topic || '')}"></div>`).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div>` : ''}${adBarsHTML(c.briefs || [], ds, 'clOpenBrief')}</div>`;
     }
     const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
     h += '</div></div>';

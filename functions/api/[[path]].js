@@ -60,7 +60,7 @@ export async function onRequest(context) {
           carouselEN:p.carouselEN||[], carouselAR:p.carouselAR||[], markedUpdated:!!p.markedUpdated, cv:p.cv||0, revisedAt:p.revisedAt||null, dimensions:p.dimensions||'',
           ref: r?{platform:r.platform,embedId:r.embedId,shortcode:r.shortcode,url:r.url,short:r.short,mtype:r.mtype,cover:r.cover||''}:null,
           feedback:(c.feedback&&c.feedback[p.id])||{status:'',comments:[]} }; });
-      return json({ name:c.name, intro:c.intro||'', calId:id, posts });
+      return json({ name:c.name, intro:c.intro||'', calId:id, posts, briefs:c.briefs||[], carModels:c.carModels||[] });
     }
     if (path === 'calendar-feedback' && request.method === 'POST') {
       const b = await request.json(); const cals=(await kv.get('calendars','json'))||[]; const c=cals.find(x=>x.id===b.id);
@@ -73,6 +73,25 @@ export async function onRequest(context) {
       await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
     }
 
+
+    // Ad briefs (client, PIN)
+    if (path === 'brief-client' && request.method === 'POST') {
+      const b = await request.json(); const cals=(await kv.get('calendars','json'))||[]; const c=cals.find(x=>x.id===b.id);
+      if (!c) return json({ error:'notfound' }, 404);
+      if ((c.pin||'') !== (b.pin||'')) return json({ error:'pin' }, 403);
+      c.briefs = c.briefs || [];
+      if (b.action === 'create' && b.brief) { if (!c.briefs.some(x=>x.id===b.brief.id)) c.briefs.unshift(b.brief); }
+      else if (b.action === 'update' && b.brief) { const i=c.briefs.findIndex(x=>x.id===b.briefId); if (i<0) return json({ error:'notfound' },404); if (c.briefs[i].status!=='Submitted') return json({ error:'locked' },409); const keep=c.briefs[i]; c.briefs[i]={...keep,...b.brief,status:keep.status,history:keep.history,conceptMedia:keep.conceptMedia,finalMedia:keep.finalMedia,fb:keep.fb}; }
+      else if (b.action === 'delete') { const x=c.briefs.find(y=>y.id===b.briefId); if (x && x.status!=='Submitted') return json({ error:'locked' },409); c.briefs=c.briefs.filter(y=>y.id!==b.briefId); }
+      else if (b.action === 'feedback') {
+        const x=c.briefs.find(y=>y.id===b.briefId); if (!x) return json({ error:'notfound' },404);
+        x.fb=x.fb||{}; x.fb[b.kind]=x.fb[b.kind]||{status:'',comments:[]};
+        if (b.replaceComments) x.fb[b.kind].comments=b.replaceComments;
+        else if (b.comment) x.fb[b.kind].comments.push({ t:b.comment, by:b.by||'Client', d:new Date().toISOString() });
+        if (b.status!==undefined) { x.fb[b.kind].status=b.status; if (b.briefStatus) { x.status=b.briefStatus; (x.history=x.history||[]).push({status:b.briefStatus,at:new Date().toISOString(),by:b.by||'Client'}); } x.conceptApprovedAt=b.conceptApprovedAt??x.conceptApprovedAt; x.finalApprovedAt=b.finalApprovedAt??x.finalApprovedAt; x.finalDueAt=b.finalDueAt??x.finalDueAt; x.approvedBy=b.approvedBy??x.approvedBy; }
+      } else return json({ error:'bad action' },400);
+      await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
+    }
     // Creative asset upload/serve (stored per-asset in KV to handle large video files)
     if (path === 'creative-upload' && request.method === 'POST') {
       const ct = request.headers.get('content-type')||'';
