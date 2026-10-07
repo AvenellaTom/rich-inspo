@@ -88,7 +88,7 @@ export async function onRequest(context) {
         x.fb=x.fb||{}; x.fb[b.kind]=x.fb[b.kind]||{status:'',comments:[]};
         if (b.replaceComments) x.fb[b.kind].comments=b.replaceComments;
         else if (b.comment) x.fb[b.kind].comments.push({ t:b.comment, by:b.by||'Client', d:new Date().toISOString() });
-        if (b.status!==undefined) { x.fb[b.kind].status=b.status; if (b.briefStatus) { x.status=b.briefStatus; (x.history=x.history||[]).push({status:b.briefStatus,at:new Date().toISOString(),by:b.by||'Client'}); } x.conceptApprovedAt=b.conceptApprovedAt??x.conceptApprovedAt; x.finalApprovedAt=b.finalApprovedAt??x.finalApprovedAt; x.finalDueAt=b.finalDueAt??x.finalDueAt; x.approvedBy=b.approvedBy??x.approvedBy; }
+        if (b.status!==undefined) { x.fb[b.kind].status=b.status; if (b.briefStatus) { x.status=b.briefStatus; (x.history=x.history||[]).push({status:b.briefStatus,at:new Date().toISOString(),by:b.by||'Client'}); } x.conceptApprovedAt=b.conceptApprovedAt??x.conceptApprovedAt; x.finalApprovedAt=b.finalApprovedAt??x.finalApprovedAt; x.finalDueAt=b.finalDueAt??x.finalDueAt; x.masterDueAt=b.masterDueAt??x.masterDueAt; x.approvedBy=b.approvedBy??x.approvedBy; }
       } else return json({ error:'bad action' },400);
       await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
     }

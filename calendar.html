@@ -595,6 +595,34 @@ input,textarea,select{font-family:inherit}
 .cl-hero .cta .btn:hover{transform:translateY(-1px);color:var(--client)}
 .ad-pill{display:inline-flex;align-items:center;gap:4px;background:#fbbf24;color:#000;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em}
 
+
+/* Day gallery */
+.dayview{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+.dayview .dv-close{position:absolute;top:14px;right:14px;color:#fff;font-size:32px;background:none;border:none;cursor:pointer;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.dayview .dv-close:hover{background:rgba(255,255,255,.1)}
+.dayview .dv-head{color:#fff;text-align:center;margin-bottom:12px}
+.dayview .dv-head h2{font-size:22px}
+.dayview .dv-head .dv-count{font-size:12px;opacity:.7}
+.dayview .dv-stage{position:relative;width:min(92vw,520px);display:flex;flex-direction:column;background:#111;border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+.dayview .dv-media{width:100%;aspect-ratio:4/5;background:#0a0a0a;position:relative;max-height:62vh}
+.dayview .dv-media img,.dayview .dv-media video{width:100%;height:100%;object-fit:contain}
+.dayview .dv-media .carousel{position:absolute;inset:0}
+.dayview .dv-media .carousel-slide img,.dayview .dv-media .carousel-slide video{object-fit:contain}
+.dayview .dv-media .no-media{display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-size:13px}
+.dayview .dv-info{padding:12px 16px;color:#fff;display:flex;align-items:center;gap:12px}
+.dayview .dv-info .plat-icon{width:34px;height:34px;background:#fff;border-radius:8px;padding:6px}
+.dayview .dv-info .plat-icon svg{width:22px;height:22px}
+.dayview .dv-info h4{font-size:15px;line-height:1.2;margin-bottom:2px}
+.dayview .dv-info .sub{font-size:11px;opacity:.7}
+.dayview .dv-info .badge{margin-left:auto;flex-shrink:0}
+.dayview .dv-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.92);border:none;font-size:24px;cursor:pointer;z-index:5;box-shadow:0 2px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
+.dayview .dv-nav.prev{left:-60px}.dayview .dv-nav.next{right:-60px}
+@media(max-width:700px){.dayview .dv-nav.prev{left:6px}.dayview .dv-nav.next{right:6px}}
+.dayview .dv-dots{display:flex;gap:6px;justify-content:center;margin-top:14px;flex-wrap:wrap;max-width:90vw}
+.dayview .dv-dots .dd{width:10px;height:10px;border-radius:50%;cursor:pointer;opacity:.4;border:2px solid #fff;box-sizing:border-box}
+.dayview .dv-dots .dd.on{opacity:1;transform:scale(1.3)}
+.dayview .dv-open{margin-top:12px}
+.dayview .dv-open .btn{background:#fff;color:#111;border:none;font-weight:600}
 /* Print */
 @media print{.int-header,.cl-header,.int-cal-toolbar,.cl-toolbar,.month-nav,.btn{display:none!important}body{background:#fff}}
 
@@ -697,6 +725,8 @@ function migrateData() {
   calendars.forEach(c => (c.posts || []).forEach(p => {
     ['carouselEN', 'carouselAR'].forEach(k => (p[k] || []).forEach((s, i) => { if (s.kvIdx === undefined) { s.kvIdx = s.idx !== undefined ? s.idx : i; changed = true; } }));
     if (p.status === 'Ready to Review') { p.status = 'Ready for Review'; changed = true; }
+  }));
+  calendars.forEach(c => (c.briefs || []).forEach(b => { if (!b.concepts) { b.concepts = 2; changed = true; }
   }));
   if (changed) saveCalendars();
 }
@@ -931,9 +961,9 @@ function monthView(c) {
     const ap = dp.filter(p => getFb(c, p.id).status === 'approved').length;
     const ch = dp.filter(p => getFb(c, p.id).status === 'declined').length;
     const un = dp.reduce((s, p) => s + unresolved(getFb(c, p.id)), 0);
-    h += `<div class="cal-day int-cal-day" ondragover="event.preventDefault()" ondrop="dropPost(event,'${ds}')" ${dp.length ? `onclick="viewMode='board';boardFilter='all';renderCalView();setTimeout(()=>document.querySelector('[data-pid=\'${dp[0].id}\']')?.scrollIntoView({behavior:'smooth',block:'start'}),100)"` : ''}>
+    h += `<div class="cal-day int-cal-day" ondragover="event.preventDefault()" ondrop="dropPost(event,'${ds}')" ${dp.length ? `onclick="intDayView('${ds}')"` : ''}>
       <div class="dn ${isT ? 'today' : ''}">${d}</div>
-      ${dp.length ? `<div class="big">${dp.length}</div><div class="dots">${dp.map(p => `<div class="dot" draggable="true" ondragstart="event.stopPropagation();dragPostStart(event,'${p.id}')" onclick="event.stopPropagation();editPost('${p.id}')" style="background:${PLAT_COLORS[(p.platforms || [])[0]] || '#8b5cf6'}" title="${esc(p.topic || 'Untitled')}"></div>`).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div><div class="fbs">${ap ? `<span class="ok">${ap}&#10003;</span>` : ''}${ch ? `<span class="ch">${ch}!</span>` : ''}${un ? `<span class="un">${un}</span>` : ''}</div>` : ''}
+      ${dp.length ? `<div class="big">${dp.reduce((s, p) => s + Math.max((p.platforms || []).length, 1), 0)}</div><div class="dots">${dp.flatMap(p => ((p.platforms || []).length ? p.platforms : ['Other']).map(pl => `<div class="dot" draggable="true" ondragstart="event.stopPropagation();dragPostStart(event,'${p.id}')" onclick="event.stopPropagation();editPost('${p.id}')" style="background:${PLAT_COLORS[pl] || '#8b5cf6'}" title="${esc(p.topic || 'Untitled')} · ${esc(pl)}"></div>`)).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div><div class="fbs">${ap ? `<span class="ok">${ap}&#10003;</span>` : ''}${ch ? `<span class="ch">${ch}!</span>` : ''}${un ? `<span class="un">${un}</span>` : ''}</div>` : ''}
       ${adBarsHTML(getBriefs(c), ds, 'openBrief')}<div class="add" onclick="event.stopPropagation();addPost('${ds}')">+ Add</div></div>`;
   }
   const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
@@ -1135,14 +1165,29 @@ function nextPickup(d) {
 function addWorkDays(d, n) { d = new Date(d); let c = 0; while (c < n) { d.setDate(d.getDate() + 1); if (!isWeekend(d)) c++; } d.setHours(WORK_END, 0, 0, 0); return d; }
 function briefCreativeCount(b) { const f = (b.formats || []).length + (b.customFormats || []).length; const l = (b.langs?.ar ? 1 : 0) + (b.langs?.en ? 1 : 0); return f * Math.max(l, 1); }
 // Each stage: by 18:00 same working day if it starts before midday, otherwise 18:00 the next working day.
-function stageDue(from) { const p = nextPickup(from); if (p.getHours() < 12) { const d = new Date(p); d.setHours(WORK_END, 0, 0, 0); return d; } return addWorkDays(p, 1); }
-function briefEstimate(b, from) {
-  const per = briefCreativeCount(b); const concepts = b.concepts || 1;
-  const pickup = nextPickup(from || new Date());
-  const conceptDue = stageDue(pickup);
-  const finalDue = stageDue(conceptDue); // assumes approval as soon as concepts land
-  return { pickup, conceptDue, finalDue, per, total: per * concepts, hours: Math.round((finalDue - pickup) / 36e5) };
+// Working-hours arithmetic: add N hours of studio time (Mon-Fri 9-18), rolling over evenings and weekends.
+function addWorkHours(from, hours) {
+  let d = nextPickup(new Date(from)); let left = hours;
+  while (left > 0) { const end = new Date(d); end.setHours(WORK_END, 0, 0, 0); const avail = (end - d) / 36e5; if (left <= avail) { d = new Date(d.getTime() + left * 36e5); left = 0; } else { left -= avail; d = new Date(end.getTime() + 1000); d = nextPickup(d); } }
+  return d;
 }
+const BRIEF_STAGE_HOURS = { brief: 1, concept: 2, review: 2, master: 2, resize: 1 };
+function briefStageHours(b) { const concepts = b.concepts || 2; const langs = (b.langs?.ar ? 1 : 0) + (b.langs?.en ? 1 : 0) || 1; return { brief: BRIEF_STAGE_HOURS.brief, concepts: BRIEF_STAGE_HOURS.concept * concepts, review: BRIEF_STAGE_HOURS.review, masters: BRIEF_STAGE_HOURS.master * langs, review2: BRIEF_STAGE_HOURS.review, resize: BRIEF_STAGE_HOURS.resize, concepts_n: concepts, langs_n: langs }; }
+function stageDue(from) { return addWorkHours(from, BRIEF_STAGE_HOURS.master + BRIEF_STAGE_HOURS.resize); }
+function briefEstimate(b, from) {
+  const sh = briefStageHours(b); const per = briefCreativeCount(b);
+  const pickup = nextPickup(from || new Date());
+  const briefedAt = addWorkHours(pickup, sh.brief);
+  const conceptDue = addWorkHours(briefedAt, sh.concepts);
+  const conceptReviewBy = addWorkHours(conceptDue, sh.review);
+  const masterDue = addWorkHours(conceptReviewBy, sh.masters);
+  const finalReviewBy = addWorkHours(masterDue, sh.review2);
+  const finalDue = addWorkHours(finalReviewBy, sh.resize);
+  const studio = sh.brief + sh.concepts + sh.masters + sh.resize, client = sh.review + sh.review2;
+  return { pickup, briefedAt, conceptDue, conceptReviewBy, masterDue, finalReviewBy, finalDue, per, total: per * sh.concepts_n, sh, studio, client, hours: Math.round((finalDue - pickup) / 36e5) };
+}
+function finalDueFromApproval(b, approvedAt) { const sh = briefStageHours(b); return addWorkHours(addWorkHours(addWorkHours(approvedAt, sh.masters), sh.review2), sh.resize); }
+function masterDueFromApproval(b, approvedAt) { return addWorkHours(approvedAt, briefStageHours(b).masters); }
 const fmtDT = d => d ? new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 const fmtD = d => d ? new Date(d + (String(d).length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
 const briefFormats = b => [...(b.formats || []).map(k => AD_FORMATS.find(f => f.key === k)).filter(Boolean), ...(b.customFormats || []).map(c => ({ key: 'custom', label: c.label || 'Custom', size: c.size || '', custom: true }))];
@@ -1191,7 +1236,7 @@ function ganttHTML(briefs, onClick, opts = {}) {
     let bars = '';
     bars += bar('concept', pickup, b.conceptDueAt, 'Concept', 'Concept due ' + fmtDT(b.conceptDueAt));
     if (st === 'Concepts ready') bars += bar('wait', b.conceptDueAt, b.conceptApprovedAt || now, 'Awaiting approval');
-    if (idx >= 3) { const fs = b.conceptApprovedAt || b.conceptDueAt; bars += bar('final', fs, b.finalDueAt || stageDue(new Date(fs)), 'Final', 'Final due ' + fmtDT(b.finalDueAt)); if (st === 'Final ready') bars += bar('wait', b.finalDueAt, b.finalApprovedAt || now, 'Awaiting approval'); }
+    if (idx >= 3) { const fs = b.conceptApprovedAt || b.conceptDueAt; bars += bar('final', fs, b.finalDueAt || finalDueFromApproval(b, new Date(fs)), 'Final', 'Final due ' + fmtDT(b.finalDueAt)); if (st === 'Final ready') bars += bar('wait', b.finalDueAt, b.finalApprovedAt || now, 'Awaiting approval'); }
     if (b.startDate && b.endDate) { const live = idx >= 6; bars += bar('live ' + (st === 'Complete' ? 'done' : live ? '' : 'planned'), b.startDate + 'T00:00:00', b.endDate + 'T23:59:59', (live ? 'Live ' : 'Planned ') + fmtD(b.startDate) + ' to ' + fmtD(b.endDate)); }
     return `<div class="g-label" onclick="${onClick}('${b.id}')"><b>${esc(b.campaignName || 'Untitled')} ${b.carModel ? '· ' + esc(b.carModel) : ''}</b><span class="sub"><span class="badge ${BRIEF_CLASS[st] || 'b-submitted'}" style="font-size:9px;padding:1px 6px">${esc(opts.client ? BRIEF_CLIENT_LABEL[st] || st : st)}</span> ${briefCreativeCount(b)} cr</span></div><div class="g-row"><div class="g-rowbg">${bgs}</div><div class="g-today" style="left:${pct(now)}%"></div>${bars}</div>`;
   };
@@ -1214,10 +1259,11 @@ function briefTimelineHTML(b) {
   return `<div class="timeline">
     ${step(true, false, 'Submitted', fmtDT(b.createdAt) + (b.submittedBy ? ' by ' + esc(b.submittedBy) : ''))}
     ${step(idx >= 1, idx === 0, 'Picked up', fmtDT(pickup))}
-    ${step(idx >= 2, idx === 1, 'Concepts ready', 'by ' + fmtDT(b.conceptDueAt))}
-    ${step(idx >= 3, idx === 2, 'Concept approved', b.conceptApprovedAt ? fmtDT(b.conceptApprovedAt) : 'awaiting your approval')}
-    ${step(idx >= 5, idx === 3 || idx === 4, 'Final ready', b.finalDueAt ? 'by ' + fmtDT(b.finalDueAt) : 'same day if approved before noon, otherwise next working day')}
-    ${step(idx >= 6, idx === 5, 'Final approved', b.finalApprovedAt ? fmtDT(b.finalApprovedAt) + (b.approvedBy ? ' by ' + esc(b.approvedBy) : '') : 'awaiting your approval')}
+    ${step(idx >= 2, idx === 1, (b.concepts || 2) === 2 ? 'Two concepts ready' : 'Concept ready', 'by ' + fmtDT(b.conceptDueAt))}
+    ${step(idx >= 3, idx === 2, 'Concept approved', b.conceptApprovedAt ? fmtDT(b.conceptApprovedAt) : 'awaiting your approval (' + BRIEF_STAGE_HOURS.review + 'h window)')}
+    ${step(idx >= 5, idx === 3 || idx === 4, 'Master design ready', b.masterDueAt ? 'by ' + fmtDT(b.masterDueAt) : briefStageHours(b).masters + 'h after approval')}
+    ${step(idx >= 6, idx === 5, 'Final approved', b.finalApprovedAt ? fmtDT(b.finalApprovedAt) + (b.approvedBy ? ' by ' + esc(b.approvedBy) : '') : 'awaiting your approval (' + BRIEF_STAGE_HOURS.review + 'h window)')}
+    ${step(idx >= 6 && !!b.finalApprovedAt, false, 'Resized to all formats', b.finalDueAt ? 'by ' + fmtDT(b.finalDueAt) : BRIEF_STAGE_HOURS.resize + 'h after approval')}
     ${b.startDate ? step(idx >= 8, idx === 6 || idx === 7, 'Live', fmtD(b.startDate) + (b.endDate ? ' to ' + fmtD(b.endDate) : '')) : ''}
   </div>`;
 }
@@ -1283,7 +1329,7 @@ function adBarsHTML(briefs, ds, onClick) {
 let bfDraft = null;
 function clNewBrief(dup) {
   const base = dup ? JSON.parse(JSON.stringify(dup)) : {};
-  bfDraft = { id: 'b_' + uid(), campaignName: base.campaignName || '', carModel: base.carModel || '', formats: base.formats || ['meta_sq', 'meta_st'], customFormats: [], langs: { ar: true, en: base.langs ? !!base.langs.en : false }, startDate: '', endDate: '', showDates: base.showDates || false, copy: base.copy || '', usps: base.usps || '', price: base.price || '', termsEN: base.termsEN || DEFAULT_TERMS_EN, termsAR: base.termsAR || DEFAULT_TERMS_AR, refs: [], concepts: 1, submittedBy: (localStorage.getItem('rich_cl_name') || ''), editing: false };
+  bfDraft = { id: 'b_' + uid(), campaignName: base.campaignName || '', carModel: base.carModel || '', formats: base.formats || ['meta_sq', 'meta_st'], customFormats: [], langs: { ar: true, en: base.langs ? !!base.langs.en : false }, startDate: '', endDate: '', showDates: base.showDates || false, copy: base.copy || '', usps: base.usps || '', price: base.price || '', termsEN: base.termsEN || DEFAULT_TERMS_EN, termsAR: base.termsAR || DEFAULT_TERMS_AR, refs: [], concepts: 2, submittedBy: (localStorage.getItem('rich_cl_name') || ''), editing: false };
   renderBriefForm();
 }
 function clEditBrief(id) { const b = clientData.briefs.find(x => x.id === id); if (!b || b.status !== 'Submitted') return; bfDraft = JSON.parse(JSON.stringify(b)); bfDraft.customFormats = bfDraft.customFormats || []; bfDraft.editing = true; renderBriefForm(); }
@@ -1318,9 +1364,10 @@ function renderBriefForm() {
       <div id="bfRefs">${briefRefsHTML(clientCalId, b, clientPin, true)}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn sm" onclick="$('bfRefFile').click()">+ Upload image</button><input type="file" id="bfRefFile" accept="image/*" multiple style="display:none" onchange="bfUploadRefs(this)"><input id="bfRefUrl" placeholder="or paste a link" style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--border-2);border-radius:6px;font-size:12px"><button class="btn sm" onclick="bfAddLink()">Add link</button></div>
     </div>
-    <div class="bf-group"><h4><span class="n">5</span>How many concepts?</h4>
-      <div class="concept-pick"><label class="${b.concepts === 1 ? 'on' : ''}"><input type="radio" name="bfc" ${b.concepts === 1 ? 'checked' : ''} onchange="bfDraft.concepts=1;renderBriefForm()" style="display:none"><b>1</b>Fastest turnaround<small>Recommended</small></label><label class="${b.concepts === 2 ? 'on' : ''}"><input type="radio" name="bfc" ${b.concepts === 2 ? 'checked' : ''} onchange="bfDraft.concepts=2;renderBriefForm()" style="display:none"><b>2</b>Two directions<small>Same turnaround</small></label></div>
-      <p style="font-size:11px;color:var(--muted);margin-top:8px">Our team can produce a maximum of 2 concepts per brief. Each concept is produced in every format and language you selected.</p>
+    <div class="bf-group"><h4><span class="n">5</span>Concepts</h4>
+      <div class="concept-pick"><label class="on" style="cursor:default"><b>Direct</b>Product-led, clear offer<small>Price, USPs, call to action up front</small></label><label class="on ${b.concepts === 1 ? '' : ''}" style="cursor:default;${b.concepts === 1 ? 'opacity:.4;text-decoration:line-through' : ''}"><b>Surreal</b>Idea-led, more creative<small>A bolder angle to stand out</small></label></div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px">As standard we share two concepts, one direct and one surreal, so you can pick the direction before we build the final. You then approve one and we take it to final.</p>
+      <div class="check-row" style="margin-top:8px"><label><input type="checkbox" ${b.concepts === 1 ? 'checked' : ''} onchange="bfDraft.concepts=this.checked?1:2;renderBriefForm()">Only one direction needed (saves ${BRIEF_STAGE_HOURS.concept} studio hours)</label></div>
     </div>
     <div id="bfEstBox"></div>`;
   $('pmFoot').innerHTML = `<div class="left"></div><div class="right"><button class="btn" onclick="$('postModal').classList.remove('show')">Cancel</button><button class="btn primary" onclick="clSubmitBrief()">${b.editing ? 'Save changes' : 'Submit request'}</button></div>`;
@@ -1334,7 +1381,18 @@ function bfEst() {
   const perList = briefFormats(b).length + ' format' + (briefFormats(b).length !== 1 ? 's' : '') + ' × ' + ((b.langs.ar ? 1 : 0) + (b.langs.en ? 1 : 0)) + ' language' + (((b.langs.ar ? 1 : 0) + (b.langs.en ? 1 : 0)) !== 1 ? 's' : '');
   let warn = '';
   if (b.startDate && new Date(b.startDate + 'T00:00:00') < e.finalDue) warn += `<div class="warn">Your start date is before the earliest possible final delivery (${fmtDT(e.finalDue)}). Please allow more runway or expect a later start.</div>`;
-  $('bfEstBox').innerHTML = `<div class="est-box"><h4>Estimated timeline</h4><div class="est-row"><div class="est"><small>Picked up</small><b>${fmtDT(e.pickup)}</b></div><div class="est"><small>Concepts ready by</small><b>${fmtDT(e.conceptDue)}</b></div><div class="est"><small>Final ready by</small><b>${fmtDT(e.finalDue)}</b></div></div><div class="note">${perList} = <b>${e.per} creative${e.per !== 1 ? 's' : ''}</b> per concept, ${e.total} in total. Our studio works Monday to Friday, 9am to 6pm. Each stage is ready by 6pm the same working day if it starts before midday, otherwise by 6pm the next working day. "Final ready by" assumes you approve the concept as soon as it lands, so quick feedback keeps this to around ${e.hours} hours end to end.</div>${warn}</div>`;
+  const sh = e.sh;
+  const stage = (k, lbl, hrs, when, who) => `<div class="tl"><div class="dot" style="background:${who === 'you' ? '#fbbf24' : '#fff'}"></div><b style="min-width:150px">${lbl}</b><span style="opacity:.8">${hrs}h${who === 'you' ? ' (you)' : ''} &middot; by ${fmtDT(when)}</span></div>`;
+  $('bfEstBox').innerHTML = `<div class="est-box"><h4>Estimated timeline</h4><div class="est-row"><div class="est"><small>Picked up</small><b>${fmtDT(e.pickup)}</b></div><div class="est"><small>Concepts to you by</small><b>${fmtDT(e.conceptDue)}</b></div><div class="est"><small>Final ready by</small><b>${fmtDT(e.finalDue)}</b></div></div>
+    <div class="timeline" style="background:rgba(255,255,255,.1);margin-top:12px;color:#fff">
+      ${stage('brief', 'Brief in &amp; planned', sh.brief, e.briefedAt)}
+      ${stage('concepts', sh.concepts_n === 2 ? 'Two concepts (direct + surreal)' : 'One concept', sh.concepts, e.conceptDue)}
+      ${stage('review', 'You review concepts', sh.review, e.conceptReviewBy, 'you')}
+      ${stage('masters', 'Master design' + (sh.langs_n > 1 ? ' (' + sh.langs_n + ' languages)' : ''), sh.masters, e.masterDue)}
+      ${stage('review2', 'You approve the final', sh.review2, e.finalReviewBy, 'you')}
+      ${stage('resize', 'Resize to all ' + briefFormats(b).length + ' format' + (briefFormats(b).length !== 1 ? 's' : ''), sh.resize, e.finalDue)}
+    </div>
+    <div class="note">${perList} = <b>${e.per} creative${e.per !== 1 ? 's' : ''}</b> per concept. ${e.studio} studio hours plus ${e.client} hours of your review time, Monday to Friday 9am to 6pm, so about <b>${e.hours} hours</b> end to end. Your two review windows sit on the critical path: every hour of delay there moves delivery by an hour. A revision round costs the same as the stage it revises plus another ${BRIEF_STAGE_HOURS.review}h review.</div>${warn}</div>`;
 }
 function bfUploadRefs(input) {
   const files = [...input.files]; input.value = ''; const b = bfDraft;
@@ -1363,9 +1421,9 @@ async function clBriefDecide(id, kind, s) {
   const b = clientData.briefs.find(x => x.id === id); if (!b) return; b.fb = b.fb || {}; b.fb[kind] = b.fb[kind] || { status: '', comments: [] };
   const was = b.fb[kind].status; b.fb[kind].status = was === s ? '' : s;
   const name = localStorage.getItem('rich_cl_name') || 'Client';
-  if (b.fb[kind].status === 'approved') { if (kind === 'concept') { b.status = 'Concept approved'; b.conceptApprovedAt = new Date().toISOString(); b.finalDueAt = stageDue(new Date()).toISOString(); } else { b.status = 'Approved'; b.finalApprovedAt = new Date().toISOString(); b.approvedBy = name; } (b.history = b.history || []).push({ status: b.status, at: new Date().toISOString(), by: name }); }
+  if (b.fb[kind].status === 'approved') { if (kind === 'concept') { b.status = 'Concept approved'; b.conceptApprovedAt = new Date().toISOString(); b.masterDueAt = masterDueFromApproval(b, new Date()).toISOString(); b.finalDueAt = finalDueFromApproval(b, new Date()).toISOString(); } else { b.status = 'Approved'; b.finalApprovedAt = new Date().toISOString(); b.approvedBy = name; } (b.history = b.history || []).push({ status: b.status, at: new Date().toISOString(), by: name }); }
   else if (was === 'approved') { if (kind === 'concept') { b.status = 'Concepts ready'; b.conceptApprovedAt = null; b.finalDueAt = null; } else { b.status = 'Final ready'; b.finalApprovedAt = null; b.approvedBy = null; } }
-  renderClient(); await clientBriefSend({ action: 'feedback', briefId: id, kind, status: b.fb[kind].status, by: name, briefStatus: b.status, conceptApprovedAt: b.conceptApprovedAt, finalApprovedAt: b.finalApprovedAt, finalDueAt: b.finalDueAt, approvedBy: b.approvedBy });
+  renderClient(); await clientBriefSend({ action: 'feedback', briefId: id, kind, status: b.fb[kind].status, by: name, briefStatus: b.status, conceptApprovedAt: b.conceptApprovedAt, finalApprovedAt: b.finalApprovedAt, finalDueAt: b.finalDueAt, masterDueAt: b.masterDueAt, approvedBy: b.approvedBy });
 }
 async function clBriefComment(id, kind) { const name = $('bnm-' + id).value.trim() || 'Client', t = $('bmsg-' + id).value.trim(); if (!t) return; localStorage.setItem('rich_cl_name', name); const b = clientData.briefs.find(x => x.id === id); b.fb = b.fb || {}; b.fb[kind] = b.fb[kind] || { status: '', comments: [] }; b.fb[kind].comments.push({ t, by: name, d: new Date().toISOString() }); renderClient(); $('bc-' + id)?.classList.add('open'); await clientBriefSend({ action: 'feedback', briefId: id, kind, comment: t, by: name }); }
 async function clBriefEditComment(id, kind, i) { const b = clientData.briefs.find(x => x.id === id); const cm = b.fb[kind].comments[i]; const t = prompt('Edit your comment:', cm.t); if (t === null) return; if (t.trim()) cm.t = t.trim(); else b.fb[kind].comments.splice(i, 1); renderClient(); $('bc-' + id)?.classList.add('open'); await clientBriefSend({ action: 'feedback', briefId: id, kind, replaceComments: b.fb[kind].comments }); }
@@ -1393,8 +1451,8 @@ function openBrief(id) {
     ${idx >= 2 ? fbPanel('concept') : ''}${idx >= 5 ? fbPanel('final') : ''}
     ${b.status === 'Submitted' ? `<div class="revision-bar needs"><div class="rb-text"><strong>New request</strong>Due for pickup ${fmtDT(nextPickup(new Date(b.createdAt)))}. Concepts due ${fmtDT(b.conceptDueAt)}.</div><button class="btn success" onclick="setBriefStatus('${id}','Concepts in progress')">Start concepts</button></div>` : ''}
     ${b.status === 'Concepts in progress' ? `<div class="revision-bar sent"><div class="rb-text"><strong>Concepts due ${fmtDT(b.conceptDueAt)}</strong>Upload concept creatives below, then mark ready so the client can review.</div><button class="btn success" onclick="setBriefStatus('${id}','Concepts ready')" ${(b.conceptMedia || []).length ? '' : 'disabled title="Upload at least one concept first"'}>Mark concepts ready</button></div>` : ''}
-    ${b.status === 'Concept approved' ? `<div class="revision-bar needs"><div class="rb-text"><strong>Concept approved ${fmtDT(b.conceptApprovedAt)}</strong>Final due ${fmtDT(b.finalDueAt)}. Only minor changes allowed now (copy, colour, not direction).</div><button class="btn success" onclick="setBriefStatus('${id}','Final in progress')">Start final</button></div>` : ''}
-    ${b.status === 'Final in progress' ? `<div class="revision-bar sent"><div class="rb-text"><strong>Final due ${fmtDT(b.finalDueAt)}</strong>Upload the final creatives, then mark ready for sign-off.</div><button class="btn success" onclick="setBriefStatus('${id}','Final ready')" ${(b.finalMedia || []).length ? '' : 'disabled title="Upload the final first"'}>Mark final ready</button></div>` : ''}
+    ${b.status === 'Concept approved' ? `<div class="revision-bar needs"><div class="rb-text"><strong>Concept approved ${fmtDT(b.conceptApprovedAt)}</strong>Master design due ${fmtDT(b.masterDueAt || b.finalDueAt)}, resized set by ${fmtDT(b.finalDueAt)}. Only minor changes allowed now (copy, colour, not direction).</div><button class="btn success" onclick="setBriefStatus('${id}','Final in progress')">Start final</button></div>` : ''}
+    ${b.status === 'Final in progress' ? `<div class="revision-bar sent"><div class="rb-text"><strong>Master due ${fmtDT(b.masterDueAt || b.finalDueAt)}, all formats by ${fmtDT(b.finalDueAt)}</strong>Upload the final creatives, then mark ready for sign-off.</div><button class="btn success" onclick="setBriefStatus('${id}','Final ready')" ${(b.finalMedia || []).length ? '' : 'disabled title="Upload the final first"'}>Mark final ready</button></div>` : ''}
     ${b.status === 'Approved' ? `<div class="revision-bar sent"><div class="rb-text"><strong>Approved by ${esc(b.approvedBy || 'client')} ${fmtDT(b.finalApprovedAt)}</strong>Agency sign-off: ${b.agencySignoff ? esc(b.agencySignoff.by) + ' ' + fmtDT(b.agencySignoff.at) : 'not yet'}.</div>${b.agencySignoff ? `<button class="btn success" onclick="setBriefStatus('${id}','Scheduled')">Mark scheduled</button>` : `<button class="btn success" onclick="agencySignoff('${id}')">Sign off (agency)</button>`}</div>` : ''}
     <div class="ed-section"><div class="ed-section-title">Concepts <span class="hint">${(b.conceptMedia || []).length} uploaded</span></div>${mediaGrid('concept')}</div>
     <div class="ed-section"><div class="ed-section-title">Final creatives <span class="hint">${(b.finalMedia || []).length} uploaded</span></div>${mediaGrid('final')}</div>
@@ -1402,7 +1460,7 @@ function openBrief(id) {
       <div class="bm-fields">
         ${f('Campaign', esc(b.campaignName))}${f('Car model', esc(b.carModel))}
         ${f('Formats', `<div class="fmt-chips">${briefFmtChips(b)}</div>`, true)}
-        ${f('Languages', briefLangs(b))}${f('Concepts requested', b.concepts || 1)}
+        ${f('Languages', briefLangs(b))}${f('Concepts', (b.concepts || 2) === 2 ? '2: direct + surreal' : '1: single direction')}
         ${f('Campaign dates', (b.startDate ? fmtD(b.startDate) : '') + (b.endDate ? ' to ' + fmtD(b.endDate) : '') + (b.showDates ? ' (show on creative)' : ''))}${f('Creatives per concept', briefCreativeCount(b))}
         ${f('Copy / captions', esc(b.copy), true)}${f('USPs', esc(b.usps), true)}${f('Price & offers', esc(b.price), true)}
         ${f('Terms (EN)', esc(b.termsEN))}${f('Terms (AR)', esc(b.termsAR), false, true)}
@@ -1436,11 +1494,13 @@ Status: ${b.status}
 FORMATS (${briefCreativeCount(b)} creatives per concept)
 ${briefFormats(b).map(f => `- ${f.print ? 'GDN Newspaper ' : ''}${f.label}: ${f.size}`).join('\n')}
 Languages: ${briefLangs(b)}
-Concepts requested: ${b.concepts || 1}
+Concepts: ${(b.concepts || 2) === 2 ? '2 (direct + surreal)' : '1 (single direction)'}
 
 DEADLINES (studio hours Mon-Fri 9-6)
 Concepts due: ${fmtDT(b.conceptDueAt)}
-Final due: ${b.finalDueAt ? fmtDT(b.finalDueAt) : 'by 6pm same day if approved before noon, otherwise next working day'}
+Master design due: ${b.masterDueAt ? fmtDT(b.masterDueAt) : briefStageHours(b).masters + 'h after concept approval'}
+All formats due: ${b.finalDueAt ? fmtDT(b.finalDueAt) : 'master + ' + BRIEF_STAGE_HOURS.review + 'h review + ' + BRIEF_STAGE_HOURS.resize + 'h resize'}
+Stage plan: brief ${BRIEF_STAGE_HOURS.brief}h > concepts ${briefStageHours(b).concepts}h (${b.concepts || 2}) > client review ${BRIEF_STAGE_HOURS.review}h > masters ${briefStageHours(b).masters}h (${briefStageHours(b).langs_n} lang) > client review ${BRIEF_STAGE_HOURS.review}h > resize ${BRIEF_STAGE_HOURS.resize}h
 Campaign: ${b.startDate ? fmtD(b.startDate) : 'TBC'}${b.endDate ? ' to ' + fmtD(b.endDate) : ''}${b.showDates ? ' (SHOW DATES ON CREATIVE)' : ''}
 
 COPY / CAPTIONS
@@ -1463,6 +1523,45 @@ Client portal: ${link}`;
   navigator.clipboard.writeText(t).then(() => alert('Brief copied. Paste it into the ClickUp task description.')).catch(() => prompt('Copy this:', t));
 }
 function openCalendarToBrief(calId, bid) { openCalendar(calId); viewMode = 'briefs'; renderCalView(); setTimeout(() => openBrief(bid), 200); }
+
+/* ================================================================
+   DAY GALLERY (shared): one slide per post per platform
+================================================================ */
+function openDayView(items, dateLabel, opts = {}) {
+  if (!items.length) return;
+  let cur = 0;
+  const ov = document.createElement('div'); ov.className = 'dayview'; ov.tabIndex = 0;
+  const render = () => {
+    const it = items[cur]; const p = it.post;
+    const st = opts.client ? (p.feedback && p.feedback.status === 'approved' ? ['approved', 'You approved this'] : p.feedback && p.feedback.status === 'declined' ? ['changes', 'You requested changes'] : [STATUS_CLASS[p.status] || 'review', CLIENT_STATUS_LABEL[p.status] || p.status]) : [STATUS_CLASS[p.status] || 'draft', p.status || 'Draft'];
+    ov.innerHTML = `<button class="dv-close">&times;</button>
+      <div class="dv-head"><h2>${esc(dateLabel)}</h2><div class="dv-count">${items.length} post${items.length !== 1 ? 's' : ''} going live &middot; ${cur + 1} of ${items.length}</div></div>
+      <div class="dv-stage">
+        ${items.length > 1 ? '<button class="dv-nav prev">&lsaquo;</button><button class="dv-nav next">&rsaquo;</button>' : ''}
+        <div class="dv-media">${it.media || '<div class="no-media">Creative coming soon</div>'}</div>
+        <div class="dv-info">${platIcon(it.platform)}<div style="min-width:0"><h4>${esc(p.topic || 'Untitled')}</h4><div class="sub">${esc(it.platform.replace('X (Twitter)', 'X'))}${p.creativeType ? ' · ' + esc(p.creativeType) : ''} · ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div></div><span class="badge ${st[0]}">${esc(st[1])}</span></div>
+      </div>
+      <div class="dv-dots">${items.map((x, i) => `<div class="dd ${i === cur ? 'on' : ''}" style="background:${PLAT_COLORS[x.platform] || '#8b5cf6'}" title="${esc(x.post.topic || '')} · ${esc(x.platform)}"></div>`).join('')}</div>
+      <div class="dv-open"><button class="btn">${opts.client ? 'Review this post' : 'Open post'}</button></div>`;
+    ov.querySelector('.dv-close').onclick = () => ov.remove();
+    ov.querySelectorAll('.dv-dots .dd').forEach((d, i) => d.onclick = () => { cur = i; render(); });
+    const pv = ov.querySelector('.dv-nav.prev'), nx = ov.querySelector('.dv-nav.next');
+    if (pv) pv.onclick = e => { e.stopPropagation(); cur = (cur - 1 + items.length) % items.length; render(); };
+    if (nx) nx.onclick = e => { e.stopPropagation(); cur = (cur + 1) % items.length; render(); };
+    ov.querySelector('.dv-open .btn').onclick = () => { ov.remove(); opts.onOpen && opts.onOpen(p.id); };
+    ov.querySelector('.dv-media').onclick = e => { if (e.target.closest('.carousel-nav') || e.target.closest('.carousel-dots') || e.target.tagName === 'VIDEO') return; openFullView(e.currentTarget, p.topic || ''); };
+  };
+  ov.onkeydown = e => { if (e.key === 'ArrowLeft') { cur = (cur - 1 + items.length) % items.length; render(); } else if (e.key === 'ArrowRight') { cur = (cur + 1) % items.length; render(); } else if (e.key === 'Escape') ov.remove(); };
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov); render(); ov.focus();
+}
+function dayItems(calId, posts, pin, prefix) {
+  const out = [];
+  posts.forEach(p => { const plats = (p.platforms || []).length ? p.platforms : ['Other']; plats.forEach((pl, i) => out.push({ post: p, platform: pl, media: mediaHTML(calId, p, 'EN', p.cv, pin, { prefix: prefix + i }) || mediaHTML(calId, p, 'AR', p.cv, pin, { prefix: prefix + i }) })); });
+  return out;
+}
+function intDayView(ds) { const c = getCal(); const posts = (c.posts || []).filter(p => p.date === ds); openDayView(dayItems(c.id, posts, null, 'dv'), fmtDate(ds), { onOpen: pid => editPost(pid) }); }
+function clDayView(ds) { const posts = (clientData.posts || []).filter(p => p.date === ds); openDayView(dayItems(clientCalId, posts, clientPin, 'cdv'), fmtDate(ds), { client: true, onOpen: pid => { clientTab = 'review'; clientFilter = 'all'; renderClient(); setTimeout(() => $('cp-' + pid)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); } }); }
 
 /* ================================================================
    CLIENT: GATE
@@ -1501,7 +1600,7 @@ function renderClient() {
   let savedName = ''; try { savedName = localStorage.getItem('rich_cl_name') || ''; } catch (e) { }
 
   let h = `<div class="cl-header"><img src="${LOGO}" alt="RICH"><span class="cl-badge">Client review</span><h1>${esc(c.name)}</h1></div><div class="cl-wrap">`;
-  h += `<div class="cl-hero"><h2>${esc(c.name)}</h2><p>${esc(c.intro || 'Please review the content below. Approve what works, or request changes and tell us what to adjust. Need an ad? Send a brief and we turn concepts and finals around within 36 hours when feedback is quick.')}</p>
+  h += `<div class="cl-hero"><h2>${esc(c.name)}</h2><p>${esc(c.intro || 'Please review the content below. Approve what works, or request changes and tell us what to adjust. Need an ad? Send a brief: two concepts, then the final, in around 29 working hours when your feedback is quick.')}</p>
     <div class="steps"><div><span class="n">1</span>Review each post</div><div><span class="n">2</span>Approve or request changes</div><div><span class="n">3</span>Leave specific feedback</div><div><span class="n">4</span>Need an ad? Send us a brief</div></div><div class="cta"><button class="btn" onclick="clNewBrief()">&#128227; Request an ad</button>${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill" style="margin-left:8px;background:#fff;color:var(--client)">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length} ad${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length !== 1 ? 's' : ''} awaiting your approval</span>` : ''}</div>
     <div class="stats"><div><strong>${allMonth.length}</strong><span>Posts</span></div><div><strong>${creatives}</strong><span>Creatives</span></div><div><strong style="color:#4ade80">${approved}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${pending}</strong><span>To review</span></div>${changes ? `<div><strong style="color:#fca5a5">${changes}</strong><span>Changes</span></div>` : ''}<div><strong>${(c.briefs || []).filter(briefIsActive).length}</strong><span>Ad requests</span></div></div></div>`;
   h += ganttHTML(c.briefs || [], 'clOpenBrief', { client: true, showDone: false, cta: ' <a href="#" onclick="event.preventDefault();clNewBrief()">Request an ad</a>' });
@@ -1518,7 +1617,7 @@ function renderClient() {
     for (let d = 1; d <= dim; d++) {
       const ds = mk + '-' + String(d).padStart(2, '0'); const dp = allMonth.filter(p => p.date === ds); const cr = dp.reduce((s, p) => s + countCreatives(p), 0);
       const isT = d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
-      h += `<div class="cal-day cl-cal-day" ${dp.length ? `onclick="clientTab='review';clientFilter='all';renderClient();setTimeout(()=>$('cp-${dp[0].id}')?.scrollIntoView({behavior:'smooth',block:'start'}),150)"` : ''}><div class="dn ${isT ? 'today' : ''}">${d}</div>${dp.length ? `<div class="big">${dp.length}</div><div class="dots">${dp.map(p => `<div class="dot" style="background:${PLAT_COLORS[(p.platforms || [])[0]] || '#8b5cf6'}" title="${esc(p.topic || '')}"></div>`).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div>` : ''}${adBarsHTML(c.briefs || [], ds, 'clOpenBrief')}</div>`;
+      h += `<div class="cal-day cl-cal-day" ${dp.length ? `onclick="clDayView('${ds}')"` : ''}><div class="dn ${isT ? 'today' : ''}">${d}</div>${dp.length ? `<div class="big">${dp.reduce((s, p) => s + Math.max((p.platforms || []).length, 1), 0)}</div><div class="dots">${dp.flatMap(p => ((p.platforms || []).length ? p.platforms : ['Other']).map(pl => `<div class="dot" style="background:${PLAT_COLORS[pl] || '#8b5cf6'}" title="${esc(p.topic || '')} · ${esc(pl)}"></div>`)).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div>` : ''}${adBarsHTML(c.briefs || [], ds, 'clOpenBrief')}</div>`;
     }
     const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
     h += '</div></div>';
