@@ -628,6 +628,9 @@ input,textarea,select{font-family:inherit}
 .save-state.saved{opacity:1;background:#16a34a;color:#fff}
 .save-state.error{opacity:1;background:#dc2626;color:#fff;cursor:pointer}
 .save-state.stale{opacity:1;background:#fbbf24;color:#000}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:#111;color:#fff;padding:10px 18px;border-radius:30px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:all .25s;z-index:2000;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.cl-header .btn{margin-left:auto}
 /* Print */
 @media print{.int-header,.cl-header,.int-cal-toolbar,.cl-toolbar,.month-nav,.btn{display:none!important}body{background:#fff}}
 
@@ -650,7 +653,7 @@ input,textarea,select{font-family:inherit}
 <div id="app"></div>
 
 <div class="modal-overlay" id="postModal"><div class="modal">
-  <div class="modal-head"><h2 id="pmTitle">Edit post</h2><button class="modal-close" id="pmClose">&times;</button></div>
+  <div class="modal-head"><h2 id="pmTitle">Edit post</h2><div style="display:flex;gap:6px;align-items:center"><button class="btn sm ghost" id="pmShare" onclick="shareHere()" title="Copy link to this">&#128279;</button><button class="modal-close" id="pmClose">&times;</button></div></div>
   <div class="modal-body" id="pmBody"></div>
   <div class="modal-foot" id="pmFoot"></div>
 </div></div>
@@ -853,7 +856,16 @@ function shareLink(kind, id) {
   else { u.searchParams.set('cal', currentCalId); u.searchParams.set(kind, id); }
   return u.href;
 }
-function copyShare(kind, id, label) { const l = shareLink(kind, id); navigator.clipboard.writeText(l).then(() => alert((label || 'Link') + ' copied:\n' + l)).catch(() => prompt('Copy this link:', l)); }
+function toast(msg) { let t = $('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); } t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200); }
+function shareHere() { const l = location.href; navigator.clipboard.writeText(l).then(() => toast('Link copied. Anyone opening it lands exactly here.')).catch(() => prompt('Copy this link:', l)); }
+function clientLinkHere() {
+  // Same place, client side: calendar + open post/brief (or month + tab) translated to the client URL scheme
+  const u = new URL(location.origin + location.pathname); u.searchParams.set('calendar', currentCalId);
+  const pid = $('postModal').classList.contains('show') ? curPid() : null; const bid = $('postModal').classList.contains('show') ? curBid() : null;
+  if (pid) u.searchParams.set('post', pid); else if (bid) u.searchParams.set('brief', bid); else { if (viewMode === 'month') u.searchParams.set('tab', 'calendar'); if (viewMode === 'briefs') u.searchParams.set('tab', 'briefs'); if (viewMode !== 'year') u.searchParams.set('m', monthKey(viewMonth.getFullYear(), viewMonth.getMonth())); }
+  navigator.clipboard.writeText(u.href).then(() => toast('Client link copied' + (pid ? ' to this post' : bid ? ' to this brief' : '') + '. PIN ' + (getCal()?.pin || ''))).catch(() => prompt('Copy this link:', u.href));
+}
+const copyShare = (kind, id) => shareHere();
 async function applyInternalRoute(q) {
   const cal = q.get('cal'); if (!cal || !calendars.find(c => c.id === cal)) { currentCalId = null; renderDashboard(); return; }
   suppressUrl = true; openCalendar(cal); suppressUrl = false;
@@ -942,7 +954,7 @@ function renderDashboard() {
         <div class="body"><h3>${esc(c.name)}</h3><div class="meta">PIN ${esc(c.pin || '')} &middot; ${n} posts &middot; ${cr} creatives</div>
           <div class="pills">${ap ? `<span class="badge approved">${ap} approved</span>` : ''}${ch ? `<span class="badge changes">${ch} changes</span>` : ''}${un ? `<span class="badge" style="background:var(--red-light);color:var(--red)">${un} unresolved</span>` : ''}${getBriefs(c).filter(b => b.status === 'Submitted').length ? `<span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted').length} new ad brief${getBriefs(c).filter(b => b.status === 'Submitted').length !== 1 ? 's' : ''}</span>` : ''}${!ap && !ch && !un ? '<span class="badge draft">No feedback yet</span>' : ''}</div>
           <div class="progress"><div style="width:${pct}%"></div></div>
-          <div class="actions"><button class="btn primary" onclick="openCalendar('${c.id}')">Open</button><button class="btn" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')">Client view</button><button class="btn" onclick="copyLink('${c.id}')">Link</button><button class="btn ghost" onclick="calSettings('${c.id}')">&#9881;</button></div>
+          <div class="actions"><button class="btn primary" onclick="openCalendar('${c.id}')">Open</button><button class="btn" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')">Client view</button><button class="btn" onclick="copyLink('${c.id}')">Client link</button><button class="btn ghost" onclick="calSettings('${c.id}')">&#9881;</button></div>
         </div></div>`;
     });
     h += '</div>';
@@ -967,7 +979,7 @@ function filterDash(rerender) {
   document.querySelectorAll('#calCards .cal-card').forEach(c => { let show = c.dataset.name.includes(q); if (dashFilter === 'attention') show = show && c.dataset.att === 'true'; c.style.display = show ? '' : 'none'; });
 }
 function createCalendar() { const name = prompt('Calendar name (e.g. Client Name - October 2026)'); if (!name) return; const c = { id: 'cal_' + uid(), name, pin: String(Math.floor(1000 + Math.random() * 9000)), created: new Date().toISOString(), posts: [], feedback: {} }; calendars.unshift(c); saveCalendars(); openCalendar(c.id); }
-function copyLink(id) { const u = location.origin + location.pathname + '?calendar=' + id; navigator.clipboard.writeText(u).then(() => alert('Client link copied:\n' + u)).catch(() => prompt('Copy this link:', u)); }
+function copyLink(id) { const u = location.origin + location.pathname + '?calendar=' + id; navigator.clipboard.writeText(u).then(() => toast('Client link copied. PIN ' + (calendars.find(c => c.id === id)?.pin || ''))).catch(() => prompt('Copy this link:', u)); }
 function setBanner(id, input) { const f = input.files[0]; if (!f) return; if (f.size > 3e6) { alert('Keep banner under 3MB'); return; } const r = new FileReader(); r.onload = e => { const c = calendars.find(x => x.id === id); if (c) { c.banner = e.target.result; saveCalendars(); renderDashboard(); } }; r.readAsDataURL(f); }
 function calSettings(id) {
   const c = calendars.find(x => x.id === id); if (!c) return;
@@ -992,7 +1004,7 @@ function renderCalView() {
   const ch = mp.filter(p => getFb(c, p.id).status === 'declined').length;
   const un = mp.reduce((s, p) => s + unresolved(getFb(c, p.id)), 0);
   const withClient = mp.filter(p => p.status === 'Ready for Review' || p.status === 'Revised').length;
-  let h = intHeader(c.name, `<button class="btn sm" onclick="renderDashboard()">&lsaquo; Dashboard</button><button class="btn sm" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')">Client view</button><button class="btn sm" onclick="copyLink('${c.id}')">Copy link</button><button class="btn sm" onclick="calSettings('${c.id}')">Settings</button>`);
+  let h = intHeader(c.name, `<button class="btn sm" onclick="renderDashboard()">&lsaquo; Dashboard</button><button class="btn sm" onclick="shareHere()" title="Copy a link to exactly this page">&#128279; Share</button><button class="btn sm" onclick="clientLinkHere()" title="Copy the client-side link to this page">Client link</button><button class="btn sm ghost" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')" title="Preview as the client">Preview</button><button class="btn sm ghost" onclick="calSettings('${c.id}')">&#9881;</button>`);
   h += '<div class="int-wrap">';
   h += `<div class="int-hero"><h2>${esc(c.name)}</h2><p>Internal workspace. Upload content, send for client review, action their feedback, and re-submit revisions. PIN ${esc(c.pin || '')}.</p>
     <div class="steps"><div><span class="n">1</span>Build &amp; upload</div><div><span class="n">2</span>Send for review</div><div><span class="n">3</span>Action feedback</div><div><span class="n">4</span>Re-submit</div></div>
@@ -1140,7 +1152,7 @@ function editPost(pid) {
   </div>
   <div class="ed-preview"><div class="pv-label">Client preview</div><div class="pv-box" ${preview ? `onclick="openFullView(this,'${esc(p.topic || '')}')"` : ''}>${preview || '<div class="pv-empty">Upload a creative to preview</div>'}</div></div>
   </div>`;
-  $('pmFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deletePost('${pid}')">Delete post</button><button class="btn sm" onclick="copyShare('post','${pid}','Internal link')">&#128279; Link</button><button class="btn sm" onclick="navigator.clipboard.writeText(location.origin+location.pathname+'?calendar=${c.id}&post=${pid}').then(()=>alert('Client link copied'))">&#128279; Client link</button></div><div class="right"><button class="btn" onclick="closeEditor()">Cancel</button><button class="btn primary" onclick="savePost('${pid}')">Save</button></div>`;
+  $('pmFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deletePost('${pid}')">Delete post</button></div><div class="right"><button class="btn" onclick="closeEditor()">Cancel</button><button class="btn primary" onclick="savePost('${pid}')">Save</button></div>`;
   $('postModal').classList.add('show'); $('pmClose').onclick = closeEditor; syncUrlInternal();
 }
 function closeEditor() { $('postModal').classList.remove('show'); renderCalView(); }
@@ -1383,7 +1395,6 @@ function briefCardHTML(calId, b, role, pin) {
       <h5>Terms</h5><p>${esc(b.termsEN || '')}</p>${b.termsAR ? `<p dir="rtl">${esc(b.termsAR)}</p>` : ''}
       ${(b.refs || []).length ? `<h5>References</h5>${briefRefsHTML(calId, b, pin, false)}` : ''}
       ${comments ? `<h5>Feedback on ${kind}</h5><div class="comments-box">${comments}</div>` : ''}
-      <div style="text-align:right;margin-top:8px"><button class="btn xs" onclick="copyShare('brief','${b.id}','Link to this brief')">&#128279; Copy link</button></div>
     </div></div>
   </div>`;
 }
@@ -1548,7 +1559,7 @@ function openBrief(id) {
       </div>
     </div>
     <div class="ed-section"><div class="ed-section-title">Campaign dates <span class="hint">Edit if the client's dates need to move</span></div><div class="field-row"><div class="field"><label>Start</label><input type="date" value="${b.startDate || ''}" onchange="saveBriefField('${id}','startDate',this.value)"></div><div class="field"><label>End</label><input type="date" value="${b.endDate || ''}" onchange="saveBriefField('${id}','endDate',this.value)"></div></div></div>`;
-  $('pmFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deleteBrief('${id}')">Delete brief</button><button class="btn sm" onclick="copyShare('brief','${id}','Internal link')">&#128279; Link</button><button class="btn sm" onclick="navigator.clipboard.writeText(location.origin+location.pathname+'?calendar=${c.id}&brief=${id}').then(()=>alert('Client link copied'))">&#128279; Client link</button></div><div class="right"><button class="btn" onclick="copyBriefForClickUp('${id}')">&#128203; Copy for ClickUp</button><button class="btn primary" onclick="$('postModal').classList.remove('show');renderCalView()">Done</button></div>`;
+  $('pmFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deleteBrief('${id}')">Delete brief</button></div><div class="right"><button class="btn" onclick="copyBriefForClickUp('${id}')">&#128203; Copy for ClickUp</button><button class="btn primary" onclick="$('postModal').classList.remove('show');renderCalView()">Done</button></div>`;
   $('postModal').classList.add('show'); $('pmClose').onclick = () => { $('postModal').classList.remove('show'); renderCalView(); }; syncUrlInternal();
 }
 function setBriefStatus(id, s) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); if (!b) return; b.status = s; (b.history = b.history || []).push({ status: s, at: new Date().toISOString(), by: localStorage.getItem('rich_team_name') || 'Agency' }); if (s === 'Concepts ready') { b.fb = b.fb || {}; b.fb.concept = b.fb.concept || { status: '', comments: [] }; b.fb.concept.status = ''; } if (s === 'Final ready') { b.fb = b.fb || {}; b.fb.final = b.fb.final || { status: '', comments: [] }; b.fb.final.status = ''; } saveCalendars(); openBrief(id); }
@@ -1622,14 +1633,13 @@ function openDayView(items, dateLabel, opts = {}) {
         <div class="dv-info">${platIcon(it.platform)}<div style="min-width:0"><h4>${esc(p.topic || 'Untitled')}</h4><div class="sub">${esc(it.platform.replace('X (Twitter)', 'X'))}${p.creativeType ? ' · ' + esc(p.creativeType) : ''} · ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div></div><span class="badge ${st[0]}">${esc(st[1])}</span></div>
       </div>
       <div class="dv-dots">${items.map((x, i) => `<div class="dd ${i === cur ? 'on' : ''}" style="background:${PLAT_COLORS[x.platform] || '#8b5cf6'}" title="${esc(x.post.topic || '')} · ${esc(x.platform)}"></div>`).join('')}</div>
-      <div class="dv-open" style="display:flex;gap:8px"><button class="btn">${opts.client ? 'Review this post' : 'Open post'}</button><button class="btn dv-link" style="background:rgba(255,255,255,.15);color:#fff">&#128279; Copy link</button></div>`;
+      <div class="dv-open"><button class="btn">${opts.client ? 'Review this post' : 'Open post'}</button></div>`;
     ov.querySelector('.dv-close').onclick = () => ov.remove();
     ov.querySelectorAll('.dv-dots .dd').forEach((d, i) => d.onclick = () => { cur = i; render(); });
     const pv = ov.querySelector('.dv-nav.prev'), nx = ov.querySelector('.dv-nav.next');
     if (pv) pv.onclick = e => { e.stopPropagation(); cur = (cur - 1 + items.length) % items.length; render(); };
     if (nx) nx.onclick = e => { e.stopPropagation(); cur = (cur + 1) % items.length; render(); };
-    ov.querySelector('.dv-open .btn:not(.dv-link)').onclick = () => { ov.remove(); opts.onOpen && opts.onOpen(p.id); };
-    ov.querySelector('.dv-link').onclick = () => copyShare('post', p.id, 'Link to this post');
+    ov.querySelector('.dv-open .btn').onclick = () => { ov.remove(); opts.onOpen && opts.onOpen(p.id); };
     ov.querySelector('.dv-media').onclick = e => { if (e.target.closest('.carousel-nav') || e.target.closest('.carousel-dots') || e.target.tagName === 'VIDEO') return; openFullView(e.currentTarget, p.topic || ''); };
   };
   ov.onkeydown = e => { if (e.key === 'ArrowLeft') { cur = (cur - 1 + items.length) % items.length; render(); } else if (e.key === 'ArrowRight') { cur = (cur + 1) % items.length; render(); } else if (e.key === 'Escape') ov.remove(); };
@@ -1687,7 +1697,7 @@ function renderClient() {
   const creatives = allMonth.reduce((s, p) => s + countCreatives(p), 0);
   let savedName = ''; try { savedName = localStorage.getItem('rich_cl_name') || ''; } catch (e) { }
 
-  let h = `<div class="cl-header"><img src="${LOGO}" alt="RICH"><span class="cl-badge">Client review</span><h1>${esc(c.name)}</h1></div><div class="cl-wrap">`;
+  let h = `<div class="cl-header"><img src="${LOGO}" alt="RICH"><span class="cl-badge">Client review</span><h1>${esc(c.name)}</h1><button class="btn sm" onclick="shareHere()" title="Copy a link to exactly this page">&#128279; Share</button></div><div class="cl-wrap">`;
   h += `<div class="cl-hero"><h2>${esc(c.name)}</h2><p>${esc(c.intro || 'Please review the content below. Approve what works, or request changes and tell us what to adjust. Need an ad? Send a brief: two concepts, then the final, in around 29 working hours when your feedback is quick.')}</p>
     <div class="steps"><div><span class="n">1</span>Review each post</div><div><span class="n">2</span>Approve or request changes</div><div><span class="n">3</span>Leave specific feedback</div><div><span class="n">4</span>Need an ad? Send us a brief</div></div><div class="cta"><button class="btn" onclick="clNewBrief()">&#128227; Request an ad</button>${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill" style="margin-left:8px;background:#fff;color:var(--client)">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length} ad${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length !== 1 ? 's' : ''} awaiting your approval</span>` : ''}</div>
     <div class="stats"><div><strong>${allMonth.length}</strong><span>Posts</span></div><div><strong>${creatives}</strong><span>Creatives</span></div><div><strong style="color:#4ade80">${approved}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${pending}</strong><span>To review</span></div>${changes ? `<div><strong style="color:#fca5a5">${changes}</strong><span>Changes</span></div>` : ''}<div><strong>${(c.briefs || []).filter(briefIsActive).length}</strong><span>Ad requests</span></div></div></div>`;
@@ -1733,7 +1743,6 @@ function renderClient() {
             ${arMedia ? `<div class="sec"><h5>Arabic creative</h5><div class="ar-box" onclick="openFullView(this,'Arabic')">${arMedia}</div></div>` : ''}
             ${(p.assets || []).filter(a => a.url).length ? `<div class="sec"><h5>Files</h5>${p.assets.filter(a => a.url).map(a => `<a href="${esc(a.url)}" target="_blank" class="btn xs" style="margin:2px">${esc(a.label || 'Open file')}</a>`).join('')}</div>` : ''}
             <div class="sec"><h5>Your feedback</h5><div class="comments-box">${comments || '<div style="font-size:12px;color:var(--muted-2);font-style:italic">No comments yet.</div>'}</div></div>
-            <div class="sec" style="text-align:right"><button class="btn xs" onclick="copyShare('post','${p.id}','Link to this post')">&#128279; Copy link to this post</button></div>
           </div></div>
         </div>`;
       });
