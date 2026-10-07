@@ -734,7 +734,8 @@ function migrateData() {
     ['carouselEN', 'carouselAR'].forEach(k => (p[k] || []).forEach((s, i) => { if (s.kvIdx === undefined) { s.kvIdx = s.idx !== undefined ? s.idx : i; changed = true; } }));
     if (p.status === 'Ready to Review') { p.status = 'Ready for Review'; changed = true; }
   }));
-  calendars.forEach(c => (c.briefs || []).forEach(b => { if (!b.concepts) { b.concepts = 2; changed = true; }
+  const FMT_MIGRATE = { meta_sq: ['fb_sq', 'gg_sq'], meta_ls: ['fb_ls', 'gg_ls'], meta_st: ['fb_st', 'gg_st'], gdn_pt: ['gg_pt'] };
+  calendars.forEach(c => (c.briefs || []).forEach(b => { if (!b.concepts) { b.concepts = 2; changed = true; } if ((b.formats || []).some(k => FMT_MIGRATE[k])) { b.formats = [...new Set(b.formats.flatMap(k => FMT_MIGRATE[k] || [k]))]; changed = true; }
   }));
   if (changed) saveCalendars();
 }
@@ -1223,10 +1224,13 @@ function dropSlide(e, lang, to) { e.preventDefault(); e.target.closest('.creativ
    AD BRIEFS: CONFIG & HELPERS
 ================================================================ */
 const AD_FORMATS = [
-  { key: 'meta_sq', grp: 'Meta Ads + Google Display', label: 'Square 1:1', size: '1080 x 1080 px' },
-  { key: 'meta_ls', grp: 'Meta Ads + Google Display', label: 'Landscape', size: '1200 x 628 px' },
-  { key: 'meta_st', grp: 'Meta Ads + Google Display', label: 'Story / Reel 9:16', size: '1080 x 1920 px' },
-  { key: 'gdn_pt', grp: 'Google Display only', label: 'Portrait', size: '960 x 1200 px' },
+  { key: 'fb_sq', grp: 'Facebook & Instagram', label: '1080 x 1080 px', size: '1080 x 1080 px' },
+  { key: 'fb_ls', grp: 'Facebook & Instagram', label: '1200 x 628 px', size: '1200 x 628 px' },
+  { key: 'fb_st', grp: 'Facebook & Instagram', label: '1080 x 1920 px', size: '1080 x 1920 px' },
+  { key: 'gg_sq', grp: 'Google', label: '1080 x 1080 px', size: '1080 x 1080 px' },
+  { key: 'gg_ls', grp: 'Google', label: '1200 x 628 px', size: '1200 x 628 px' },
+  { key: 'gg_st', grp: 'Google', label: '1080 x 1920 px', size: '1080 x 1920 px' },
+  { key: 'gg_pt', grp: 'Google', label: '960 x 1200 px', size: '960 x 1200 px' },
   { key: 'print_sun', grp: 'GDN Newspaper', label: 'Sunday', size: '26 x 36 cm', print: true },
   { key: 'print_mon', grp: 'GDN Newspaper', label: 'Monday', size: '26 x 18 cm', print: true },
   { key: 'print_tue', grp: 'GDN Newspaper', label: 'Tuesday', size: '26 x 18 cm', print: true },
@@ -1281,7 +1285,8 @@ function masterDueFromApproval(b, approvedAt) { return addWorkHours(approvedAt, 
 const fmtDT = d => d ? new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 const fmtD = d => d ? new Date(d + (String(d).length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
 const briefFormats = b => [...(b.formats || []).map(k => AD_FORMATS.find(f => f.key === k)).filter(Boolean), ...(b.customFormats || []).map(c => ({ key: 'custom', label: c.label || 'Custom', size: c.size || '', custom: true }))];
-const briefFmtChips = b => briefFormats(b).map(f => `<span class="fmt-chip ${f.print ? 'print' : ''}" title="${esc(f.size)}">${f.print ? 'GDN ' : ''}${esc(f.label)} <span style="opacity:.6">${esc(f.size)}</span></span>`).join('') || '<span class="fmt-chip">No formats</span>';
+const FMT_SHORT = { 'Facebook & Instagram': 'FB/IG', 'Google': 'Google', 'GDN Newspaper': 'GDN' };
+const briefFmtChips = b => briefFormats(b).map(f => `<span class="fmt-chip ${f.print ? 'print' : ''}" title="${esc((f.grp || 'Custom') + ' ' + f.size)}"><b style="opacity:.75">${esc(FMT_SHORT[f.grp] || (f.custom ? 'Custom' : ''))}</b> ${f.print ? esc(f.label) + ' ' : ''}<span style="opacity:.8">${esc(f.size)}</span></span>`).join('') || '<span class="fmt-chip">No formats</span>';
 const briefLangs = b => [b.langs?.ar ? 'Arabic' : '', b.langs?.en ? 'English' : ''].filter(Boolean).join(' + ') || 'Arabic';
 const getBriefs = c => c.briefs || [];
 const briefFb = (b, kind) => (b.fb && b.fb[kind]) || { status: '', comments: [] };
@@ -1419,7 +1424,7 @@ function adBarsHTML(briefs, ds, onClick) {
 let bfDraft = null;
 function clNewBrief(dup) {
   const base = dup ? JSON.parse(JSON.stringify(dup)) : {};
-  bfDraft = { id: 'b_' + uid(), campaignName: base.campaignName || '', carModel: base.carModel || '', formats: base.formats || ['meta_sq', 'meta_st'], customFormats: [], langs: { ar: true, en: base.langs ? !!base.langs.en : false }, startDate: '', endDate: '', showDates: base.showDates || false, copy: base.copy || '', usps: base.usps || '', price: base.price || '', termsEN: base.termsEN || DEFAULT_TERMS_EN, termsAR: base.termsAR || DEFAULT_TERMS_AR, refs: [], concepts: 2, submittedBy: (localStorage.getItem('rich_cl_name') || ''), editing: false };
+  bfDraft = { id: 'b_' + uid(), campaignName: base.campaignName || '', carModel: base.carModel || '', formats: base.formats || ['fb_sq', 'fb_st'], customFormats: [], langs: { ar: true, en: base.langs ? !!base.langs.en : false }, startDate: '', endDate: '', showDates: base.showDates || false, copy: base.copy || '', usps: base.usps || '', price: base.price || '', termsEN: base.termsEN || DEFAULT_TERMS_EN, termsAR: base.termsAR || DEFAULT_TERMS_AR, refs: [], concepts: 2, submittedBy: (localStorage.getItem('rich_cl_name') || ''), editing: false };
   renderBriefForm();
 }
 function clEditBrief(id) { const b = clientData.briefs.find(x => x.id === id); if (!b || b.status !== 'Submitted') return; bfDraft = JSON.parse(JSON.stringify(b)); bfDraft.customFormats = bfDraft.customFormats || []; bfDraft.editing = true; renderBriefForm(); }
@@ -1430,7 +1435,7 @@ function renderBriefForm() {
   const grps = [...new Set(AD_FORMATS.map(f => f.grp))];
   $('pmTitle').textContent = b.editing ? 'Edit ad request' : 'Request an ad';
   let fmts = '';
-  grps.forEach(g => { fmts += `<div class="fmt-grp-title">${g}</div>` + AD_FORMATS.filter(f => f.grp === g).map(f => `<label class="fmt-opt ${b.formats.includes(f.key) ? 'on' : ''}"><input type="checkbox" ${b.formats.includes(f.key) ? 'checked' : ''} onchange="bfToggleFmt('${f.key}',this.checked)"><span>${f.label}</span><span class="sz">${f.size}</span></label>`).join(''); });
+  grps.forEach(g => { fmts += `<div class="fmt-grp-title">${g}</div>` + AD_FORMATS.filter(f => f.grp === g).map(f => `<label class="fmt-opt ${b.formats.includes(f.key) ? 'on' : ''}"><input type="checkbox" ${b.formats.includes(f.key) ? 'checked' : ''} onchange="bfToggleFmt('${f.key}',this.checked)"><span>${f.print ? f.label : f.size}</span>${f.print ? `<span class="sz">${f.size}</span>` : ''}</label>`).join(''); });
   fmts += `<div class="fmt-grp-title">Custom</div>` + (b.customFormats || []).map((c, i) => `<div class="fmt-opt on" style="grid-column:1/-1;gap:6px"><input type="text" value="${esc(c.label)}" placeholder="Name (e.g. Billboard)" oninput="bfDraft.customFormats[${i}].label=this.value;bfEst()" style="flex:1;border:1px solid var(--border-2);border-radius:4px;padding:4px 6px;font-size:12px"><input type="text" value="${esc(c.size)}" placeholder="Size (e.g. 300 x 250 px)" oninput="bfDraft.customFormats[${i}].size=this.value" style="flex:1;border:1px solid var(--border-2);border-radius:4px;padding:4px 6px;font-size:12px"><button class="btn xs danger" onclick="bfDraft.customFormats.splice(${i},1);renderBriefForm()">&times;</button></div>`).join('') + `<button class="btn sm" style="grid-column:1/-1;justify-content:center" onclick="bfDraft.customFormats.push({label:'',size:''});renderBriefForm()">+ Add custom format</button>`;
   $('pmBody').innerHTML = `
     <div class="bf-group"><h4><span class="n">1</span>What are we advertising?</h4>
@@ -1582,7 +1587,7 @@ Submitted: ${fmtDT(b.createdAt)} by ${b.submittedBy || 'client'}
 Status: ${b.status}
 
 FORMATS (${briefCreativeCount(b)} creatives per concept)
-${briefFormats(b).map(f => `- ${f.print ? 'GDN Newspaper ' : ''}${f.label}: ${f.size}`).join('\n')}
+${briefFormats(b).map(f => `- ${f.grp || 'Custom'}${f.print ? ' ' + f.label : ''}: ${f.size}`).join('\n')}
 Languages: ${briefLangs(b)}
 Concepts: ${(b.concepts || 2) === 2 ? '2 (direct + surreal)' : '1 (single direction)'}
 
