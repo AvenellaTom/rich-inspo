@@ -41,8 +41,48 @@ export async function onRequest(context) {
     }
 
     // Calendars (team)
-    if (path === 'calendars' && request.method === 'GET') return json({ calendars: (await kv.get('calendars','json'))||[] });
-    if (path === 'calendars' && request.method === 'PUT') { await kv.put('calendars', JSON.stringify(await request.json())); return json({ ok:true }); }
+    if (path === 'calendars' && request.method === 'GET') { const cals=(await kv.get('calendars','json'))||[]; const rev=(await kv.get('calendars:rev'))||'0'; return json({ calendars: cals, rev }); }
+    if (path === 'calendars' && request.method === 'PUT') {
+      // Merge-safe save. Client-owned fields (feedback, briefs' fb/status set by client) are taken from the stored copy
+      // so an internal tab with stale data can never wipe out newer client activity. A rev mismatch is reported so the
+      // caller can refresh; the merged result is still written (last writer wins on agency-owned fields only).
+      const incoming = await request.json(); const body = Array.isArray(incoming) ? { calendars: incoming } : incoming;
+      const stored = (await kv.get('calendars','json'))||[]; const storedRev=(await kv.get('calendars:rev'))||'0';
+      const byId = {}; stored.forEach(c=>byId[c.id]=c);
+      const merged = (body.calendars||[]).map(c=>{
+        const s = byId[c.id]; if (!s) return c;
+        const out = { ...c };
+        // Post feedback: union stored + incoming, prefer stored comments (client-owned), keep incoming resolved flags
+        out.feedback = { ...(c.feedback||{}) };
+        Object.entries(s.feedback||{}).forEach(([pid,sf])=>{
+          const inc = out.feedback[pid]||{status:'',comments:[]};
+          const incById = {}; (inc.comments||[]).forEach(cm=>{ incById[(cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||'')]=cm; });
+          const comments = (sf.comments||[]).map(cm=>{ const k=(cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||''); const i=incById[k]; return i && i.resolved!==undefined ? { ...cm, resolved:i.resolved } : cm; });
+          out.feedback[pid] = { status: sf.status!==undefined ? sf.status : inc.status, comments };
+        });
+        // Briefs: client creates/edits/deletes while Submitted; client fb/status transitions are client-owned
+        const sBriefs = s.briefs||[]; const iBriefs = c.briefs||[]; const iById={}; iBriefs.forEach(b=>iById[b.id]=b);
+        const sById={}; sBriefs.forEach(b=>sById[b.id]=b);
+        const mergedBriefs = [];
+        sBriefs.forEach(sb=>{ const ib=iById[sb.id]; if(!ib){ if(sb.status==='Submitted' || !c.__knownBriefIds || !c.__knownBriefIds.includes(sb.id)) mergedBriefs.push(sb); return; }
+          const mb = { ...sb, ...ib };
+          // client-owned: fb comments/status, approvals, submitted-stage edits
+          mb.fb = { ...(ib.fb||{}) }; ['concept','final'].forEach(k=>{ const sf=(sb.fb||{})[k]||{status:'',comments:[]}; const inf=(ib.fb||{})[k]||{status:'',comments:[]}; const incById={}; (inf.comments||[]).forEach(cm=>{incById[(cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||'')]=cm;}); mb.fb[k]={ status: sf.status, comments:(sf.comments||[]).map(cm=>{const i=incById[(cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||'')]; return i&&i.resolved!==undefined?{...cm,resolved:i.resolved}:cm;}) }; });
+          // if the client advanced status (approvals) after the agency's copy, keep the more advanced status
+          const ORDER=['Submitted','Concepts in progress','Concepts ready','Concept approved','Final in progress','Final ready','Approved','Scheduled','Live','Complete'];
+          const si=ORDER.indexOf(sb.status), ii=ORDER.indexOf(ib.status);
+          if (['Concept approved','Approved'].includes(sb.status) && si>ii) { mb.status=sb.status; mb.conceptApprovedAt=sb.conceptApprovedAt; mb.finalApprovedAt=sb.finalApprovedAt; mb.finalDueAt=sb.finalDueAt; mb.masterDueAt=sb.masterDueAt; mb.approvedBy=sb.approvedBy; }
+          if (sb.status==='Submitted' && ib.status==='Submitted') { ['campaignName','carModel','formats','customFormats','langs','startDate','endDate','showDates','copy','usps','price','termsEN','termsAR','refs','concepts','submittedBy','conceptDueAt','cv'].forEach(k=>{ if(sb[k]!==undefined) mb[k]=sb[k]; }); }
+          mergedBriefs.push(mb); });
+        iBriefs.forEach(ib=>{ if(!sById[ib.id]) mergedBriefs.push(ib); });
+        out.briefs = mergedBriefs; delete out.__knownBriefIds;
+        return out;
+      });
+      // calendars present in stored but missing from incoming were deleted by the caller: honour that only if caller saw them
+      const newRev = String(Date.now());
+      await kv.put('calendars', JSON.stringify(merged)); await kv.put('calendars:rev', newRev);
+      return json({ ok:true, rev:newRev, stale: body.rev!==undefined && String(body.rev)!==String(storedRev), calendars: merged });
+    }
     // Calendar (client, PIN)
     if (path === 'calendar' && request.method === 'GET') {
       const id = url.searchParams.get('id'); const pin = url.searchParams.get('pin')||'';
@@ -70,7 +110,7 @@ export async function onRequest(context) {
       if (b.status!==undefined) c.feedback[b.postId].status=b.status;
       if (b.replaceComments) c.feedback[b.postId].comments = b.replaceComments;
       else if (b.comment) c.feedback[b.postId].comments.push({ t:b.comment, by:b.by||'Client', d:new Date().toISOString(), replyTo:b.replyTo!==undefined?b.replyTo:undefined });
-      await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
+      await kv.put('calendars', JSON.stringify(cals)); await kv.put('calendars:rev', String(Date.now())); return json({ ok:true });
     }
 
 
@@ -90,7 +130,7 @@ export async function onRequest(context) {
         else if (b.comment) x.fb[b.kind].comments.push({ t:b.comment, by:b.by||'Client', d:new Date().toISOString() });
         if (b.status!==undefined) { x.fb[b.kind].status=b.status; if (b.briefStatus) { x.status=b.briefStatus; (x.history=x.history||[]).push({status:b.briefStatus,at:new Date().toISOString(),by:b.by||'Client'}); } x.conceptApprovedAt=b.conceptApprovedAt??x.conceptApprovedAt; x.finalApprovedAt=b.finalApprovedAt??x.finalApprovedAt; x.finalDueAt=b.finalDueAt??x.finalDueAt; x.masterDueAt=b.masterDueAt??x.masterDueAt; x.approvedBy=b.approvedBy??x.approvedBy; }
       } else return json({ error:'bad action' },400);
-      await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
+      await kv.put('calendars', JSON.stringify(cals)); await kv.put('calendars:rev', String(Date.now())); return json({ ok:true });
     }
     // Creative asset upload/serve (stored per-asset in KV to handle large video files)
     if (path === 'creative-upload' && request.method === 'POST') {
@@ -144,7 +184,7 @@ export async function onRequest(context) {
       if (b.captionEN !== undefined) p.captionEN = b.captionEN;
       if (b.captionAR !== undefined) p.captionAR = b.captionAR;
       if (b.caption !== undefined) p.caption = b.caption;
-      await kv.put('calendars', JSON.stringify(cals)); return json({ ok:true });
+      await kv.put('calendars', JSON.stringify(cals)); await kv.put('calendars:rev', String(Date.now())); return json({ ok:true });
     }
 
     // Suggestions (team box; admin gate is client-side PIN)

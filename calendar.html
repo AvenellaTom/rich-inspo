@@ -623,6 +623,11 @@ input,textarea,select{font-family:inherit}
 .dayview .dv-dots .dd.on{opacity:1;transform:scale(1.3)}
 .dayview .dv-open{margin-top:12px}
 .dayview .dv-open .btn{background:#fff;color:#111;border:none;font-weight:600}
+.save-state{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;transition:opacity .2s;opacity:0}
+.save-state.saving{opacity:1;background:rgba(255,255,255,.12);color:#fff}
+.save-state.saved{opacity:1;background:#16a34a;color:#fff}
+.save-state.error{opacity:1;background:#dc2626;color:#fff;cursor:pointer}
+.save-state.stale{opacity:1;background:#fbbf24;color:#000}
 /* Print */
 @media print{.int-header,.cl-header,.int-cal-toolbar,.cl-toolbar,.month-nav,.btn{display:none!important}body{background:#fff}}
 
@@ -734,14 +739,38 @@ function migrateData() {
 /* ================================================================
    API
 ================================================================ */
+let dataRev = '0', saveState = 'idle', saveTimer = null, saveChain = Promise.resolve();
+function setSaveState(s, msg) { saveState = s; const el = $('saveState'); if (!el) return; el.className = 'save-state ' + s; el.textContent = msg || ({ idle: '', saving: 'Saving…', saved: 'Saved', error: 'Not saved. Retry', stale: 'Updated elsewhere. Refreshing…' })[s] || ''; if (s === 'saved') { clearTimeout(saveTimer); saveTimer = setTimeout(() => setSaveState('idle'), 2500); } }
 async function loadCalendars() {
-  try { const r = await fetch('/api/calendars'); if (r.ok) { const d = await r.json(); apiOn = true; return d.calendars || []; } } catch (e) { }
+  try { const r = await fetch('/api/calendars', { cache: 'no-store' }); if (r.ok) { const d = await r.json(); apiOn = true; dataRev = d.rev || '0'; return d.calendars || []; } } catch (e) { }
   try { return JSON.parse(localStorage.getItem('rich_calendars') || '[]'); } catch (e) { return []; }
 }
-async function saveCalendars() {
-  if (apiOn) { try { await fetch('/api/calendars', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(calendars) }); } catch (e) { } }
+function saveCalendars() {
   try { localStorage.setItem('rich_calendars', JSON.stringify(calendars)); } catch (e) { }
+  if (!apiOn) return Promise.resolve();
+  setSaveState('saving');
+  saveChain = saveChain.then(async () => {
+    try {
+      const r = await fetch('/api/calendars', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ calendars, rev: dataRev }) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json(); dataRev = d.rev || dataRev;
+      if (d.calendars) { // adopt server-merged copy so client activity that arrived meanwhile shows up
+        const cur = currentCalId; calendars = d.calendars; if (cur && !calendars.find(c => c.id === cur)) currentCalId = null;
+      }
+      if (d.stale) { setSaveState('stale'); setTimeout(() => { if (!$('postModal').classList.contains('show')) rerender(); setSaveState('saved', 'Saved and refreshed'); }, 600); } else setSaveState('saved');
+    } catch (e) { console.error('save failed', e); setSaveState('error'); const el = $('saveState'); if (el) el.onclick = () => saveCalendars(); }
+  });
+  return saveChain;
 }
+function rerender() { if (currentCalId) renderCalView(); else renderDashboard(); }
+async function refreshFromServer(silent) {
+  if (!apiOn) return; if ($('postModal').classList.contains('show') || $('settingsModal').classList.contains('show')) return;
+  try { const r = await fetch('/api/calendars', { cache: 'no-store' }); if (!r.ok) return; const d = await r.json(); if ((d.rev || '0') !== dataRev) { dataRev = d.rev || '0'; calendars = d.calendars || []; rerender(); if (!silent) setSaveState('saved', 'Refreshed'); } } catch (e) { }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshFromServer(true); });
+window.addEventListener('focus', () => refreshFromServer(true));
+setInterval(() => { if (document.visibilityState === 'visible') refreshFromServer(true); }, 60000);
+window.addEventListener('beforeunload', e => { if (saveState === 'saving' || saveState === 'error') { e.preventDefault(); e.returnValue = ''; } });
 async function clientLoad(id, pin) {
   try { const r = await fetch('/api/calendar?id=' + encodeURIComponent(id) + '&pin=' + encodeURIComponent(pin)); if (r.status === 403) return { error: 'pin' }; if (!r.ok) return { error: 'notfound' }; return await r.json(); } catch (e) { return { error: 'network' }; }
 }
@@ -811,7 +840,7 @@ async function init() {
    INTERNAL: HEADER
 ================================================================ */
 function intHeader(title, actions) {
-  return `<div class="int-header"><img src="${LOGO}" alt="RICH"><span class="int-badge">Internal</span><h1>${esc(title)}</h1><div class="int-actions">${actions || ''}</div></div>`;
+  return `<div class="int-header"><img src="${LOGO}" alt="RICH"><span class="int-badge">Internal</span><h1>${esc(title)}</h1><span class="save-state ${saveState}" id="saveState">${({ saving: 'Saving…', saved: 'Saved', error: 'Not saved. Retry', stale: 'Updated elsewhere. Refreshing…' })[saveState] || ''}</span><div class="int-actions">${actions || ''}</div></div>`;
 }
 
 /* ================================================================
