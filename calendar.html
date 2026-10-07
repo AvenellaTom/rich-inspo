@@ -828,12 +828,60 @@ function openFullView(el, label) {
 /* ================================================================
    ROUTER
 ================================================================ */
+/* ================================================================
+   ROUTER: URL <-> state. Internal: ?cal=&view=&m=&post=|brief=   Client: ?calendar=&tab=&m=&post=|brief=
+================================================================ */
+let suppressUrl = false;
+function writeUrl(params, replace) {
+  if (suppressUrl) return;
+  const u = new URL(location.href); u.search = '';
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '' && v !== false) u.searchParams.set(k, v); });
+  if (u.href !== location.href) history[replace ? 'replaceState' : 'pushState']({}, '', u.href);
+}
+function syncUrlInternal(replace) {
+  const open = $('postModal').classList.contains('show'); const pid = open ? curPid() : null; const bid = open ? curBid() : null;
+  writeUrl({ cal: currentCalId, view: currentCalId ? viewMode : undefined, m: currentCalId && viewMode !== 'year' ? monthKey(viewMonth.getFullYear(), viewMonth.getMonth()) : undefined, post: pid || undefined, brief: bid || undefined }, replace);
+}
+function syncUrlClient(replace, extra = {}) {
+  writeUrl({ calendar: clientCalId, tab: clientTab !== 'review' ? clientTab : undefined, m: clientMonth ? monthKey(clientMonth.getFullYear(), clientMonth.getMonth()) : undefined, ...extra }, replace);
+}
+function curBid() { const m = $('pmFoot').innerHTML.match(/deleteBrief\('([^']+)'/); return m ? m[1] : null; }
+function parseMonth(s) { if (!s || !/^\d{4}-\d{2}$/.test(s)) return null; const [y, m] = s.split('-').map(Number); return new Date(y, m - 1, 1); }
+function shareLink(kind, id) {
+  const u = new URL(location.origin + location.pathname);
+  if (clientData) { u.searchParams.set('calendar', clientCalId); u.searchParams.set(kind, id); }
+  else { u.searchParams.set('cal', currentCalId); u.searchParams.set(kind, id); }
+  return u.href;
+}
+function copyShare(kind, id, label) { const l = shareLink(kind, id); navigator.clipboard.writeText(l).then(() => alert((label || 'Link') + ' copied:\n' + l)).catch(() => prompt('Copy this link:', l)); }
+async function applyInternalRoute(q) {
+  const cal = q.get('cal'); if (!cal || !calendars.find(c => c.id === cal)) { currentCalId = null; renderDashboard(); return; }
+  suppressUrl = true; openCalendar(cal); suppressUrl = false;
+  const v = q.get('view'); if (['board', 'month', 'year', 'briefs'].includes(v)) viewMode = v;
+  const m = parseMonth(q.get('m')); if (m) viewMonth = m;
+  renderCalView();
+  if (q.get('post') && getPost(getCal(), q.get('post'))) { const p = getPost(getCal(), q.get('post')); if (p.date && !q.get('m')) { viewMonth = new Date(p.date + 'T00:00:00'); viewMonth.setDate(1); renderCalView(); } editPost(q.get('post')); }
+  else if (q.get('brief') && getBriefs(getCal()).find(b => b.id === q.get('brief'))) { viewMode = 'briefs'; renderCalView(); openBrief(q.get('brief')); }
+}
+function applyClientRoute(q) {
+  const t = q.get('tab'); clientTab = ['review', 'calendar', 'briefs'].includes(t) ? t : 'review';
+  const m = parseMonth(q.get('m')); if (m) clientMonth = m;
+  if (q.get('brief')) { const b = (clientData.briefs || []).find(x => x.id === q.get('brief')); if (b) { clientTab = 'briefs'; clBriefTab = briefIsActive(b) ? 'active' : 'done'; } }
+  if (q.get('post')) { const p = (clientData.posts || []).find(x => x.id === q.get('post')); if (p && p.date) { clientMonth = new Date(p.date + 'T00:00:00'); clientMonth.setDate(1); clientTab = 'review'; clientFilter = 'all'; } }
+  renderClient();
+  if (q.get('post')) setTimeout(() => { const el = $('cp-' + q.get('post')); if (el) { el.classList.add('open'); el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }); el.style.boxShadow = '0 0 0 3px var(--client)'; setTimeout(() => el.style.boxShadow = '', 2500); } }, 150);
+  if (q.get('brief')) setTimeout(() => { const el = $('bc-' + q.get('brief')); if (el) { el.classList.add('open'); el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }); } }, 150);
+}
+window.addEventListener('popstate', async () => {
+  const q = new URLSearchParams(location.search); suppressUrl = true;
+  try { if (clientData) applyClientRoute(q); else { $('postModal').classList.remove('show'); await applyInternalRoute(q); } } finally { suppressUrl = false; }
+});
 async function init() {
   const q = new URLSearchParams(location.search);
   if (q.get('calendar')) { clientGate(q.get('calendar')); return; }
   calendars = await loadCalendars();
   migrateData();
-  renderDashboard();
+  suppressUrl = true; await applyInternalRoute(q); suppressUrl = false; syncUrlInternal(true);
 }
 
 /* ================================================================
@@ -847,7 +895,7 @@ function intHeader(title, actions) {
    INTERNAL: DASHBOARD
 ================================================================ */
 function renderDashboard() {
-  currentCalId = null;
+  currentCalId = null; syncUrlInternal();
   let totalPosts = 0, review = 0, changes = 0, approved = 0, unres = 0, openBriefs = 0, newBriefs = 0;
   const activity = [];
   calendars.forEach(c => {
@@ -953,6 +1001,7 @@ function renderCalView() {
   if (viewMode === 'year') h += yearView(c); else if (viewMode === 'board') h += boardView(c); else if (viewMode === 'briefs') h += briefsView(c); else h += monthView(c);
   h += '</div>';
   $('app').innerHTML = h;
+  if (!$('postModal').classList.contains('show')) syncUrlInternal();
 }
 function calToolbar(c, extra) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
@@ -1091,8 +1140,8 @@ function editPost(pid) {
   </div>
   <div class="ed-preview"><div class="pv-label">Client preview</div><div class="pv-box" ${preview ? `onclick="openFullView(this,'${esc(p.topic || '')}')"` : ''}>${preview || '<div class="pv-empty">Upload a creative to preview</div>'}</div></div>
   </div>`;
-  $('pmFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deletePost('${pid}')">Delete post</button></div><div class="right"><button class="btn" onclick="closeEditor()">Cancel</button><button class="btn primary" onclick="savePost('${pid}')">Save</button></div>`;
-  $('postModal').classList.add('show'); $('pmClose').onclick = closeEditor;
+  $('pmFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deletePost('${pid}')">Delete post</button><button class="btn sm" onclick="copyShare('post','${pid}','Internal link')">&#128279; Link</button><button class="btn sm" onclick="navigator.clipboard.writeText(location.origin+location.pathname+'?calendar=${c.id}&post=${pid}').then(()=>alert('Client link copied'))">&#128279; Client link</button></div><div class="right"><button class="btn" onclick="closeEditor()">Cancel</button><button class="btn primary" onclick="savePost('${pid}')">Save</button></div>`;
+  $('postModal').classList.add('show'); $('pmClose').onclick = closeEditor; syncUrlInternal();
 }
 function closeEditor() { $('postModal').classList.remove('show'); renderCalView(); }
 function readForm(p) {
@@ -1334,6 +1383,7 @@ function briefCardHTML(calId, b, role, pin) {
       <h5>Terms</h5><p>${esc(b.termsEN || '')}</p>${b.termsAR ? `<p dir="rtl">${esc(b.termsAR)}</p>` : ''}
       ${(b.refs || []).length ? `<h5>References</h5>${briefRefsHTML(calId, b, pin, false)}` : ''}
       ${comments ? `<h5>Feedback on ${kind}</h5><div class="comments-box">${comments}</div>` : ''}
+      <div style="text-align:right;margin-top:8px"><button class="btn xs" onclick="copyShare('brief','${b.id}','Link to this brief')">&#128279; Copy link</button></div>
     </div></div>
   </div>`;
 }
@@ -1442,7 +1492,7 @@ async function clSubmitBrief() {
   b.createdAt = new Date().toISOString(); const e = briefEstimate(b, new Date(b.createdAt)); b.conceptDueAt = e.conceptDue.toISOString(); b.status = 'Submitted'; b.history = [{ status: 'Submitted', at: b.createdAt, by: b.submittedBy }]; b.conceptMedia = []; b.finalMedia = []; b.fb = { concept: { status: '', comments: [] }, final: { status: '', comments: [] } }; delete b.editing;
   clientData.briefs = clientData.briefs || []; clientData.briefs.unshift(b);
   $('postModal').classList.remove('show'); clBriefTab = 'active'; clientTab = 'briefs'; renderClient();
-  setTimeout(() => $('bc-' + b.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  setTimeout(() => $('bc-' + b.id)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 100);
   await clientBriefSend({ action: 'create', brief: b });
 }
 async function clientBriefSend(data) { try { const r = await fetch('/api/brief-client', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: clientCalId, pin: clientPin, ...data }) }); if (!r.ok) alert('Something went wrong saving your request. Please try again.'); } catch (e) { alert('Could not reach the server. Please check your connection and try again.'); } }
@@ -1457,7 +1507,7 @@ async function clBriefDecide(id, kind, s) {
 async function clBriefComment(id, kind) { const name = $('bnm-' + id).value.trim() || 'Client', t = $('bmsg-' + id).value.trim(); if (!t) return; localStorage.setItem('rich_cl_name', name); const b = clientData.briefs.find(x => x.id === id); b.fb = b.fb || {}; b.fb[kind] = b.fb[kind] || { status: '', comments: [] }; b.fb[kind].comments.push({ t, by: name, d: new Date().toISOString() }); renderClient(); $('bc-' + id)?.classList.add('open'); await clientBriefSend({ action: 'feedback', briefId: id, kind, comment: t, by: name }); }
 async function clBriefEditComment(id, kind, i) { const b = clientData.briefs.find(x => x.id === id); const cm = b.fb[kind].comments[i]; const t = prompt('Edit your comment:', cm.t); if (t === null) return; if (t.trim()) cm.t = t.trim(); else b.fb[kind].comments.splice(i, 1); renderClient(); $('bc-' + id)?.classList.add('open'); await clientBriefSend({ action: 'feedback', briefId: id, kind, replaceComments: b.fb[kind].comments }); }
 async function clBriefDeleteComment(id, kind, i) { if (!confirm('Delete this comment?')) return; const b = clientData.briefs.find(x => x.id === id); b.fb[kind].comments.splice(i, 1); renderClient(); $('bc-' + id)?.classList.add('open'); await clientBriefSend({ action: 'feedback', briefId: id, kind, replaceComments: b.fb[kind].comments }); }
-function clOpenBrief(id) { clientTab = 'briefs'; const b = clientData.briefs.find(x => x.id === id); clBriefTab = b && !briefIsActive(b) ? 'done' : 'active'; renderClient(); setTimeout(() => { const el = $('bc-' + id); if (el) { el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, 100); }
+function clOpenBrief(id) { clientTab = 'briefs'; const b = clientData.briefs.find(x => x.id === id); clBriefTab = b && !briefIsActive(b) ? 'done' : 'active'; renderClient(); setTimeout(() => { const el = $('bc-' + id); if (el) { el.classList.add('open'); el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }); } }, 100); }
 
 /* ================================================================
    AD BRIEFS: INTERNAL
@@ -1498,8 +1548,8 @@ function openBrief(id) {
       </div>
     </div>
     <div class="ed-section"><div class="ed-section-title">Campaign dates <span class="hint">Edit if the client's dates need to move</span></div><div class="field-row"><div class="field"><label>Start</label><input type="date" value="${b.startDate || ''}" onchange="saveBriefField('${id}','startDate',this.value)"></div><div class="field"><label>End</label><input type="date" value="${b.endDate || ''}" onchange="saveBriefField('${id}','endDate',this.value)"></div></div></div>`;
-  $('pmFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deleteBrief('${id}')">Delete brief</button></div><div class="right"><button class="btn" onclick="copyBriefForClickUp('${id}')">&#128203; Copy for ClickUp</button><button class="btn primary" onclick="$('postModal').classList.remove('show');renderCalView()">Done</button></div>`;
-  $('postModal').classList.add('show'); $('pmClose').onclick = () => { $('postModal').classList.remove('show'); renderCalView(); };
+  $('pmFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deleteBrief('${id}')">Delete brief</button><button class="btn sm" onclick="copyShare('brief','${id}','Internal link')">&#128279; Link</button><button class="btn sm" onclick="navigator.clipboard.writeText(location.origin+location.pathname+'?calendar=${c.id}&brief=${id}').then(()=>alert('Client link copied'))">&#128279; Client link</button></div><div class="right"><button class="btn" onclick="copyBriefForClickUp('${id}')">&#128203; Copy for ClickUp</button><button class="btn primary" onclick="$('postModal').classList.remove('show');renderCalView()">Done</button></div>`;
+  $('postModal').classList.add('show'); $('pmClose').onclick = () => { $('postModal').classList.remove('show'); renderCalView(); }; syncUrlInternal();
 }
 function setBriefStatus(id, s) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); if (!b) return; b.status = s; (b.history = b.history || []).push({ status: s, at: new Date().toISOString(), by: localStorage.getItem('rich_team_name') || 'Agency' }); if (s === 'Concepts ready') { b.fb = b.fb || {}; b.fb.concept = b.fb.concept || { status: '', comments: [] }; b.fb.concept.status = ''; } if (s === 'Final ready') { b.fb = b.fb || {}; b.fb.final = b.fb.final || { status: '', comments: [] }; b.fb.final.status = ''; } saveCalendars(); openBrief(id); }
 function agencySignoff(id) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); const by = prompt('Sign off as:', localStorage.getItem('rich_team_name') || 'Tom'); if (!by) return; localStorage.setItem('rich_team_name', by); b.agencySignoff = { by, at: new Date().toISOString() }; saveCalendars(); openBrief(id); }
@@ -1548,7 +1598,8 @@ AR: ${b.termsAR || '-'}
 REFERENCES
 ${(b.refs || []).map(r => r.url ? '- ' + r.url : '- ' + location.origin + creativeUrl(c.id, b.id, 'ref', r.kvIdx, b.cv)).join('\n') || '- none'}
 
-Client portal: ${link}`;
+Internal link: ${location.origin}${location.pathname}?cal=${c.id}&brief=${b.id}
+Client link: ${link}&brief=${b.id}`;
   navigator.clipboard.writeText(t).then(() => alert('Brief copied. Paste it into the ClickUp task description.')).catch(() => prompt('Copy this:', t));
 }
 function openCalendarToBrief(calId, bid) { openCalendar(calId); viewMode = 'briefs'; renderCalView(); setTimeout(() => openBrief(bid), 200); }
@@ -1571,13 +1622,14 @@ function openDayView(items, dateLabel, opts = {}) {
         <div class="dv-info">${platIcon(it.platform)}<div style="min-width:0"><h4>${esc(p.topic || 'Untitled')}</h4><div class="sub">${esc(it.platform.replace('X (Twitter)', 'X'))}${p.creativeType ? ' · ' + esc(p.creativeType) : ''} · ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div></div><span class="badge ${st[0]}">${esc(st[1])}</span></div>
       </div>
       <div class="dv-dots">${items.map((x, i) => `<div class="dd ${i === cur ? 'on' : ''}" style="background:${PLAT_COLORS[x.platform] || '#8b5cf6'}" title="${esc(x.post.topic || '')} · ${esc(x.platform)}"></div>`).join('')}</div>
-      <div class="dv-open"><button class="btn">${opts.client ? 'Review this post' : 'Open post'}</button></div>`;
+      <div class="dv-open" style="display:flex;gap:8px"><button class="btn">${opts.client ? 'Review this post' : 'Open post'}</button><button class="btn dv-link" style="background:rgba(255,255,255,.15);color:#fff">&#128279; Copy link</button></div>`;
     ov.querySelector('.dv-close').onclick = () => ov.remove();
     ov.querySelectorAll('.dv-dots .dd').forEach((d, i) => d.onclick = () => { cur = i; render(); });
     const pv = ov.querySelector('.dv-nav.prev'), nx = ov.querySelector('.dv-nav.next');
     if (pv) pv.onclick = e => { e.stopPropagation(); cur = (cur - 1 + items.length) % items.length; render(); };
     if (nx) nx.onclick = e => { e.stopPropagation(); cur = (cur + 1) % items.length; render(); };
-    ov.querySelector('.dv-open .btn').onclick = () => { ov.remove(); opts.onOpen && opts.onOpen(p.id); };
+    ov.querySelector('.dv-open .btn:not(.dv-link)').onclick = () => { ov.remove(); opts.onOpen && opts.onOpen(p.id); };
+    ov.querySelector('.dv-link').onclick = () => copyShare('post', p.id, 'Link to this post');
     ov.querySelector('.dv-media').onclick = e => { if (e.target.closest('.carousel-nav') || e.target.closest('.carousel-dots') || e.target.tagName === 'VIDEO') return; openFullView(e.currentTarget, p.topic || ''); };
   };
   ov.onkeydown = e => { if (e.key === 'ArrowLeft') { cur = (cur - 1 + items.length) % items.length; render(); } else if (e.key === 'ArrowRight') { cur = (cur + 1) % items.length; render(); } else if (e.key === 'Escape') ov.remove(); };
@@ -1590,13 +1642,19 @@ function dayItems(calId, posts, pin, prefix) {
   return out;
 }
 function intDayView(ds) { const c = getCal(); const posts = (c.posts || []).filter(p => p.date === ds); openDayView(dayItems(c.id, posts, null, 'dv'), fmtDate(ds), { onOpen: pid => editPost(pid) }); }
-function clDayView(ds) { const posts = (clientData.posts || []).filter(p => p.date === ds); openDayView(dayItems(clientCalId, posts, clientPin, 'cdv'), fmtDate(ds), { client: true, onOpen: pid => { clientTab = 'review'; clientFilter = 'all'; renderClient(); setTimeout(() => $('cp-' + pid)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); } }); }
+function clDayView(ds) { const posts = (clientData.posts || []).filter(p => p.date === ds); openDayView(dayItems(clientCalId, posts, clientPin, 'cdv'), fmtDate(ds), { client: true, onOpen: pid => { clientTab = 'review'; clientFilter = 'all'; renderClient(); setTimeout(() => $('cp-' + pid)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 150); } }); }
 
 /* ================================================================
    CLIENT: GATE
 ================================================================ */
 function clientGate(id) {
   clientCalId = id;
+  let saved = ''; try { saved = sessionStorage.getItem('rich_pin_' + id) || localStorage.getItem('rich_pin_' + id) || ''; } catch (e) { }
+  if (saved) { clientLoad(id, saved).then(d => { if (!d.error) { clientPin = saved; clientData = d; try { clientSize = localStorage.getItem('rich_cl_sz') || 'm'; } catch (e) { } applyClientRoute(new URLSearchParams(location.search)); } else renderGate(); }); return; }
+  renderGate();
+}
+function renderGate() {
+  const id = clientCalId;
   $('app').innerHTML = `<div class="cl-header"><img src="${LOGO}" alt="RICH"><span class="cl-badge">Client review</span><h1>Content Calendar</h1></div>
     <div class="cl-gate"><div class="gate-card"><h2>Enter your PIN</h2><p>This content calendar has been shared privately with you by RICH Marketing.</p><input id="pinIn" type="text" inputmode="numeric" autocomplete="off" placeholder="····" maxlength="10"><br><button class="btn primary" onclick="clientEnter()">View content</button><div class="err" id="pinErr"></div></div></div>`;
   $('pinIn').onkeydown = e => { if (e.key === 'Enter') clientEnter(); }; setTimeout(() => $('pinIn').focus(), 100);
@@ -1606,7 +1664,8 @@ async function clientEnter() {
   const d = await clientLoad(clientCalId, pin);
   if (d.error === 'pin') { $('pinErr').textContent = 'That PIN is not correct. Please try again.'; return; }
   if (d.error) { $('pinErr').textContent = 'Calendar not found.'; return; }
-  clientPin = pin; clientData = d; try { clientSize = localStorage.getItem('rich_cl_sz') || 'm'; } catch (e) { } renderClient();
+  clientPin = pin; clientData = d; try { localStorage.setItem('rich_pin_' + clientCalId, pin); clientSize = localStorage.getItem('rich_cl_sz') || 'm'; } catch (e) { }
+  applyClientRoute(new URLSearchParams(location.search));
 }
 
 /* ================================================================
@@ -1674,6 +1733,7 @@ function renderClient() {
             ${arMedia ? `<div class="sec"><h5>Arabic creative</h5><div class="ar-box" onclick="openFullView(this,'Arabic')">${arMedia}</div></div>` : ''}
             ${(p.assets || []).filter(a => a.url).length ? `<div class="sec"><h5>Files</h5>${p.assets.filter(a => a.url).map(a => `<a href="${esc(a.url)}" target="_blank" class="btn xs" style="margin:2px">${esc(a.label || 'Open file')}</a>`).join('')}</div>` : ''}
             <div class="sec"><h5>Your feedback</h5><div class="comments-box">${comments || '<div style="font-size:12px;color:var(--muted-2);font-style:italic">No comments yet.</div>'}</div></div>
+            <div class="sec" style="text-align:right"><button class="btn xs" onclick="copyShare('post','${p.id}','Link to this post')">&#128279; Copy link to this post</button></div>
           </div></div>
         </div>`;
       });
@@ -1682,6 +1742,7 @@ function renderClient() {
   }
   h += `<div class="cl-footer"><img src="${LOGO}" alt="RICH">Prepared by RICH Marketing</div></div>`;
   $('app').innerHTML = h;
+  syncUrlClient();
 }
 function clientGo(k) { const [y, m] = k.split('-').map(Number); clientMonth = new Date(y, m - 1, 1); renderClient(); }
 async function clDecide(pid, s) { const p = clientData.posts.find(x => x.id === pid); p.feedback = p.feedback || { status: '', comments: [] }; p.feedback.status = p.feedback.status === s ? '' : s; renderClient(); await clientSend(pid, { status: p.feedback.status }); }
