@@ -634,6 +634,9 @@ input,textarea,select{font-family:inherit}
 .view-tabs button.todo-hot:not(.active){color:#b45309;font-weight:600}
 .view-tabs button .ad-pill{margin-left:4px}
 .cl-card .status-row .badge.review{background:#fbbf24;color:#111;font-weight:700}
+.fv-expand{position:absolute;bottom:8px;right:8px;z-index:4;width:34px;height:34px;border-radius:8px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);transition:background .15s}
+.fv-expand:hover{background:var(--client)}
+.media video,.bc-media video{cursor:zoom-in}
 /* Print */
 @media print{.int-header,.cl-header,.int-cal-toolbar,.cl-toolbar,.month-nav,.btn{display:none!important}body{background:#fff}}
 
@@ -793,23 +796,36 @@ function mediaHTML(calId, p, lang, v, pin, opts = {}) {
   const slides = p['carousel' + lang] || [];
   const id = (opts.prefix || 'c') + '-' + lang + '-' + p.id;
   if (slides.length > 1) {
-    const inner = slides.map((s, i) => { const src = creativeUrl(calId, p.id, lang, slideKey(s, i), v, pin); return `<div class="carousel-slide">${s.type === 'video' ? `<video src="${src}" controls playsinline onclick="event.stopPropagation()"></video>` : `<img src="${src}" alt="">`}</div>`; }).join('');
+    const inner = slides.map((s, i) => { const src = creativeUrl(calId, p.id, lang, slideKey(s, i), v, pin); return `<div class="carousel-slide">${s.type === 'video' ? `<video src="${src}" controls playsinline onclick="vidClick(event)"></video>` : `<img src="${src}" alt="">`}</div>`; }).join('');
     return `<div class="carousel"><div class="carousel-count">${slides.length}</div><div class="carousel-track" id="${id}">${inner}</div><button class="carousel-nav prev" onclick="event.stopPropagation();carNav('${id}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="event.stopPropagation();carNav('${id}',1)">&rsaquo;</button><div class="carousel-dots" id="${id}-dots">${slides.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" onclick="event.stopPropagation();carGo('${id}',${i})"></div>`).join('')}</div></div>`;
   }
-  if (slides.length === 1) { const src = creativeUrl(calId, p.id, lang, slideKey(slides[0], 0), v, pin); return slides[0].type === 'video' ? `<video src="${src}" controls playsinline onclick="event.stopPropagation()"></video>` : `<img src="${src}" alt="">`; }
-  if (p['hasCreative' + lang]) { const src = creativeUrl(calId, p.id, lang, undefined, v, pin); return p['creative' + lang + 'Type'] === 'video' ? `<video src="${src}" controls playsinline onclick="event.stopPropagation()"></video>` : `<img src="${src}" alt="">`; }
+  if (slides.length === 1) { const src = creativeUrl(calId, p.id, lang, slideKey(slides[0], 0), v, pin); return slides[0].type === 'video' ? `<video src="${src}" controls playsinline onclick="vidClick(event)"></video>` : `<img src="${src}" alt="">`; }
+  if (p['hasCreative' + lang]) { const src = creativeUrl(calId, p.id, lang, undefined, v, pin); return p['creative' + lang + 'Type'] === 'video' ? `<video src="${src}" controls playsinline onclick="vidClick(event)"></video>` : `<img src="${src}" alt="">`; }
   return '';
 }
 const carState = {};
 function carNav(id, d) { const t = $(id); if (!t) return; const n = t.children.length; carState[id] = (((carState[id] || 0) + d) % n + n) % n; carGo(id, carState[id]); }
 function carGo(id, i) { const t = $(id); if (!t) return; carState[id] = i; t.style.transform = `translateX(-${i * 100}%)`; const d = $(id + '-dots'); if (d) d.querySelectorAll('.dot').forEach((x, j) => x.classList.toggle('active', j === i)); }
 
-function openFullView(el, label) {
-  if (event && (event.target.closest('.carousel-nav') || event.target.closest('.carousel-dots') || event.target.tagName === 'VIDEO')) return;
+function vidClick(e) {
+  // Native controls live in the bottom ~44px of the element. Clicks there are for play/pause/scrub; anything above opens fullscreen.
+  const v = e.currentTarget; const r = v.getBoundingClientRect();
+  if (e.clientY > r.bottom - 48) { e.stopPropagation(); return; }
+  if (e.target.closest('.fullview')) { e.stopPropagation(); return; }
+  e.preventDefault(); e.stopPropagation();
+  const host = v.closest('.media, .bc-media, .pv-box, .ar-box, .dv-media, .ref, .creative-thumb') || v.parentElement;
+  openFullView(host, host.dataset.fvLabel || '', v);
+}
+function openFullView(el, label, startEl) {
+  const ev = (typeof event !== 'undefined' && event) ? event : null;
+  if (!startEl && ev && ev.target && ev.target.closest && (ev.target.closest('.carousel-nav') || ev.target.closest('.carousel-dots') || ev.target.tagName === 'VIDEO')) return;
   const items = [...el.querySelectorAll('img,video')].filter(x => !x.closest('.plat-icon'));
   if (!items.length) return;
   let cur = 0;
-  if (event) { const clicked = event.target.closest('.carousel-slide'); if (clicked) { const slides = [...el.querySelectorAll('.carousel-slide')]; cur = Math.max(0, slides.indexOf(clicked)); } }
+  if (startEl) { const i = items.indexOf(startEl); if (i >= 0) cur = i; }
+  else if (ev && ev.target && ev.target.closest) { const clicked = ev.target.closest('.carousel-slide'); if (clicked) { const slides = [...el.querySelectorAll('.carousel-slide')]; cur = Math.max(0, slides.indexOf(clicked)); } }
+  // pause any inline video so two do not play at once
+  document.querySelectorAll('video').forEach(x => { try { x.pause(); } catch (e) { } });
   const ov = document.createElement('div'); ov.className = 'fullview'; ov.tabIndex = 0;
   const stage = document.createElement('div'); stage.className = 'fv-stage';
   ov.innerHTML = '<button class="fv-close">&times;</button>'; ov.appendChild(stage);
@@ -819,7 +835,7 @@ function openFullView(el, label) {
     stage.querySelectorAll('.fvm').forEach(m => m.remove());
     const src = items[cur].src, vid = items[cur].tagName === 'VIDEO';
     const m = document.createElement(vid ? 'video' : 'img'); m.className = 'fvm'; m.src = src;
-    if (vid) { m.controls = true; m.autoplay = true; m.onclick = e => e.stopPropagation(); }
+    if (vid) { m.controls = true; m.autoplay = true; m.playsInline = true; m.onclick = e => e.stopPropagation(); try { if (items[cur].currentTime) m.currentTime = items[cur].currentTime; } catch (e) { } }
     stage.appendChild(m);
     const c = stage.querySelector('.fv-counter'); if (c) c.textContent = (cur + 1) + ' / ' + items.length;
   }
@@ -1082,7 +1098,7 @@ function boardView(c) {
     const media = mediaHTML(c.id, p, 'EN', p.cv, null, { prefix: 'b' }) || mediaHTML(c.id, p, 'AR', p.cv, null, { prefix: 'b' });
     const fbBadge = fb.status === 'approved' ? '<div class="fb-badge ok">&#10003; Client approved</div>' : fb.status === 'declined' ? '<div class="fb-badge ch">! Changes requested</div>' : un ? `<div class="fb-badge un">${un} unresolved</div>` : '';
     h += `<div class="board-card" data-pid="${p.id}">
-      <div class="media" onclick="${media ? `openFullView(this,'${esc(p.topic || '')}')` : `$('bf-${p.id}').click()`}">${media || '<div class="empty"><span class="plus">+</span>Upload creative</div>'}<div class="plat-icons">${platIcons(p.platforms)}</div><span class="badge status-badge ${STATUS_CLASS[p.status] || 'draft'}">${esc(p.status || 'Draft')}</span>${fbBadge}${media ? `<div class="upload-overlay"><button class="btn" onclick="event.stopPropagation();$('bf-${p.id}').click()">+ Add</button></div>` : ''}</div>
+      <div class="media" data-fv-label="${esc(p.topic || '')}" onclick="${media ? `openFullView(this,'${esc(p.topic || '')}')` : `$('bf-${p.id}').click()`}">${media || '<div class="empty"><span class="plus">+</span>Upload creative</div>'}${media ? `<button class="fv-expand" title="View full screen" onclick="event.stopPropagation();openFullView(this.parentElement,'${esc(p.topic || '')}')">&#x26F6;</button>` : ''}<div class="plat-icons">${platIcons(p.platforms)}</div><span class="badge status-badge ${STATUS_CLASS[p.status] || 'draft'}">${esc(p.status || 'Draft')}</span>${fbBadge}${media ? `<div class="upload-overlay"><button class="btn" onclick="event.stopPropagation();$('bf-${p.id}').click()">+ Add</button></div>` : ''}</div>
       <input type="file" id="bf-${p.id}" accept="image/*,video/*" multiple style="display:none" onchange="boardUpload('${p.id}',this)">
       <div class="body"><h4>${esc(p.topic || 'Untitled')}</h4><div class="date">${fmtDate(p.date)} &middot; ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div>
         ${last ? `<div class="last-fb"><strong>${esc(last.by || 'Client')}:</strong> ${esc((last.t || '').slice(0, 100))}${(last.t || '').length > 100 ? '…' : ''}</div>` : ''}
@@ -1301,8 +1317,8 @@ const briefIsLive = b => b.startDate && b.endDate && b.startDate <= todayStr() &
 function briefMediaHTML(calId, b, kind, pin, prefix) {
   const arr = b[kind + 'Media'] || []; const id = (prefix || 'bm') + '-' + kind + '-' + b.id;
   if (!arr.length) return '';
-  if (arr.length === 1) { const src = creativeUrl(calId, b.id, kind, arr[0].kvIdx, b.cv, pin); return arr[0].type === 'video' ? `<video src="${src}" controls playsinline onclick="event.stopPropagation()"></video>` : `<img src="${src}" alt="">`; }
-  const inner = arr.map((s, i) => { const src = creativeUrl(calId, b.id, kind, s.kvIdx, b.cv, pin); return `<div class="carousel-slide">${s.type === 'video' ? `<video src="${src}" controls playsinline onclick="event.stopPropagation()"></video>` : `<img src="${src}" alt="">`}</div>`; }).join('');
+  if (arr.length === 1) { const src = creativeUrl(calId, b.id, kind, arr[0].kvIdx, b.cv, pin); return arr[0].type === 'video' ? `<video src="${src}" controls playsinline onclick="vidClick(event)"></video>` : `<img src="${src}" alt="">`; }
+  const inner = arr.map((s, i) => { const src = creativeUrl(calId, b.id, kind, s.kvIdx, b.cv, pin); return `<div class="carousel-slide">${s.type === 'video' ? `<video src="${src}" controls playsinline onclick="vidClick(event)"></video>` : `<img src="${src}" alt="">`}</div>`; }).join('');
   return `<div class="carousel"><div class="carousel-count">${arr.length}</div><div class="carousel-track" id="${id}">${inner}</div><button class="carousel-nav prev" onclick="event.stopPropagation();carNav('${id}',-1)">&lsaquo;</button><button class="carousel-nav next" onclick="event.stopPropagation();carNav('${id}',1)">&rsaquo;</button><div class="carousel-dots" id="${id}-dots">${arr.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" onclick="event.stopPropagation();carGo('${id}',${i})"></div>`).join('')}</div></div>`;
 }
 function briefRefsHTML(calId, b, pin, editable) {
@@ -1386,7 +1402,7 @@ function briefCardHTML(calId, b, role, pin) {
   const comments = kind ? (fb.comments || []).map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'Client')}</strong>${cm.resolved ? '<span class="badge approved" style="font-size:9px">Actioned</span>' : ''}<time>${fmtTime(cm.d)}</time>${client ? `<div class="comment-actions"><button onclick="clBriefEditComment('${b.id}','${kind}',${i})">Edit</button><button class="del" onclick="clBriefDeleteComment('${b.id}','${kind}',${i})">Delete</button></div>` : ''}</div><div class="comment-text">${esc(cm.t)}</div></div></div>`).join('') : '';
   return `<div class="brief-card ${st === 'Submitted' ? 'open' : ''}" id="bc-${b.id}">
     <div class="bc-head"><div class="ic">&#128227;</div><div style="min-width:0;flex:1"><h4>${esc(b.campaignName || 'Untitled')}</h4><div class="sub">${esc(b.carModel || '')}${b.carModel ? ' · ' : ''}${briefCreativeCount(b)} creative${briefCreativeCount(b) !== 1 ? 's' : ''} · ${b.concepts || 1} concept${(b.concepts || 1) !== 1 ? 's' : ''}</div></div><span class="badge ${fb.status === 'declined' ? 'b-changes' : BRIEF_CLASS[st] || 'b-submitted'}">${fb.status === 'declined' ? 'Changes requested' : esc(label)}</span></div>
-    ${media ? `<div class="bc-media" onclick="openFullView(this,'${esc(b.campaignName || '')}')"><div class="tag">${kind === 'final' ? 'Final' : 'Concept'}${(b[kind + 'Media'] || []).length > 1 ? 's' : ''}</div>${media}</div>` : ''}
+    ${media ? `<div class="bc-media" data-fv-label="${esc(b.campaignName || '')}" onclick="openFullView(this,'${esc(b.campaignName || '')}')"><div class="tag">${kind === 'final' ? 'Final' : 'Concept'}${(b[kind + 'Media'] || []).length > 1 ? 's' : ''}</div>${media}<button class="fv-expand" title="View full screen" onclick="event.stopPropagation();openFullView(this.parentElement,'${esc(b.campaignName || '')}')">&#x26F6;</button></div>` : ''}
     <div class="bc-body">
       <div class="bc-row"><div class="k">Formats</div><div class="v"><div class="fmt-chips">${briefFmtChips(b)}</div></div></div>
       <div class="bc-row"><div class="k">Languages</div><div class="v">${briefLangs(b)}</div></div>
@@ -1743,7 +1759,7 @@ function renderClient() {
         const statusCls = fb.status === 'approved' ? 'approved' : fb.status === 'declined' ? 'changes' : p.status === 'Revised' ? 'revised' : 'review';
         const comments = (fb.comments || []).map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'You')}</strong>${cm.resolved ? '<span class="badge approved" style="font-size:9px">Actioned by RICH</span>' : ''}<time>${fmtTime(cm.d)}</time><div class="comment-actions"><button onclick="clEditComment('${p.id}',${i})">Edit</button><button class="del" onclick="clDeleteComment('${p.id}',${i})">Delete</button></div></div><div class="comment-text">${esc(cm.t)}</div></div></div>`).join('');
         h += `<div class="cl-card" id="cp-${p.id}">
-          <div class="media" onclick="openFullView(this,'${esc(p.topic || '')}')">${media || '<div class="no-media">Creative coming soon</div>'}<div class="plat-icons">${platIcons(p.platforms)}</div>${p.status === 'Revised' ? '<div class="revised-tag">Revised</div>' : ''}</div>
+          <div class="media" data-fv-label="${esc(p.topic || '')}" onclick="openFullView(this,'${esc(p.topic || '')}')">${media || '<div class="no-media">Creative coming soon</div>'}<div class="plat-icons">${platIcons(p.platforms)}</div>${p.status === 'Revised' ? '<div class="revised-tag">Revised</div>' : ''}${media ? `<button class="fv-expand" title="View full screen" onclick="event.stopPropagation();openFullView(this.parentElement,'${esc(p.topic || '')}')">&#x26F6;</button>` : ''}</div>
           <div class="info"><div class="date-row"><div class="date-chip"><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-GB', { month: 'short' })}</span></div><div style="min-width:0"><h4>${esc(p.topic || 'Untitled')}</h4><div class="sub">${d.toLocaleDateString('en-GB', clientTab === 'todo' ? { weekday: 'short', day: 'numeric', month: 'long' } : { weekday: 'long' })}${p.creativeType ? ' · ' + esc(p.creativeType) : ''} · ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div></div></div></div>
           <div class="status-row"><span class="badge ${statusCls}">${statusLabel}</span></div>
           <div class="decide"><button class="btn outline-green ${fb.status === 'approved' ? 'active' : ''}" onclick="clDecide('${p.id}','approved')">&#10003; Approve</button><button class="btn outline-amber ${fb.status === 'declined' ? 'active' : ''}" onclick="clDecide('${p.id}','declined')">Request changes</button></div>
