@@ -119,6 +119,34 @@ input,textarea,select{font-family:inherit}
 .comment-actions button{font-size:11px;background:none;border:none;color:var(--blue);cursor:pointer;padding:2px 5px}
 .comment-actions button:hover{text-decoration:underline}
 .comment-actions button.del{color:var(--red)}
+.comment-actions button.wa{color:#16a34a;display:inline-flex;align-items:center;gap:3px}
+.comment-actions button.wa svg{width:13px;height:13px}
+.replies{margin-top:8px;padding-left:10px;border-left:3px solid var(--purple);display:flex;flex-direction:column;gap:8px}
+.reply{display:flex;gap:8px;align-items:flex-start}
+.reply .comment-avatar{width:24px;height:24px;font-size:10px;background:#111;color:#fbbf24}
+.reply .rb{flex:1;min-width:0;background:#f5f3ff;border-radius:8px;padding:7px 10px}
+.reply .rb .rh{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.reply .rb .rh strong{font-size:12px}
+.reply .rb .rh time{font-size:10px;color:var(--muted-2)}
+.reply .rb .rt{font-size:13px;line-height:1.45;word-break:break-word}
+.reply-form{display:flex;gap:6px;margin-top:8px}
+.reply-form input{flex:1;padding:7px 10px;border:1px solid var(--border-2);border-radius:6px;font-size:13px}
+.reply-form input:focus{outline:none;border-color:var(--purple)}
+.badge.replied{background:#ede9fe;color:#5b21b6}
+.comment.resolved .replies,.comment.resolved .reply .rt{text-decoration:none;opacity:1}
+.rich-replied{display:flex;align-items:center;gap:8px;background:#ede9fe;color:#4c1d95;border-bottom:1px solid #ddd6fe;padding:8px 14px;font-size:12px;font-weight:600}
+.rich-replied .n{background:#5b21b6;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px}
+.sched{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--muted)}
+.sched span{display:inline-flex;align-items:center;gap:3px}
+.sched .plat-icon svg{width:12px;height:12px}
+.plat-dates{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 18px}
+.plat-dates .pd{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}
+.plat-dates .pd label{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);cursor:pointer;flex:0 0 120px;overflow:hidden;white-space:nowrap}
+.plat-dates .pd input[type=checkbox]{width:15px;height:15px;accent-color:var(--blue)}
+.plat-dates .pd input[type=date]{width:auto;flex:0 0 150px;padding:5px 8px;border:1px solid var(--border-2);border-radius:6px;font-size:12px}
+.plat-dates .pd input[type=date]:disabled{opacity:.35}
+.plat-dates .pd .same{display:none}
+@media(max-width:600px){.plat-dates{grid-template-columns:1fr}}
 .comment-form{display:flex;gap:6px;margin-top:10px;align-items:flex-start}
 .comment-form input[type=text]{flex:0 0 100px;padding:8px 10px;border:1px solid var(--border-2);border-radius:6px;font-size:13px}
 .comment-form textarea{flex:1;padding:8px 10px;border:1px solid var(--border-2);border-radius:6px;font-size:13px;resize:none;min-height:38px;line-height:1.4}
@@ -732,7 +760,23 @@ const getPost = (c, id) => (c.posts || []).find(p => p.id === id);
 const getFb = (c, pid) => (c.feedback && c.feedback[pid]) || { status: '', comments: [] };
 const unresolved = fb => (fb.comments || []).filter(cm => !cm.resolved).length;
 const monthKey = (y, m) => y + '-' + String(m + 1).padStart(2, '0');
-const inMonth = (p, y, m) => (p.date || '').startsWith(monthKey(y, m));
+// Per-platform go-live dates. p.platformDates = { Instagram: '2026-11-05' } overrides p.date for that platform only.
+const platDate = (p, pl) => ((p.platformDates || {})[pl]) || p.date || '';
+const postPlats = p => (p.platforms || []).length ? p.platforms : ['Other'];
+const postDates = p => [...new Set(postPlats(p).map(pl => platDate(p, pl)).filter(Boolean))].sort();
+const platsOnDate = (p, ds) => postPlats(p).filter(pl => platDate(p, pl) === ds);
+const hasSplitDates = p => postDates(p).length > 1;
+const inMonth = (p, y, m) => postDates(p).some(d => d.startsWith(monthKey(y, m)));
+const shortD = ds => { try { return new Date(ds + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); } catch (e) { return ds; } };
+const schedHTML = p => hasSplitDates(p) ? `<div class="sched">${postPlats(p).map(pl => `<span>${platIcon(pl)}${shortD(platDate(p, pl))}</span>`).join('')}</div>` : '';
+// Comment threads: client comment + agency replies. WhatsApp share prefilled with the asset link and the comment.
+const WA_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c.6.3 1.1.4 1.5.5a3.7 3.7 0 0 0 1.7-.1 2.8 2.8 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>';
+function waShare(text) { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
+const waText = (cm, topic, link) => `${cm.by || 'Client'} on "${topic || 'post'}":\n${cm.t || ''}${(cm.replies || []).length ? '\n\nRICH replied: ' + cm.replies.slice(-1)[0].t : ''}\n\n${link}`;
+const latestReplyIsNewest = cms => (cms || []).some(cm => (cm.replies || []).length && cm.replies.slice(-1)[0].d > (cm.d || ''));
+const repliesHTML = cm => (cm.replies || []).length ? `<div class="replies">${cm.replies.map(r => `<div class="reply"><div class="comment-avatar" title="RICH">R</div><div class="rb"><div class="rh"><strong>${esc(r.by || 'RICH')}</strong><span class="badge replied" style="font-size:9px">RICH</span><time>${fmtTime(r.d)}</time></div><div class="rt">${esc(r.t)}</div></div></div>`).join('')}</div>` : '';
+const commentBadges = cm => `${cm.resolved ? '<span class="badge approved" style="font-size:9px">&#10003; Actioned</span>' : ''}${(cm.replies || []).length ? '<span class="badge replied" style="font-size:9px">RICH replied</span>' : ''}`;
+const waBtn = (cm, topic, link) => `<button class="wa" title="Share on WhatsApp" onclick="event.stopPropagation();waShare(${JSON.stringify(waText(cm, topic, link)).replace(/"/g, '&quot;')})">${WA_SVG}</button>`;
 const creativeUrl = (calId, pid, lang, key, v, pin) => `/api/creative?calId=${encodeURIComponent(calId)}&postId=${encodeURIComponent(pid)}&lang=${encodeURIComponent(lang + (key !== undefined ? '-' + key : ''))}&v=${v || 0}${pin ? '&pin=' + encodeURIComponent(pin) : ''}`;
 
 function migrateData() {
@@ -740,6 +784,7 @@ function migrateData() {
   calendars.forEach(c => (c.posts || []).forEach(p => {
     ['carouselEN', 'carouselAR'].forEach(k => (p[k] || []).forEach((s, i) => { if (s.kvIdx === undefined) { s.kvIdx = s.idx !== undefined ? s.idx : i; changed = true; } }));
     if (p.status === 'Ready to Review') { p.status = 'Ready for Review'; changed = true; }
+    if (p.platformDates) { Object.keys(p.platformDates).forEach(k => { if (!p.platformDates[k] || p.platformDates[k] === p.date || !(p.platforms || []).includes(k)) { delete p.platformDates[k]; changed = true; } }); if (!Object.keys(p.platformDates).length) { delete p.platformDates; changed = true; } }
   }));
   const FMT_MIGRATE = { meta_sq: ['fb_sq', 'gg_sq'], meta_ls: ['fb_ls', 'gg_ls'], meta_st: ['fb_st', 'gg_st'], gdn_pt: ['gg_pt'] };
   calendars.forEach(c => (c.briefs || []).forEach(b => { if (!b.concepts) { b.concepts = 2; changed = true; } if ((b.formats || []).some(k => FMT_MIGRATE[k])) { b.formats = [...new Set(b.formats.flatMap(k => FMT_MIGRATE[k] || [k]))]; changed = true; }
@@ -784,6 +829,12 @@ setInterval(() => { if (document.visibilityState === 'visible') refreshFromServe
 window.addEventListener('beforeunload', e => { if (saveState === 'saving' || saveState === 'error') { e.preventDefault(); e.returnValue = ''; } });
 async function clientLoad(id, pin) {
   try { const r = await fetch('/api/calendar?id=' + encodeURIComponent(id) + '&pin=' + encodeURIComponent(pin)); if (r.status === 403) return { error: 'pin' }; if (!r.ok) return { error: 'notfound' }; return await r.json(); } catch (e) { return { error: 'network' }; }
+}
+async function internalOp(data) {
+  if (!apiOn) return { ok: true };
+  setSaveState('saving');
+  try { const r = await fetch('/api/internal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) }); if (!r.ok) throw new Error('HTTP ' + r.status); const d = await r.json(); if (d.rev) dataRev = d.rev; setSaveState('saved'); return d; }
+  catch (e) { console.error('op failed', e); setSaveState('error'); return { ok: false }; }
 }
 async function clientSend(postId, data) {
   try { await fetch('/api/calendar-feedback', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: clientCalId, pin: clientPin, postId, ...data }) }); } catch (e) { }
@@ -879,13 +930,21 @@ function shareLink(kind, id) {
 }
 function toast(msg) { let t = $('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); } t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200); }
 function shareHere() { const l = location.href; navigator.clipboard.writeText(l).then(() => toast('Link copied. Anyone opening it lands exactly here.')).catch(() => prompt('Copy this link:', l)); }
-function clientLinkHere() {
+function clientUrlHere() {
   // Same place, client side: calendar + open post/brief (or month + tab) translated to the client URL scheme
   const u = new URL(location.origin + location.pathname); u.searchParams.set('calendar', currentCalId);
   const pid = $('postModal').classList.contains('show') ? curPid() : null; const bid = $('postModal').classList.contains('show') ? curBid() : null;
   if (pid) u.searchParams.set('post', pid); else if (bid) u.searchParams.set('brief', bid); else { if (viewMode === 'month') u.searchParams.set('tab', 'calendar'); if (viewMode === 'briefs') u.searchParams.set('tab', 'briefs'); if (viewMode !== 'year') u.searchParams.set('m', monthKey(viewMonth.getFullYear(), viewMonth.getMonth())); }
-  navigator.clipboard.writeText(u.href).then(() => toast('Client link copied' + (pid ? ' to this post' : bid ? ' to this brief' : '') + '. PIN ' + (getCal()?.pin || ''))).catch(() => prompt('Copy this link:', u.href));
+  return u.href;
 }
+function copyPin(id, url) {
+  // One button for sharing with the client: link and PIN together, ready to paste into WhatsApp or email
+  const c = calendars.find(x => x.id === id); if (!c) return;
+  const link = url || (location.origin + location.pathname + '?calendar=' + id);
+  const text = `${c.name}\n${link}\nPIN: ${c.pin || ''}`;
+  navigator.clipboard.writeText(text).then(() => toast('Client link and PIN copied. Paste it straight to the client.')).catch(() => prompt('Copy this:', text));
+}
+function copyPinHere() { copyPin(currentCalId, clientUrlHere()); }
 const copyShare = (kind, id) => shareHere();
 async function applyInternalRoute(q) {
   const cal = q.get('cal'); if (!cal || !calendars.find(c => c.id === cal)) { currentCalId = null; renderDashboard(); return; }
@@ -975,7 +1034,7 @@ function renderDashboard() {
         <div class="body"><h3>${esc(c.name)}</h3><div class="meta">PIN ${esc(c.pin || '')} &middot; ${n} posts &middot; ${cr} creatives</div>
           <div class="pills">${ap ? `<span class="badge approved">${ap} approved</span>` : ''}${ch ? `<span class="badge changes">${ch} changes</span>` : ''}${un ? `<span class="badge" style="background:var(--red-light);color:var(--red)">${un} unresolved</span>` : ''}${getBriefs(c).filter(b => b.status === 'Submitted').length ? `<span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted').length} new ad brief${getBriefs(c).filter(b => b.status === 'Submitted').length !== 1 ? 's' : ''}</span>` : ''}${!ap && !ch && !un ? '<span class="badge draft">No feedback yet</span>' : ''}</div>
           <div class="progress"><div style="width:${pct}%"></div></div>
-          <div class="actions"><button class="btn primary" onclick="openCalendar('${c.id}')">Open</button><button class="btn" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')">Client view</button><button class="btn" onclick="copyLink('${c.id}')">Client link</button><button class="btn ghost" onclick="calSettings('${c.id}')">&#9881;</button></div>
+          <div class="actions"><button class="btn primary" onclick="openCalendar('${c.id}')">Open</button><button class="btn" onclick="copyPin('${c.id}')" title="Copy the client link and PIN together">Copy PIN</button><button class="btn ghost" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')" title="Preview as the client">Preview</button><button class="btn ghost" onclick="calSettings('${c.id}')">&#9881;</button></div>
         </div></div>`;
     });
     h += '</div>';
@@ -1000,7 +1059,7 @@ function filterDash(rerender) {
   document.querySelectorAll('#calCards .cal-card').forEach(c => { let show = c.dataset.name.includes(q); if (dashFilter === 'attention') show = show && c.dataset.att === 'true'; c.style.display = show ? '' : 'none'; });
 }
 function createCalendar() { const name = prompt('Calendar name (e.g. Client Name - October 2026)'); if (!name) return; const c = { id: 'cal_' + uid(), name, pin: String(Math.floor(1000 + Math.random() * 9000)), created: new Date().toISOString(), posts: [], feedback: {} }; calendars.unshift(c); saveCalendars(); openCalendar(c.id); }
-function copyLink(id) { const u = location.origin + location.pathname + '?calendar=' + id; navigator.clipboard.writeText(u).then(() => toast('Client link copied. PIN ' + (calendars.find(c => c.id === id)?.pin || ''))).catch(() => prompt('Copy this link:', u)); }
+const copyLink = id => copyPin(id);
 function setBanner(id, input) { const f = input.files[0]; if (!f) return; if (f.size > 3e6) { alert('Keep banner under 3MB'); return; } const r = new FileReader(); r.onload = e => { const c = calendars.find(x => x.id === id); if (c) { c.banner = e.target.result; saveCalendars(); renderDashboard(); } }; r.readAsDataURL(f); }
 function calSettings(id) {
   const c = calendars.find(x => x.id === id); if (!c) return;
@@ -1025,7 +1084,7 @@ function renderCalView() {
   const ch = mp.filter(p => getFb(c, p.id).status === 'declined').length;
   const un = mp.reduce((s, p) => s + unresolved(getFb(c, p.id)), 0);
   const withClient = mp.filter(p => p.status === 'Ready for Review' || p.status === 'Revised').length;
-  let h = intHeader(c.name, `<button class="btn sm" onclick="renderDashboard()">&lsaquo; Dashboard</button><button class="btn sm" onclick="shareHere()" title="Copy a link to exactly this page">&#128279; Share</button><button class="btn sm" onclick="clientLinkHere()" title="Copy the client-side link to this page">Client link</button><button class="btn sm ghost" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')" title="Preview as the client">Preview</button><button class="btn sm ghost" onclick="calSettings('${c.id}')">&#9881;</button>`);
+  let h = intHeader(c.name, `<button class="btn sm" onclick="renderDashboard()">&lsaquo; Dashboard</button><button class="btn sm" onclick="shareHere()" title="Copy a link to exactly this page">&#128279; Share</button><button class="btn sm" onclick="copyPinHere()" title="Copy the client link to this page together with the PIN">Copy PIN</button><button class="btn sm ghost" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')" title="Preview as the client">Preview</button><button class="btn sm ghost" onclick="calSettings('${c.id}')">&#9881;</button>`);
   h += '<div class="int-wrap">';
   h += `<div class="int-hero"><h2>${esc(c.name)}</h2><p>Internal workspace. Upload content, send for client review, action their feedback, and re-submit revisions. PIN ${esc(c.pin || '')}.</p>
     <div class="steps"><div><span class="n">1</span>Build &amp; upload</div><div><span class="n">2</span>Send for review</div><div><span class="n">3</span>Action feedback</div><div><span class="n">4</span>Re-submit</div></div>
@@ -1048,7 +1107,7 @@ function yearView(c) {
   h += '<div class="year-grid">';
   for (let m = 0; m < 12; m++) {
     const dim = new Date(y, m + 1, 0).getDate(), fd = (new Date(y, m, 1).getDay() + 6) % 7;
-    const mp = (c.posts || []).filter(p => inMonth(p, y, m)); const days = new Set(mp.map(p => +p.date.slice(8)));
+    const mp = (c.posts || []).filter(p => inMonth(p, y, m)); const days = new Set(mp.flatMap(p => postDates(p).filter(d => d.startsWith(monthKey(y, m))).map(d => +d.slice(8))));
     let g = '<div class="mini-grid">' + 'MTWTFSS'.split('').map(d => `<div style="font-weight:600;color:var(--muted-2)">${d}</div>`).join('');
     for (let i = 0; i < fd; i++) g += '<div class="d"></div>';
     for (let d = 1; d <= dim; d++) g += `<div class="d ${days.has(d) ? 'has' : ''} ${d === today.getDate() && m === today.getMonth() && y === today.getFullYear() ? 'today' : ''}">${d}</div>`;
@@ -1066,7 +1125,7 @@ function monthView(c) {
   for (let i = 0; i < fd; i++) h += '<div class="cal-day empty"></div>';
   for (let d = 1; d <= dim; d++) {
     const ds = monthKey(y, m) + '-' + String(d).padStart(2, '0');
-    const dp = (c.posts || []).filter(p => p.date === ds);
+    const dp = (c.posts || []).filter(p => platsOnDate(p, ds).length);
     const cr = dp.reduce((s, p) => s + countCreatives(p), 0);
     const isT = d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
     const ap = dp.filter(p => getFb(c, p.id).status === 'approved').length;
@@ -1074,7 +1133,7 @@ function monthView(c) {
     const un = dp.reduce((s, p) => s + unresolved(getFb(c, p.id)), 0);
     h += `<div class="cal-day int-cal-day" ondragover="event.preventDefault()" ondrop="dropPost(event,'${ds}')" ${dp.length ? `onclick="intDayView('${ds}')"` : ''}>
       <div class="dn ${isT ? 'today' : ''}">${d}</div>
-      ${dp.length ? `<div class="big">${dp.reduce((s, p) => s + Math.max((p.platforms || []).length, 1), 0)}</div><div class="dots">${dp.flatMap(p => ((p.platforms || []).length ? p.platforms : ['Other']).map(pl => `<div class="dot" draggable="true" ondragstart="event.stopPropagation();dragPostStart(event,'${p.id}')" onclick="event.stopPropagation();editPost('${p.id}')" style="background:${PLAT_COLORS[pl] || '#8b5cf6'}" title="${esc(p.topic || 'Untitled')} · ${esc(pl)}"></div>`)).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div><div class="fbs">${ap ? `<span class="ok">${ap}&#10003;</span>` : ''}${ch ? `<span class="ch">${ch}!</span>` : ''}${un ? `<span class="un">${un}</span>` : ''}</div>` : ''}
+      ${dp.length ? `<div class="big">${dp.reduce((s, p) => s + platsOnDate(p, ds).length, 0)}</div><div class="dots">${dp.flatMap(p => platsOnDate(p, ds).map(pl => `<div class="dot" draggable="true" ondragstart="event.stopPropagation();dragPostStart(event,'${p.id}')" onclick="event.stopPropagation();editPost('${p.id}')" style="background:${PLAT_COLORS[pl] || '#8b5cf6'}" title="${esc(p.topic || 'Untitled')} · ${esc(pl)}${hasSplitDates(p) ? ' (this platform only)' : ''}"></div>`)).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div><div class="fbs">${ap ? `<span class="ok">${ap}&#10003;</span>` : ''}${ch ? `<span class="ch">${ch}!</span>` : ''}${un ? `<span class="un">${un}</span>` : ''}</div>` : ''}
       ${adBarsHTML(getBriefs(c), ds, 'openBrief')}<div class="add" onclick="event.stopPropagation();addPost('${ds}')">+ Add</div></div>`;
   }
   const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
@@ -1082,7 +1141,8 @@ function monthView(c) {
 }
 let dragPid = null;
 function dragPostStart(e, id) { dragPid = id; e.dataTransfer.effectAllowed = 'move'; }
-function dropPost(e, ds) { e.preventDefault(); if (!dragPid) return; const c = getCal(); const p = getPost(c, dragPid); if (p) { p.date = ds; saveCalendars(); renderCalView(); } dragPid = null; }
+function shiftPostTo(p, ds) { const delta = Math.round((new Date(ds + 'T00:00:00') - new Date((p.date || ds) + 'T00:00:00')) / 86400000); if (p.platformDates) Object.keys(p.platformDates).forEach(k => { const d = new Date(p.platformDates[k] + 'T00:00:00'); d.setDate(d.getDate() + delta); p.platformDates[k] = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }); p.date = ds; }
+function dropPost(e, ds) { e.preventDefault(); if (!dragPid) return; const c = getCal(); const p = getPost(c, dragPid); if (p) { shiftPostTo(p, ds); saveCalendars(); renderCalView(); } dragPid = null; }
 
 function boardView(c) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
@@ -1100,7 +1160,7 @@ function boardView(c) {
     h += `<div class="board-card" data-pid="${p.id}">
       <div class="media" data-fv-label="${esc(p.topic || '')}" onclick="${media ? `openFullView(this,'${esc(p.topic || '')}')` : `$('bf-${p.id}').click()`}">${media || '<div class="empty"><span class="plus">+</span>Upload creative</div>'}${media ? `<button class="fv-expand" title="View full screen" onclick="event.stopPropagation();openFullView(this.parentElement,'${esc(p.topic || '')}')">&#x26F6;</button>` : ''}<div class="plat-icons">${platIcons(p.platforms)}</div><span class="badge status-badge ${STATUS_CLASS[p.status] || 'draft'}">${esc(p.status || 'Draft')}</span>${fbBadge}${media ? `<div class="upload-overlay"><button class="btn" onclick="event.stopPropagation();$('bf-${p.id}').click()">+ Add</button></div>` : ''}</div>
       <input type="file" id="bf-${p.id}" accept="image/*,video/*" multiple style="display:none" onchange="boardUpload('${p.id}',this)">
-      <div class="body"><h4>${esc(p.topic || 'Untitled')}</h4><div class="date">${fmtDate(p.date)} &middot; ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div>
+      <div class="body"><h4>${esc(p.topic || 'Untitled')}</h4><div class="date">${hasSplitDates(p) ? 'Staggered: ' + postDates(p).map(shortD).join(', ') : fmtDate(p.date)} &middot; ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div>${schedHTML(p)}
         ${last ? `<div class="last-fb"><strong>${esc(last.by || 'Client')}:</strong> ${esc((last.t || '').slice(0, 100))}${(last.t || '').length > 100 ? '…' : ''}</div>` : ''}
         <div class="actions"><button class="btn primary" onclick="editPost('${p.id}')">Open</button><select class="btn" style="flex:1.5" onchange="quickStatus('${p.id}',this.value)">${STATUSES.map(s => `<option ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
       </div></div>`;
@@ -1122,14 +1182,15 @@ function addPost(date) {
 function editPost(pid) {
   const c = getCal(); const p = getPost(c, pid); if (!p) return;
   const fb = getFb(c, pid); const un = unresolved(fb);
-  $('pmTitle').textContent = (p.topic || 'New post') + ' — ' + fmtDate(p.date);
+  $('pmTitle').textContent = (p.topic || 'New post') + ' — ' + (hasSplitDates(p) ? postDates(p).map(shortD).join(' / ') : fmtDate(p.date));
 
   // Client feedback panel
   const fbClass = fb.status === 'approved' ? 'st-approved' : fb.status === 'declined' ? 'st-changes' : p.status === 'Revised' ? 'st-revised' : 'st-pending';
   const fbTag = fb.status === 'approved' ? '<span class="badge approved">Client approved</span>' : fb.status === 'declined' ? '<span class="badge changes">Client requested changes</span>' : p.status === 'Revised' ? '<span class="badge revised">Sent for re-approval</span>' : '<span class="badge draft">Awaiting client</span>';
   let fbHTML = `<div class="fb-panel ${fbClass}"><div class="fb-head"><h3>Client feedback</h3>${fbTag}${un ? `<span class="badge" style="background:var(--red);color:#fff">${un} to action</span>` : ''}</div>`;
   if ((fb.comments || []).length) {
-    fbHTML += fb.comments.map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'Client')}</strong><time>${fmtTime(cm.d)}</time><div class="comment-actions"><button class="fb-resolve ${cm.resolved ? 'done' : ''}" onclick="toggleResolve('${pid}',${i})">${cm.resolved ? '&#10003; Actioned' : 'Mark actioned'}</button></div></div><div class="comment-text">${esc(cm.t)}</div></div></div>`).join('');
+    const plink = shareLink('post', pid);
+    fbHTML += fb.comments.map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'Client')}</strong>${(cm.replies || []).length ? '<span class="badge replied" style="font-size:9px">Replied</span>' : ''}<time>${fmtTime(cm.d)}</time><div class="comment-actions">${waBtn(cm, p.topic, plink)}<button onclick="toggleReplyForm('rf-${pid}-${i}')">Reply</button><button class="fb-resolve ${cm.resolved ? 'done' : ''}" onclick="toggleResolve('${pid}',${i})">${cm.resolved ? '&#10003; Actioned' : 'Mark actioned'}</button></div></div><div class="comment-text">${esc(cm.t)}</div>${repliesHTML(cm)}<div class="reply-form" id="rf-${pid}-${i}" style="display:none"><input type="text" placeholder="Reply as RICH (the client sees this)" onkeydown="if(event.key==='Enter')sendReply('${pid}',${i},this.value)"><button class="btn sm primary" onclick="sendReply('${pid}',${i},this.previousElementSibling.value)">Send</button></div></div></div>`).join('');
     if (!un) fbHTML += '<div class="fb-done">&#10003; All client notes have been actioned</div>';
   } else fbHTML += '<div class="fb-empty">No client feedback on this post yet.</div>';
   fbHTML += '</div>';
@@ -1147,7 +1208,7 @@ function editPost(pid) {
     <div class="ed-section"><div class="ed-section-title">Post details</div>
       <div class="field"><label>Topic (shown on calendar)</label><input id="peTopic" value="${esc(p.topic)}" placeholder="e.g. BAIC BJ40 launch reel"></div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="peDate" value="${p.date}"></div><div class="field"><label>Status</label><select id="peStatus">${STATUSES.map(s => `<option ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div></div>
-      <div class="field"><label>Platforms</label><div class="check-row">${PLATFORMS.map(pl => `<label><input type="checkbox" name="plat" value="${pl}" ${(p.platforms || []).includes(pl) ? 'checked' : ''}>${pl}</label>`).join('')}</div></div>
+      <div class="field"><label>Platforms &amp; go-live dates <span style="font-weight:400;text-transform:none;color:var(--muted-2)">(leave a date blank to use the post date; set one where a platform goes live on a different day)</span></label><div class="plat-dates">${PLATFORMS.map(pl => { const on = (p.platforms || []).includes(pl); const pd = (p.platformDates || {})[pl] || ''; return `<div class="pd"><label><input type="checkbox" name="plat" value="${pl}" ${on ? 'checked' : ''} onchange="this.closest('.pd').querySelector('input[type=date]').disabled=!this.checked">${platIcon(pl)}${pl}</label><input type="date" data-pd="${pl}" value="${pd}" ${on ? '' : 'disabled'} title="Go-live date on ${pl}. Leave blank to use the post date."><span class="same">${pd ? '' : 'same day as post'}</span></div>`; }).join('')}</div></div>
       <div class="field-row"><div class="field"><label>Creative type</label><select id="peType">${CREATIVE_TYPES.map(s => `<option ${s === p.creativeType ? 'selected' : ''}>${s || 'Select'}</option>`).join('')}</select></div><div class="field"><label>Dimensions</label><select id="peDim">${DIMENSIONS.map(s => `<option ${s === p.dimensions ? 'selected' : ''}>${s || 'Select'}</option>`).join('')}</select></div></div>
       <div class="field"><label>ClickUp task <span style="font-weight:400;text-transform:none;color:var(--muted-2)">(internal)</span></label><div style="display:flex;gap:6px"><input id="peClickup" value="${esc(p.clickupLink || '')}" placeholder="https://app.clickup.com/...">${p.clickupLink ? `<a href="${esc(p.clickupLink)}" target="_blank" class="btn sm">Open</a>` : ''}</div></div>
     </div>
@@ -1180,7 +1241,7 @@ function closeEditor() { $('postModal').classList.remove('show'); renderCalView(
 function readForm(p) {
   const v = id => { const e = $(id); return e ? e.value : undefined; };
   if (v('peTopic') !== undefined) p.topic = v('peTopic').trim();
-  if (v('peDate')) p.date = v('peDate');
+  const oldDate = p.date; if (v('peDate')) p.date = v('peDate');
   if (v('peStatus')) p.status = v('peStatus');
   if (v('peClickup') !== undefined) p.clickupLink = v('peClickup').trim();
   if (v('peType') !== undefined) p.creativeType = v('peType');
@@ -1192,6 +1253,7 @@ function readForm(p) {
   if (v('peVisAR') !== undefined) p.visualCopyAR = v('peVisAR');
   if (v('peDir') !== undefined) p.creativeDirection = v('peDir');
   const plats = [...document.querySelectorAll('input[name=plat]:checked')].map(x => x.value); if (plats.length || $('peTopic')) p.platforms = plats;
+  if ($('peTopic')) { const pdm = {}; document.querySelectorAll('input[data-pd]').forEach(inp => { const pl = inp.dataset.pd; const val = inp.value; if (plats.includes(pl) && val && val !== oldDate && val !== p.date) pdm[pl] = val; }); if (Object.keys(pdm).length) p.platformDates = pdm; else delete p.platformDates; }
   p.assets = []; document.querySelectorAll('[data-au]').forEach(inp => { const i = inp.dataset.au; const lbl = document.querySelector(`[data-al="${i}"]`); if (inp.value.trim()) p.assets.push({ label: lbl ? lbl.value.trim() : '', url: inp.value.trim() }); });
   p.videoScript = []; const rows = {}; document.querySelectorAll('[data-st]').forEach(inp => { const r = inp.dataset.st; rows[r] = rows[r] || {}; rows[r][inp.dataset.sf] = inp.value; }); Object.keys(rows).sort((a, b) => a - b).forEach(k => { const r = rows[k]; if (r.timecode || r.voiceEN || r.voiceAR || r.visuals) p.videoScript.push(r); });
 }
@@ -1201,6 +1263,27 @@ function addAssetRow() { const l = $('assetList'); const i = l.children.length; 
 function addScriptRow() { const b = $('scriptBody'); const i = b.children.length; const tr = document.createElement('tr'); tr.innerHTML = `<td><input data-st="${i}" data-sf="timecode" placeholder="0:00"></td><td><input data-st="${i}" data-sf="voiceEN"></td><td><input data-st="${i}" data-sf="voiceAR"></td><td><input data-st="${i}" data-sf="visuals"></td><td><button class="btn xs danger" onclick="this.closest('tr').remove()">&times;</button></td>`; b.appendChild(tr); }
 function sendForReapproval(pid) { const c = getCal(); const p = getPost(c, pid); if (!p) return; readForm(p); p.status = 'Revised'; p.revisedAt = new Date().toISOString(); c.feedback = c.feedback || {}; c.feedback[pid] = c.feedback[pid] || { status: '', comments: [] }; c.feedback[pid].status = ''; saveCalendars(); editPost(pid); }
 function undoReapproval(pid) { const c = getCal(); const p = getPost(c, pid); if (!p) return; readForm(p); p.status = 'Changes Requested'; p.revisedAt = null; c.feedback[pid].status = 'declined'; saveCalendars(); editPost(pid); }
+function toggleReplyForm(id) { const f = $(id); if (!f) return; f.style.display = f.style.display === 'none' ? 'flex' : 'none'; if (f.style.display === 'flex') f.querySelector('input').focus(); }
+async function sendReply(pid, i, text) {
+  text = (text || '').trim(); if (!text) return;
+  let by = localStorage.getItem('rich_team_name'); if (!by) { by = prompt('Your name (shown to the client with your reply):', 'RICH'); if (!by) return; localStorage.setItem('rich_team_name', by); }
+  const c = getCal(); const p = getPost(c, pid); readForm(p); const fb = getFb(c, pid); const cm = fb.comments[i]; if (!cm) return;
+  const reply = { by, t: text, d: new Date().toISOString() };
+  cm.replies = cm.replies || []; cm.replies.push(reply);
+  editPost(pid);
+  const r = await internalOp({ op: 'reply', calId: c.id, postId: pid, key: { d: cm.d, by: cm.by, t: cm.t }, reply });
+  if (r && r.ok === false) alert('Reply not saved. Check your connection and try again.');
+}
+async function sendBriefReply(id, kind, i, text) {
+  text = (text || '').trim(); if (!text) return;
+  let by = localStorage.getItem('rich_team_name'); if (!by) { by = prompt('Your name (shown to the client with your reply):', 'RICH'); if (!by) return; localStorage.setItem('rich_team_name', by); }
+  const c = getCal(); const b = getBriefs(c).find(x => x.id === id); const cm = briefFb(b, kind).comments[i]; if (!cm) return;
+  const reply = { by, t: text, d: new Date().toISOString() };
+  cm.replies = cm.replies || []; cm.replies.push(reply);
+  openBrief(id);
+  const r = await internalOp({ op: 'reply', calId: c.id, briefId: id, kind, key: { d: cm.d, by: cm.by, t: cm.t }, reply });
+  if (r && r.ok === false) alert('Reply not saved. Check your connection and try again.');
+}
 function toggleResolve(pid, i) { const c = getCal(); const p = getPost(c, pid); readForm(p); const fb = getFb(c, pid); if (fb.comments[i]) fb.comments[i].resolved = !fb.comments[i].resolved; saveCalendars(); editPost(pid); }
 function addTeamNote(pid) { const c = getCal(); const p = getPost(c, pid); const name = $('tnName').value.trim() || 'Team', text = $('tnText').value.trim(); if (!text) return; localStorage.setItem('rich_team_name', name); readForm(p); p.comments = p.comments || []; p.comments.push({ by: name, text, d: new Date().toISOString() }); saveCalendars(); editPost(pid); }
 function editTeamNote(pid, i) { const c = getCal(); const p = getPost(c, pid); const cm = p.comments[i]; const t = prompt('Edit note:', cm.text); if (t === null) return; readForm(p); if (t.trim()) cm.text = t.trim(); else p.comments.splice(i, 1); saveCalendars(); editPost(pid); }
@@ -1399,7 +1482,7 @@ function briefCardHTML(calId, b, role, pin) {
   } else {
     actions = `<button class="btn primary" onclick="openBrief('${b.id}')">Open brief</button><button class="btn" onclick="copyBriefForClickUp('${b.id}')">Copy for ClickUp</button>`;
   }
-  const comments = kind ? (fb.comments || []).map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'Client')}</strong>${cm.resolved ? '<span class="badge approved" style="font-size:9px">Actioned</span>' : ''}<time>${fmtTime(cm.d)}</time>${client ? `<div class="comment-actions"><button onclick="clBriefEditComment('${b.id}','${kind}',${i})">Edit</button><button class="del" onclick="clBriefDeleteComment('${b.id}','${kind}',${i})">Delete</button></div>` : ''}</div><div class="comment-text">${esc(cm.t)}</div></div></div>`).join('') : '';
+  const comments = kind ? (fb.comments || []).map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'Client')}</strong>${cm.resolved ? '<span class="badge approved" style="font-size:9px">Actioned</span>' : ''}${(cm.replies || []).length ? '<span class="badge replied" style="font-size:9px">RICH replied</span>' : ''}<time>${fmtTime(cm.d)}</time><div class="comment-actions">${waBtn(cm, b.campaignName, shareLink('brief', b.id))}${client ? `<button onclick="clBriefEditComment('${b.id}','${kind}',${i})">Edit</button><button class="del" onclick="clBriefDeleteComment('${b.id}','${kind}',${i})">Delete</button>` : ''}</div></div><div class="comment-text">${esc(cm.t)}</div>${repliesHTML(cm)}</div></div>`).join('') : '';
   return `<div class="brief-card ${st === 'Submitted' ? 'open' : ''}" id="bc-${b.id}">
     <div class="bc-head"><div class="ic">&#128227;</div><div style="min-width:0;flex:1"><h4>${esc(b.campaignName || 'Untitled')}</h4><div class="sub">${esc(b.carModel || '')}${b.carModel ? ' · ' : ''}${briefCreativeCount(b)} creative${briefCreativeCount(b) !== 1 ? 's' : ''} · ${b.concepts || 1} concept${(b.concepts || 1) !== 1 ? 's' : ''}</div></div><span class="badge ${fb.status === 'declined' ? 'b-changes' : BRIEF_CLASS[st] || 'b-submitted'}">${fb.status === 'declined' ? 'Changes requested' : esc(label)}</span></div>
     ${media ? `<div class="bc-media" data-fv-label="${esc(b.campaignName || '')}" onclick="openFullView(this,'${esc(b.campaignName || '')}')"><div class="tag">${kind === 'final' ? 'Final' : 'Concept'}${(b[kind + 'Media'] || []).length > 1 ? 's' : ''}</div>${media}<button class="fv-expand" title="View full screen" onclick="event.stopPropagation();openFullView(this.parentElement,'${esc(b.campaignName || '')}')">&#x26F6;</button></div>` : ''}
@@ -1559,7 +1642,7 @@ function openBrief(id) {
   const idx = BRIEF_STATUSES.indexOf(b.status);
   $('pmTitle').textContent = 'Ad brief: ' + (b.campaignName || 'Untitled');
   const stepper = `<div class="status-stepper">${BRIEF_STATUSES.map((s, i) => `<div class="st ${i < idx ? 'done' : ''} ${i === idx ? 'now' : ''}" onclick="setBriefStatus('${id}','${s}')">${s}</div>`).join('')}</div>`;
-  const fbPanel = kind => { const fb = briefFb(b, kind); const un = (fb.comments || []).filter(x => !x.resolved).length; const cls = fb.status === 'approved' ? 'st-approved' : fb.status === 'declined' ? 'st-changes' : 'st-pending'; const tag = fb.status === 'approved' ? '<span class="badge approved">Client approved</span>' : fb.status === 'declined' ? '<span class="badge changes">Client requested changes</span>' : '<span class="badge draft">No decision yet</span>'; return `<div class="fb-panel ${cls}"><div class="fb-head"><h3>Client feedback on ${kind}</h3>${tag}${un ? `<span class="badge" style="background:var(--red);color:#fff">${un} to action</span>` : ''}</div>${(fb.comments || []).length ? fb.comments.map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'Client')}</strong><time>${fmtTime(cm.d)}</time><div class="comment-actions"><button class="fb-resolve ${cm.resolved ? 'done' : ''}" onclick="toggleBriefResolve('${id}','${kind}',${i})">${cm.resolved ? '&#10003; Actioned' : 'Mark actioned'}</button></div></div><div class="comment-text">${esc(cm.t)}</div></div></div>`).join('') + (!un ? '<div class="fb-done">&#10003; All notes actioned</div>' : '') : '<div class="fb-empty">No feedback yet.</div>'}</div>`; };
+  const fbPanel = kind => { const fb = briefFb(b, kind); const un = (fb.comments || []).filter(x => !x.resolved).length; const cls = fb.status === 'approved' ? 'st-approved' : fb.status === 'declined' ? 'st-changes' : 'st-pending'; const tag = fb.status === 'approved' ? '<span class="badge approved">Client approved</span>' : fb.status === 'declined' ? '<span class="badge changes">Client requested changes</span>' : '<span class="badge draft">No decision yet</span>'; return `<div class="fb-panel ${cls}"><div class="fb-head"><h3>Client feedback on ${kind}</h3>${tag}${un ? `<span class="badge" style="background:var(--red);color:#fff">${un} to action</span>` : ''}</div>${(fb.comments || []).length ? fb.comments.map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'Client')}</strong><time>${fmtTime(cm.d)}</time><div class="comment-actions">${waBtn(cm, b.campaignName, shareLink('brief', id))}<button onclick="toggleReplyForm('brf-${id}-${kind}-${i}')">Reply</button><button class="fb-resolve ${cm.resolved ? 'done' : ''}" onclick="toggleBriefResolve('${id}','${kind}',${i})">${cm.resolved ? '&#10003; Actioned' : 'Mark actioned'}</button></div></div><div class="comment-text">${esc(cm.t)}</div>${repliesHTML(cm)}<div class="reply-form" id="brf-${id}-${kind}-${i}" style="display:none"><input type="text" placeholder="Reply as RICH (the client sees this)" onkeydown="if(event.key==='Enter')sendBriefReply('${id}','${kind}',${i},this.value)"><button class="btn sm primary" onclick="sendBriefReply('${id}','${kind}',${i},this.previousElementSibling.value)">Send</button></div></div></div>`).join('') + (!un ? '<div class="fb-done">&#10003; All notes actioned</div>' : '') : '<div class="fb-empty">No feedback yet.</div>'}</div>`; };
   const mediaGrid = kind => { const arr = b[kind + 'Media'] || []; return `<div class="creative-grid" id="bgrid-${kind}">${arr.map((s, i) => `<div class="creative-thumb" style="cursor:pointer" onclick="openFullView(this.parentElement,'${kind}')">${s.type === 'video' ? `<video src="${creativeUrl(c.id, b.id, kind, s.kvIdx, b.cv)}"></video>` : `<img src="${creativeUrl(c.id, b.id, kind, s.kvIdx, b.cv)}" alt="">`}<button class="rm" onclick="event.stopPropagation();removeBriefMedia('${id}','${kind}',${i})">&times;</button></div>`).join('')}<div class="creative-add" onclick="$('bf-${kind}').click()"><span class="plus">+</span>Add</div></div><input type="file" id="bf-${kind}" accept="image/*,video/*" multiple style="display:none" onchange="briefUpload('${id}','${kind}',this)">`; };
   const f = (k, v, wide, rtl) => `<div class="f ${wide ? 'wide' : ''}"><div class="k">${k}</div><div class="v" ${rtl ? 'dir="rtl"' : ''}>${v || '<span style="color:var(--muted-2)">—</span>'}</div></div>`;
   $('pmBody').innerHTML = `${stepper}
@@ -1591,7 +1674,7 @@ function setBriefStatus(id, s) { const c = getCal(); const b = getBriefs(c).find
 function agencySignoff(id) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); const by = prompt('Sign off as:', localStorage.getItem('rich_team_name') || 'Tom'); if (!by) return; localStorage.setItem('rich_team_name', by); b.agencySignoff = { by, at: new Date().toISOString() }; saveCalendars(); openBrief(id); }
 function saveBriefField(id, k, v) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); if (b) { b[k] = v; saveCalendars(); } }
 function toggleBriefResolve(id, kind, i) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); const cm = briefFb(b, kind).comments[i]; if (cm) cm.resolved = !cm.resolved; saveCalendars(); openBrief(id); }
-function deleteBrief(id) { if (!confirm('Delete this ad brief permanently?')) return; const c = getCal(); c.briefs = getBriefs(c).filter(b => b.id !== id); saveCalendars(); $('postModal').classList.remove('show'); renderCalView(); }
+async function deleteBrief(id) { if (!confirm('Delete this ad brief permanently?')) return; const c = getCal(); c.briefs = getBriefs(c).filter(b => b.id !== id); $('postModal').classList.remove('show'); renderCalView(); const r = await internalOp({ op: 'brief-delete', calId: c.id, briefId: id }); if (r && r.ok === false) alert('Delete not saved. Check your connection and try again.'); else if (r && r.calendars) { calendars = r.calendars; renderCalView(); } }
 function removeBriefMedia(id, kind, i) { const c = getCal(); const b = getBriefs(c).find(x => x.id === id); b[kind + 'Media'].splice(i, 1); b.cv = (b.cv || 0) + 1; saveCalendars(); openBrief(id); }
 function briefUpload(id, kind, input) {
   const files = [...input.files]; input.value = ''; const c = getCal();
@@ -1655,7 +1738,7 @@ function openDayView(items, dateLabel, opts = {}) {
       <div class="dv-stage">
         ${items.length > 1 ? '<button class="dv-nav prev">&lsaquo;</button><button class="dv-nav next">&rsaquo;</button>' : ''}
         <div class="dv-media">${it.media || '<div class="no-media">Creative coming soon</div>'}</div>
-        <div class="dv-info">${platIcon(it.platform)}<div style="min-width:0"><h4>${esc(p.topic || 'Untitled')}</h4><div class="sub">${esc(it.platform.replace('X (Twitter)', 'X'))}${p.creativeType ? ' · ' + esc(p.creativeType) : ''} · ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div></div><span class="badge ${st[0]}">${esc(st[1])}</span></div>
+        <div class="dv-info">${platIcon(it.platform)}<div style="min-width:0"><h4>${esc(p.topic || 'Untitled')}</h4><div class="sub">${esc(it.platform.replace('X (Twitter)', 'X'))}${hasSplitDates(p) ? ' · also: ' + postPlats(p).filter(x => x !== it.platform).map(x => x.replace('X (Twitter)', 'X') + ' ' + shortD(platDate(p, x))).join(', ') : ''}${p.creativeType ? ' · ' + esc(p.creativeType) : ''} · ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div></div><span class="badge ${st[0]}">${esc(st[1])}</span></div>
       </div>
       <div class="dv-dots">${items.map((x, i) => `<div class="dd ${i === cur ? 'on' : ''}" style="background:${PLAT_COLORS[x.platform] || '#8b5cf6'}" title="${esc(x.post.topic || '')} · ${esc(x.platform)}"></div>`).join('')}</div>
       <div class="dv-open"><button class="btn">${opts.client ? 'Review this post' : 'Open post'}</button></div>`;
@@ -1671,13 +1754,13 @@ function openDayView(items, dateLabel, opts = {}) {
   ov.onclick = e => { if (e.target === ov) ov.remove(); };
   document.body.appendChild(ov); render(); ov.focus();
 }
-function dayItems(calId, posts, pin, prefix) {
+function dayItems(calId, posts, pin, prefix, ds) {
   const out = [];
-  posts.forEach(p => { const plats = (p.platforms || []).length ? p.platforms : ['Other']; plats.forEach((pl, i) => out.push({ post: p, platform: pl, media: mediaHTML(calId, p, 'EN', p.cv, pin, { prefix: prefix + i }) || mediaHTML(calId, p, 'AR', p.cv, pin, { prefix: prefix + i }) })); });
+  posts.forEach(p => { const plats = ds ? platsOnDate(p, ds) : postPlats(p); plats.forEach((pl, i) => out.push({ post: p, platform: pl, media: mediaHTML(calId, p, 'EN', p.cv, pin, { prefix: prefix + i }) || mediaHTML(calId, p, 'AR', p.cv, pin, { prefix: prefix + i }) })); });
   return out;
 }
-function intDayView(ds) { const c = getCal(); const posts = (c.posts || []).filter(p => p.date === ds); openDayView(dayItems(c.id, posts, null, 'dv'), fmtDate(ds), { onOpen: pid => editPost(pid) }); }
-function clDayView(ds) { const posts = (clientData.posts || []).filter(p => p.date === ds); openDayView(dayItems(clientCalId, posts, clientPin, 'cdv'), fmtDate(ds), { client: true, onOpen: pid => { clientTab = 'review'; clientFilter = 'all'; renderClient(); setTimeout(() => $('cp-' + pid)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 150); } }); }
+function intDayView(ds) { const c = getCal(); const posts = (c.posts || []).filter(p => platsOnDate(p, ds).length); openDayView(dayItems(c.id, posts, null, 'dv', ds), fmtDate(ds), { onOpen: pid => editPost(pid) }); }
+function clDayView(ds) { const posts = (clientData.posts || []).filter(p => platsOnDate(p, ds).length); openDayView(dayItems(clientCalId, posts, clientPin, 'cdv', ds), fmtDate(ds), { client: true, onOpen: pid => { clientTab = 'review'; clientFilter = 'all'; renderClient(); setTimeout(() => $('cp-' + pid)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 150); } }); }
 
 /* ================================================================
    CLIENT: GATE
@@ -1740,9 +1823,9 @@ function renderClient() {
     h += '<div class="cal-scroll"><div class="cal-grid">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-head">${d}</div>`).join('');
     for (let i = 0; i < fd; i++) h += '<div class="cal-day empty"></div>';
     for (let d = 1; d <= dim; d++) {
-      const ds = mk + '-' + String(d).padStart(2, '0'); const dp = allMonth.filter(p => p.date === ds); const cr = dp.reduce((s, p) => s + countCreatives(p), 0);
+      const ds = mk + '-' + String(d).padStart(2, '0'); const dp = allMonth.filter(p => platsOnDate(p, ds).length); const cr = dp.reduce((s, p) => s + countCreatives(p), 0);
       const isT = d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
-      h += `<div class="cal-day cl-cal-day" ${dp.length ? `onclick="clDayView('${ds}')"` : ''}><div class="dn ${isT ? 'today' : ''}">${d}</div>${dp.length ? `<div class="big">${dp.reduce((s, p) => s + Math.max((p.platforms || []).length, 1), 0)}</div><div class="dots">${dp.flatMap(p => ((p.platforms || []).length ? p.platforms : ['Other']).map(pl => `<div class="dot" style="background:${PLAT_COLORS[pl] || '#8b5cf6'}" title="${esc(p.topic || '')} · ${esc(pl)}"></div>`)).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div>` : ''}${adBarsHTML(c.briefs || [], ds, 'clOpenBrief')}</div>`;
+      h += `<div class="cal-day cl-cal-day" ${dp.length ? `onclick="clDayView('${ds}')"` : ''}><div class="dn ${isT ? 'today' : ''}">${d}</div>${dp.length ? `<div class="big">${dp.reduce((s, p) => s + platsOnDate(p, ds).length, 0)}</div><div class="dots">${dp.flatMap(p => platsOnDate(p, ds).map(pl => `<div class="dot" style="background:${PLAT_COLORS[pl] || '#8b5cf6'}" title="${esc(p.topic || '')} · ${esc(pl)}"></div>`)).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div>` : ''}${adBarsHTML(c.briefs || [], ds, 'clOpenBrief')}</div>`;
     }
     const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
     h += '</div></div>';
@@ -1757,11 +1840,14 @@ function renderClient() {
         const arMedia = (p.carouselEN || []).length && (p.carouselAR || []).length ? mediaHTML(clientCalId, p, 'AR', p.cv, clientPin, { prefix: 'clar' }) : '';
         const statusLabel = fb.status === 'approved' ? 'You approved this' : fb.status === 'declined' ? 'You requested changes' : CLIENT_STATUS_LABEL[p.status] || 'Awaiting your review';
         const statusCls = fb.status === 'approved' ? 'approved' : fb.status === 'declined' ? 'changes' : p.status === 'Revised' ? 'revised' : 'review';
-        const comments = (fb.comments || []).map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'You')}</strong>${cm.resolved ? '<span class="badge approved" style="font-size:9px">Actioned by RICH</span>' : ''}<time>${fmtTime(cm.d)}</time><div class="comment-actions"><button onclick="clEditComment('${p.id}',${i})">Edit</button><button class="del" onclick="clDeleteComment('${p.id}',${i})">Delete</button></div></div><div class="comment-text">${esc(cm.t)}</div></div></div>`).join('');
+        const plink = shareLink('post', p.id);
+        const comments = (fb.comments || []).map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'You')}</strong>${cm.resolved ? '<span class="badge approved" style="font-size:9px">&#10003; Actioned by RICH</span>' : ''}${(cm.replies || []).length ? '<span class="badge replied" style="font-size:9px">RICH replied</span>' : ''}<time>${fmtTime(cm.d)}</time><div class="comment-actions">${waBtn(cm, p.topic, plink)}<button onclick="clEditComment('${p.id}',${i})">Edit</button><button class="del" onclick="clDeleteComment('${p.id}',${i})">Delete</button></div></div><div class="comment-text">${esc(cm.t)}</div>${repliesHTML(cm)}</div></div>`).join('');
+        const nReplied = (fb.comments || []).filter(cm => (cm.replies || []).length).length; const nActioned = (fb.comments || []).filter(cm => cm.resolved).length;
+        const replyBanner = nReplied ? `<div class="rich-replied" onclick="this.closest('.cl-card').classList.add('open')" style="cursor:pointer"><span class="n">${nReplied}</span>RICH has replied to your feedback${nActioned ? ` &middot; ${nActioned} actioned` : ''} &rarr;</div>` : nActioned ? `<div class="rich-replied" style="background:#dcfce7;color:#166534;border-color:#bbf7d0"><span class="n" style="background:#166534">${nActioned}</span>Your feedback has been actioned by RICH</div>` : '';
         h += `<div class="cl-card" id="cp-${p.id}">
           <div class="media" data-fv-label="${esc(p.topic || '')}" onclick="openFullView(this,'${esc(p.topic || '')}')">${media || '<div class="no-media">Creative coming soon</div>'}<div class="plat-icons">${platIcons(p.platforms)}</div>${p.status === 'Revised' ? '<div class="revised-tag">Revised</div>' : ''}${media ? `<button class="fv-expand" title="View full screen" onclick="event.stopPropagation();openFullView(this.parentElement,'${esc(p.topic || '')}')">&#x26F6;</button>` : ''}</div>
-          <div class="info"><div class="date-row"><div class="date-chip"><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-GB', { month: 'short' })}</span></div><div style="min-width:0"><h4>${esc(p.topic || 'Untitled')}</h4><div class="sub">${d.toLocaleDateString('en-GB', clientTab === 'todo' ? { weekday: 'short', day: 'numeric', month: 'long' } : { weekday: 'long' })}${p.creativeType ? ' · ' + esc(p.creativeType) : ''} · ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div></div></div></div>
-          <div class="status-row"><span class="badge ${statusCls}">${statusLabel}</span></div>
+          <div class="info"><div class="date-row"><div class="date-chip"><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-GB', { month: 'short' })}</span></div><div style="min-width:0"><h4>${esc(p.topic || 'Untitled')}</h4><div class="sub">${d.toLocaleDateString('en-GB', clientTab === 'todo' ? { weekday: 'short', day: 'numeric', month: 'long' } : { weekday: 'long' })}${p.creativeType ? ' · ' + esc(p.creativeType) : ''} · ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div>${schedHTML(p)}</div></div></div>
+          ${replyBanner}<div class="status-row"><span class="badge ${statusCls}">${statusLabel}</span></div>
           <div class="decide"><button class="btn outline-green ${fb.status === 'approved' ? 'active' : ''}" onclick="clDecide('${p.id}','approved')">&#10003; Approve</button><button class="btn outline-amber ${fb.status === 'declined' ? 'active' : ''}" onclick="clDecide('${p.id}','declined')">Request changes</button></div>
           <div class="feedback"><div class="fb-row"><input class="nm" id="nm-${p.id}" value="${esc(savedName)}" placeholder="Name" onchange="localStorage.setItem('rich_cl_name',this.value)"><input class="msg" id="msg-${p.id}" placeholder="What should we change?" onkeydown="if(event.key==='Enter')clComment('${p.id}')"><button class="btn primary" onclick="clComment('${p.id}')">Send</button></div></div>
           <div class="expand" onclick="this.closest('.cl-card').classList.toggle('open')"><span class="arrow">&#9660;</span>${(fb.comments || []).length ? `${fb.comments.length} comment${fb.comments.length !== 1 ? 's' : ''} &amp; details` : 'Captions &amp; details'}</div>

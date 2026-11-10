@@ -64,7 +64,8 @@ export async function onRequest(context) {
         const sBriefs = s.briefs||[]; const iBriefs = c.briefs||[]; const iById={}; iBriefs.forEach(b=>iById[b.id]=b);
         const sById={}; sBriefs.forEach(b=>sById[b.id]=b);
         const mergedBriefs = [];
-        sBriefs.forEach(sb=>{ const ib=iById[sb.id]; if(!ib){ if(sb.status==='Submitted' || !c.__knownBriefIds || !c.__knownBriefIds.includes(sb.id)) mergedBriefs.push(sb); return; }
+        const dead = new Set([...(s.deletedBriefIds||[]), ...(c.deletedBriefIds||[])]);
+        sBriefs.forEach(sb=>{ const ib=iById[sb.id]; if(!ib){ if(!dead.has(sb.id)) mergedBriefs.push(sb); return; } // stored brief missing from a (possibly stale) snapshot: keep it; deletes go through /api/internal
           const mb = { ...sb, ...ib };
           // client-owned: fb comments/status, approvals, submitted-stage edits
           mb.fb = { ...(ib.fb||{}) }; ['concept','final'].forEach(k=>{ const sf=(sb.fb||{})[k]||{status:'',comments:[]}; const inf=(ib.fb||{})[k]||{status:'',comments:[]}; const incById={}; (inf.comments||[]).forEach(cm=>{incById[(cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||'')]=cm;}); mb.fb[k]={ status: sf.status, comments:(sf.comments||[]).map(cm=>{const i=incById[(cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||'')]; return i&&i.resolved!==undefined?{...cm,resolved:i.resolved}:cm;}) }; });
@@ -74,8 +75,8 @@ export async function onRequest(context) {
           if (['Concept approved','Approved'].includes(sb.status) && si>ii) { mb.status=sb.status; mb.conceptApprovedAt=sb.conceptApprovedAt; mb.finalApprovedAt=sb.finalApprovedAt; mb.finalDueAt=sb.finalDueAt; mb.masterDueAt=sb.masterDueAt; mb.approvedBy=sb.approvedBy; }
           if (sb.status==='Submitted' && ib.status==='Submitted') { ['campaignName','carModel','formats','customFormats','langs','startDate','endDate','showDates','copy','usps','price','termsEN','termsAR','refs','concepts','submittedBy','conceptDueAt','cv'].forEach(k=>{ if(sb[k]!==undefined) mb[k]=sb[k]; }); }
           mergedBriefs.push(mb); });
-        iBriefs.forEach(ib=>{ if(!sById[ib.id]) mergedBriefs.push(ib); });
-        out.briefs = mergedBriefs; delete out.__knownBriefIds;
+        iBriefs.forEach(ib=>{ if(!sById[ib.id] && !dead.has(ib.id)) mergedBriefs.push(ib); });
+        out.briefs = mergedBriefs; out.deletedBriefIds = [...dead].slice(-300); delete out.__knownBriefIds;
         return out;
       });
       // calendars present in stored but missing from incoming were deleted by the caller: honour that only if caller saw them
@@ -97,7 +98,7 @@ export async function onRequest(context) {
           screenshot:p.screenshot||'', assetLink:p.assetLink||'', assets:p.assets||[],
           hasCreativeEN:!!(p.creativesEN||p.hasCreativeEN), hasCreativeAR:!!(p.creativesAR||p.hasCreativeAR),
           creativeENType:p.creativeENType||'image', creativeARType:p.creativeARType||'image',
-          carouselEN:p.carouselEN||[], carouselAR:p.carouselAR||[], markedUpdated:!!p.markedUpdated, cv:p.cv||0, revisedAt:p.revisedAt||null, dimensions:p.dimensions||'',
+          carouselEN:p.carouselEN||[], carouselAR:p.carouselAR||[], platformDates:p.platformDates||undefined, markedUpdated:!!p.markedUpdated, cv:p.cv||0, revisedAt:p.revisedAt||null, dimensions:p.dimensions||'',
           ref: r?{platform:r.platform,embedId:r.embedId,shortcode:r.shortcode,url:r.url,short:r.short,mtype:r.mtype,cover:r.cover||''}:null,
           feedback:(c.feedback&&c.feedback[p.id])||{status:'',comments:[]} }; });
       return json({ name:c.name, intro:c.intro||'', calId:id, posts, briefs:c.briefs||[], carModels:c.carModels||[] });
@@ -122,7 +123,7 @@ export async function onRequest(context) {
       c.briefs = c.briefs || [];
       if (b.action === 'create' && b.brief) { if (!c.briefs.some(x=>x.id===b.brief.id)) c.briefs.unshift(b.brief); }
       else if (b.action === 'update' && b.brief) { const i=c.briefs.findIndex(x=>x.id===b.briefId); if (i<0) return json({ error:'notfound' },404); if (c.briefs[i].status!=='Submitted') return json({ error:'locked' },409); const keep=c.briefs[i]; c.briefs[i]={...keep,...b.brief,status:keep.status,history:keep.history,conceptMedia:keep.conceptMedia,finalMedia:keep.finalMedia,fb:keep.fb}; }
-      else if (b.action === 'delete') { const x=c.briefs.find(y=>y.id===b.briefId); if (x && x.status!=='Submitted') return json({ error:'locked' },409); c.briefs=c.briefs.filter(y=>y.id!==b.briefId); }
+      else if (b.action === 'delete') { const x=c.briefs.find(y=>y.id===b.briefId); if (x && x.status!=='Submitted') return json({ error:'locked' },409); c.briefs=c.briefs.filter(y=>y.id!==b.briefId); c.deletedBriefIds=[...(c.deletedBriefIds||[]), b.briefId].slice(-300); }
       else if (b.action === 'feedback') {
         const x=c.briefs.find(y=>y.id===b.briefId); if (!x) return json({ error:'notfound' },404);
         x.fb=x.fb||{}; x.fb[b.kind]=x.fb[b.kind]||{status:'',comments:[]};
@@ -131,6 +132,23 @@ export async function onRequest(context) {
         if (b.status!==undefined) { x.fb[b.kind].status=b.status; if (b.briefStatus) { x.status=b.briefStatus; (x.history=x.history||[]).push({status:b.briefStatus,at:new Date().toISOString(),by:b.by||'Client'}); } x.conceptApprovedAt=b.conceptApprovedAt??x.conceptApprovedAt; x.finalApprovedAt=b.finalApprovedAt??x.finalApprovedAt; x.finalDueAt=b.finalDueAt??x.finalDueAt; x.masterDueAt=b.masterDueAt??x.masterDueAt; x.approvedBy=b.approvedBy??x.approvedBy; }
       } else return json({ error:'bad action' },400);
       await kv.put('calendars', JSON.stringify(cals)); await kv.put('calendars:rev', String(Date.now())); return json({ ok:true });
+    }
+    // Internal explicit operations (agency side). These write straight to the stored copy so a stale internal tab's
+    // next PUT can never undo them: brief delete (tombstoned) and agency replies to client comments.
+    if (path === 'internal' && request.method === 'POST') {
+      const b = await request.json(); const cals=(await kv.get('calendars','json'))||[]; const c=cals.find(x=>x.id===b.calId);
+      if (!c) return json({ error:'notfound' }, 404);
+      const ckey = cm => (cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||'');
+      if (b.op === 'brief-delete') { c.briefs=(c.briefs||[]).filter(x=>x.id!==b.briefId); c.deletedBriefIds=[...(c.deletedBriefIds||[]), b.briefId].slice(-300); }
+      else if (b.op === 'reply' && b.reply && b.key) {
+        let list;
+        if (b.postId) { c.feedback=c.feedback||{}; list=(c.feedback[b.postId]||{}).comments||[]; }
+        else if (b.briefId) { const x=(c.briefs||[]).find(y=>y.id===b.briefId); list=x && x.fb && x.fb[b.kind] ? (x.fb[b.kind].comments||[]) : []; }
+        const cm=(list||[]).find(x=>ckey(x)===ckey(b.key)); if (!cm) return json({ error:'comment not found' }, 404);
+        cm.replies=cm.replies||[]; if (!cm.replies.some(r=>r.d===b.reply.d && r.t===b.reply.t)) cm.replies.push({ by:b.reply.by||'RICH', t:String(b.reply.t||'').slice(0,2000), d:b.reply.d||new Date().toISOString() });
+      } else return json({ error:'bad op' }, 400);
+      const newRev=String(Date.now()); await kv.put('calendars', JSON.stringify(cals)); await kv.put('calendars:rev', newRev);
+      return json({ ok:true, rev:newRev, calendars:cals });
     }
     // Creative asset upload/serve (stored per-asset in KV to handle large video files)
     if (path === 'creative-upload' && request.method === 'POST') {
