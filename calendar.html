@@ -666,7 +666,47 @@ input,textarea,select{font-family:inherit}
 .fv-expand:hover{background:var(--client)}
 .media video,.bc-media video{cursor:zoom-in}
 /* Print */
-@media print{.int-header,.cl-header,.int-cal-toolbar,.cl-toolbar,.month-nav,.btn{display:none!important}body{background:#fff}}
+@media print{.int-header,.cl-header,.int-cal-toolbar,.cl-toolbar,.month-nav,.btn,.int-hero,.cl-hero,.gantt-wrap,.cl-footer,.save-state,.rep-nav,.rep-head{display:none!important}body{background:#fff}.int-wrap,.cl-wrap{padding:0;max-width:none}.report{box-shadow:none;padding:0;margin:0}.rep-stats{grid-template-columns:repeat(3,1fr)!important}.rep-grid{grid-template-columns:1fr 1fr!important}.rep-print-head{display:flex!important}.rep-sec{break-inside:avoid}.rep-gallery .rg-thumb{break-inside:avoid}}
+/* Monthly report */
+.report{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:24px;margin-top:16px}
+.rep-print-head{display:none;align-items:center;gap:14px;border-bottom:3px solid #111;padding-bottom:12px;margin-bottom:18px}
+.rep-print-head img{height:30px}.rep-print-head h2{font-family:'Barlow Condensed',sans-serif;font-size:26px;margin:0;text-transform:uppercase}.rep-print-head .sub{font-size:12px;color:var(--muted)}
+.rep-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.rep-head h2{font-family:'Barlow Condensed',sans-serif;font-size:30px;text-transform:uppercase;margin:0;line-height:1}
+.rep-head p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.rep-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.rep-stat{background:var(--bg);border-radius:10px;padding:14px 16px;border-left:4px solid var(--border-2)}
+.rep-stat .n{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:700;line-height:1}
+.rep-stat .l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:4px;font-weight:600}
+.rep-stat .d{font-size:11px;margin-top:6px;color:var(--muted-2)}
+.rep-stat .d.up{color:#166534}.rep-stat .d.down{color:#b91c1c}
+.rep-stat.hi{border-left-color:var(--client)}.rep-stat.ok{border-left-color:#16a34a}.rep-stat.amber{border-left-color:#f59e0b}
+.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:800px){.rep-grid{grid-template-columns:1fr}}
+.rep-sec{background:var(--bg);border-radius:10px;padding:16px 18px;margin-bottom:18px}
+.rep-sec h3{font-family:'Barlow Condensed',sans-serif;font-size:18px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.rep-sec h3 .tot{margin-left:auto;font-size:13px;color:var(--muted);font-family:inherit;text-transform:none;letter-spacing:0;font-weight:500}
+.rep-bar{display:grid;grid-template-columns:130px 1fr 44px;align-items:center;gap:10px;font-size:13px;padding:5px 0}
+.rep-bar .nm{display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rep-bar .tr{height:10px;background:var(--border);border-radius:5px;overflow:hidden}.rep-bar .tr div{height:100%;border-radius:5px}
+.rep-bar .v{font-weight:700;text-align:right;font-family:'Barlow Condensed',sans-serif;font-size:17px}
+.rep-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.rep-table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 8px;border-bottom:2px solid var(--border-2)}
+.rep-table td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.rep-table tr.tot td{font-weight:700;border-top:2px solid var(--border-2);border-bottom:none;background:var(--card)}
+.rep-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.rep-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.rep-gallery .rg-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#111;cursor:pointer}
+.rep-gallery .rg-thumb img,.rep-gallery .rg-thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.rep-gallery .rg-thumb .lg{position:absolute;top:5px;left:5px;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.9);color:#111}
+.rep-gallery .rg-thumb .lg.ar{background:#111;color:#fbbf24}
+.rep-gallery .rg-thumb .cnt{position:absolute;bottom:5px;right:5px;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.65);color:#fff}
+.rep-plat{margin-bottom:14px}.rep-plat h4{display:flex;align-items:center;gap:6px;font-size:13px;margin:0 0 8px}
+.rep-plat h4 .c{color:var(--muted);font-weight:500}
+.rep-empty{font-size:13px;color:var(--muted-2);font-style:italic;padding:8px 0}
+.rep-status{display:flex;flex-wrap:wrap;gap:8px}
+.rep-status .badge{font-size:11px}
+.rep-note{font-size:12px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-2)}
 
 /* Responsive tweaks */
 @media(max-width:600px){
@@ -949,14 +989,14 @@ const copyShare = (kind, id) => shareHere();
 async function applyInternalRoute(q) {
   const cal = q.get('cal'); if (!cal || !calendars.find(c => c.id === cal)) { currentCalId = null; renderDashboard(); return; }
   suppressUrl = true; openCalendar(cal); suppressUrl = false;
-  const v = q.get('view'); if (['board', 'month', 'year', 'briefs'].includes(v)) viewMode = v;
+  const v = q.get('view'); if (['board', 'month', 'year', 'briefs', 'report'].includes(v)) viewMode = v;
   const m = parseMonth(q.get('m')); if (m) viewMonth = m;
   renderCalView();
   if (q.get('post') && getPost(getCal(), q.get('post'))) { const p = getPost(getCal(), q.get('post')); if (p.date && !q.get('m')) { viewMonth = new Date(p.date + 'T00:00:00'); viewMonth.setDate(1); renderCalView(); } editPost(q.get('post')); }
   else if (q.get('brief') && getBriefs(getCal()).find(b => b.id === q.get('brief'))) { viewMode = 'briefs'; renderCalView(); openBrief(q.get('brief')); }
 }
 function applyClientRoute(q) {
-  const t = q.get('tab'); clientTab = ['review', 'calendar', 'briefs', 'todo'].includes(t) ? t : ((clientData.posts || []).some(awaitingClient) && !q.get('post') && !q.get('brief') ? 'todo' : 'review');
+  const t = q.get('tab'); clientTab = ['review', 'calendar', 'briefs', 'todo', 'report'].includes(t) ? t : ((clientData.posts || []).some(awaitingClient) && !q.get('post') && !q.get('brief') ? 'todo' : 'review');
   const m = parseMonth(q.get('m')); if (m) clientMonth = m;
   if (q.get('brief')) { const b = (clientData.briefs || []).find(x => x.id === q.get('brief')); if (b) { clientTab = 'briefs'; clBriefTab = briefIsActive(b) ? 'active' : 'done'; } }
   if (q.get('post')) { const p = (clientData.posts || []).find(x => x.id === q.get('post')); if (p && p.date) { clientMonth = new Date(p.date + 'T00:00:00'); clientMonth.setDate(1); clientTab = 'review'; clientFilter = 'all'; } }
@@ -1090,14 +1130,14 @@ function renderCalView() {
     <div class="steps"><div><span class="n">1</span>Build &amp; upload</div><div><span class="n">2</span>Send for review</div><div><span class="n">3</span>Action feedback</div><div><span class="n">4</span>Re-submit</div></div>
     <div class="stats"><div><strong>${mp.length}</strong><span>Posts</span></div><div><strong>${cr}</strong><span>Creatives</span></div><div><strong style="color:#60a5fa">${withClient}</strong><span>With client</span></div><div><strong style="color:#4ade80">${ap}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${ch}</strong><span>Changes</span></div><div><strong style="color:#f87171">${un}</strong><span>Unresolved</span></div><div><strong style="color:#fbbf24">${getBriefs(c).filter(briefIsActive).length}</strong><span>Ad briefs</span></div></div></div>`;
   h += ganttHTML(getBriefs(c), 'openBrief', { showDone: false });
-  if (viewMode === 'year') h += yearView(c); else if (viewMode === 'board') h += boardView(c); else if (viewMode === 'briefs') h += briefsView(c); else h += monthView(c);
+  if (viewMode === 'year') h += yearView(c); else if (viewMode === 'board') h += boardView(c); else if (viewMode === 'briefs') h += briefsView(c); else if (viewMode === 'report') h += reportView(c); else h += monthView(c);
   h += '</div>';
   $('app').innerHTML = h;
   if (!$('postModal').classList.contains('show')) syncUrlInternal();
 }
 function calToolbar(c, extra) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
-  return `<div class="int-cal-toolbar"><div class="left"><button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button><h2>${MONTHS[m]} ${y}</h2><button class="month-nav" onclick="monthNav(1)">&rsaquo;</button><div class="view-tabs"><button class="${viewMode === 'board' ? 'active' : ''}" onclick="viewMode='board';renderCalView()">Review board</button><button class="${viewMode === 'month' ? 'active' : ''}" onclick="viewMode='month';renderCalView()">Calendar</button><button class="${viewMode === 'year' ? 'active' : ''}" onclick="viewMode='year';renderCalView()">Year</button><button class="${viewMode === 'briefs' ? 'active' : ''}" onclick="viewMode='briefs';renderCalView()">Ad requests${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length ? ` <span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length}</span>` : ''}</button></div></div><div class="right">${extra || ''}<button class="btn sm primary" onclick="addPost()">+ Add post</button></div></div>`;
+  return `<div class="int-cal-toolbar"><div class="left"><button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button><h2>${MONTHS[m]} ${y}</h2><button class="month-nav" onclick="monthNav(1)">&rsaquo;</button><div class="view-tabs"><button class="${viewMode === 'board' ? 'active' : ''}" onclick="viewMode='board';renderCalView()">Review board</button><button class="${viewMode === 'month' ? 'active' : ''}" onclick="viewMode='month';renderCalView()">Calendar</button><button class="${viewMode === 'year' ? 'active' : ''}" onclick="viewMode='year';renderCalView()">Year</button><button class="${viewMode === 'report' ? 'active' : ''}" onclick="viewMode='report';renderCalView()">Report</button><button class="${viewMode === 'briefs' ? 'active' : ''}" onclick="viewMode='briefs';renderCalView()">Ad requests${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length ? ` <span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length}</span>` : ''}</button></div></div><div class="right">${extra || ''}<button class="btn sm primary" onclick="addPost()">+ Add post</button></div></div>`;
 }
 function monthNav(d) { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + d, 1); renderCalView(); }
 
@@ -1631,6 +1671,12 @@ function clOpenBrief(id) { clientTab = 'briefs'; const b = clientData.briefs.fin
 /* ================================================================
    AD BRIEFS: INTERNAL
 ================================================================ */
+function reportView(c) {
+  const y = viewMonth.getFullYear(), m = viewMonth.getMonth(); const [py, pm] = prevMonth(y, m);
+  const fbOf = p => getFb(c, p.id);
+  const r = reportData(c.posts, getBriefs(c), fbOf, y, m), prev = reportData(c.posts, getBriefs(c), fbOf, py, pm);
+  return calToolbar(c) + reportHTML(r, prev, { role: 'internal', calId: c.id, pin: null, name: c.name, onPost: "editPost('PID')" });
+}
 function briefsView(c) {
   const briefs = getBriefs(c);
   let h = calToolbar(c, briefTabs('internal'));
@@ -1724,6 +1770,91 @@ Client link: ${link}&brief=${b.id}`;
 function openCalendarToBrief(calId, bid) { openCalendar(calId); viewMode = 'briefs'; renderCalView(); setTimeout(() => openBrief(bid), 200); }
 
 /* ================================================================
+   MONTHLY REPORT (shared): what RICH produced this month
+   Delivered = post status Approved / Scheduled / Published, or client-approved.
+   Ads count in the month the client approved the final.
+================================================================ */
+const DELIVERED_STATUSES = ['Approved', 'Scheduled', 'Published'];
+const isDelivered = (p, fb) => DELIVERED_STATUSES.includes(p.status) || ((fb || {}).status === 'approved');
+const slideCounts = p => { const r = { enImg: 0, enVid: 0, arImg: 0, arVid: 0 }; const cnt = (arr, legacy, legacyType, k) => { if ((arr || []).length) arr.forEach(x => r[k + (x.type === 'video' ? 'Vid' : 'Img')]++); else if (legacy) r[k + (legacyType === 'video' ? 'Vid' : 'Img')]++; }; cnt(p.carouselEN, p.hasCreativeEN, p.creativeENType, 'en'); cnt(p.carouselAR, p.hasCreativeAR, p.creativeARType, 'ar'); return r; };
+const briefFormatRows = b => [...(b.formats || []).map(k => { const f = AD_FORMATS.find(x => x.key === k); return f ? { grp: f.grp, label: f.print ? f.label + ' ' + f.size : f.size } : { grp: 'Other', label: k }; }), ...(b.customFormats || []).map(x => ({ grp: 'Custom', label: typeof x === 'string' ? x : (x.label || x.size || 'custom') }))];
+function reportData(posts, briefs, fbOf, y, m) {
+  const mk = monthKey(y, m);
+  const monthPosts = (posts || []).filter(p => inMonth(p, y, m));
+  const delivered = monthPosts.filter(p => isDelivered(p, fbOf(p)));
+  const pending = monthPosts.filter(p => !isDelivered(p, fbOf(p)));
+  const byStatus = {}; pending.forEach(p => { const st = p.status || 'Draft'; byStatus[st] = (byStatus[st] || 0) + 1; });
+  const platforms = {}; let placements = 0;
+  delivered.forEach(p => postPlats(p).forEach(pl => { if (platDate(p, pl).startsWith(mk)) { platforms[pl] = (platforms[pl] || 0) + 1; placements++; } }));
+  const cr = { enImg: 0, enVid: 0, arImg: 0, arVid: 0 }; delivered.forEach(p => { const c = slideCounts(p); Object.keys(cr).forEach(k => cr[k] += c[k]); });
+  const social = cr.enImg + cr.enVid + cr.arImg + cr.arVid;
+  const ads = (briefs || []).filter(b => (b.finalApprovedAt || '').startsWith(mk)).map(b => { const rows = briefFormatRows(b); const langs = (b.langs?.ar ? 1 : 0) + (b.langs?.en ? 1 : 0) || 1; return { b, rows, langs, variations: rows.length * langs, finals: (b.finalMedia || []).length, concepts: (b.conceptMedia || []).length, conceptsBriefed: b.concepts || 2 }; });
+  const adTot = ads.reduce((t, a) => ({ variations: t.variations + a.variations, finals: t.finals + a.finals, concepts: t.concepts + a.concepts, formats: t.formats + a.rows.length }), { variations: 0, finals: 0, concepts: 0, formats: 0 });
+  const adsOpen = (briefs || []).filter(b => briefIsActive(b) && (b.createdAt || '').startsWith(mk)).length;
+  return { y, m, mk, monthPosts, delivered, pending, byStatus, platforms, placements, cr, social, ads, adTot, adsOpen, total: social + adTot.variations };
+}
+const prevMonth = (y, m) => m === 0 ? [y - 1, 11] : [y, m - 1];
+function deltaHTML(cur, prev, label) { if (prev === undefined || prev === null) return ''; const d = cur - prev; const cls = d > 0 ? 'up' : d < 0 ? 'down' : ''; const arrow = d > 0 ? '&#9650;' : d < 0 ? '&#9660;' : '&#9644;'; return `<div class="d ${cls}">${arrow} ${d === 0 ? 'Same as' : (d > 0 ? '+' : '') + d + ' vs'} ${label}</div>`; }
+function reportHTML(r, prev, opts) {
+  // opts: { role:'internal'|'client', calId, pin, name, onPost(pid) js string }
+  const client = opts.role === 'client'; const prevLabel = MONTHS[prevMonth(r.y, r.m)[1]].slice(0, 3);
+  const monthLabel = MONTHS[r.m] + ' ' + r.y;
+  const stat = (n, l, cls, pv) => `<div class="rep-stat ${cls || ''}"><div class="n">${n}</div><div class="l">${l}</div>${deltaHTML(n, pv, prevLabel)}</div>`;
+  let h = `<div class="report" id="report">
+    <div class="rep-print-head"><img src="${LOGO}" alt="RICH"><div><h2>${esc(opts.name)}: ${monthLabel}</h2><div class="sub">Monthly production report, prepared by RICH Marketing. Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.</div></div></div>
+    <div class="rep-head"><div><h2>${monthLabel} report</h2><p>${client ? 'Everything RICH produced for you this month. Finished work only; anything still in progress is not counted yet.' : 'What has been delivered this month. Delivered means Approved, Scheduled or Published, or client-approved. Posts still in production are listed below and are not counted in the headline numbers.'}</p></div><div class="rep-nav"><button class="btn sm" onclick="window.print()" title="Print or save as PDF">&#128438; Print / PDF</button></div></div>
+    <div class="rep-stats">
+      ${stat(r.delivered.length, 'Posts delivered', 'hi', prev && prev.delivered.length)}
+      ${stat(r.placements, 'Platform placements', '', prev && prev.placements)}
+      ${stat(r.social, 'Social creatives', 'ok', prev && prev.social)}
+      ${stat(r.ads.length, 'Ads delivered', 'amber', prev && prev.ads.length)}
+      ${stat(r.adTot.variations, 'Ad variations', 'amber', prev && prev.adTot.variations)}
+      ${stat(r.total, 'Total creatives', 'hi', prev && prev.total)}
+    </div>
+    <div class="rep-grid">
+      <div class="rep-sec"><h3>Posts by platform <span class="tot">${r.placements} placement${r.placements !== 1 ? 's' : ''} across ${Object.keys(r.platforms).length} platform${Object.keys(r.platforms).length !== 1 ? 's' : ''}</span></h3>`;
+  const maxP = Math.max(1, ...Object.values(r.platforms));
+  const platOrder = Object.entries(r.platforms).sort((a, b) => b[1] - a[1]);
+  h += platOrder.length ? platOrder.map(([pl, n]) => `<div class="rep-bar"><div class="nm">${platIcon(pl)}${esc(pl.replace('X (Twitter)', 'X'))}</div><div class="tr"><div style="width:${Math.round(n / maxP * 100)}%;background:${PLAT_COLORS[pl] || '#8b5cf6'}"></div></div><div class="v">${n}</div></div>`).join('') : '<div class="rep-empty">No posts delivered yet this month.</div>';
+  h += `</div><div class="rep-sec"><h3>Social creatives <span class="tot">${r.social} file${r.social !== 1 ? 's' : ''}</span></h3>
+      <table class="rep-table"><thead><tr><th></th><th class="num">Images</th><th class="num">Videos</th><th class="num">Total</th></tr></thead><tbody>
+        <tr><td>English</td><td class="num">${r.cr.enImg}</td><td class="num">${r.cr.enVid}</td><td class="num">${r.cr.enImg + r.cr.enVid}</td></tr>
+        <tr><td>Arabic</td><td class="num">${r.cr.arImg}</td><td class="num">${r.cr.arVid}</td><td class="num">${r.cr.arImg + r.cr.arVid}</td></tr>
+        <tr class="tot"><td>Total</td><td class="num">${r.cr.enImg + r.cr.arImg}</td><td class="num">${r.cr.enVid + r.cr.arVid}</td><td class="num">${r.social}</td></tr>
+      </tbody></table>
+      <div class="rep-note">Every file counts: a 5-slide carousel in English and Arabic is 10 creatives. ${r.delivered.length} post${r.delivered.length !== 1 ? 's' : ''} delivered, ${r.delivered.length ? (r.social / r.delivered.length).toFixed(1) : 0} creatives per post on average.</div>
+    </div></div>`;
+  // Ads
+  h += `<div class="rep-sec"><h3>Ads delivered <span class="tot">${r.ads.length} ad${r.ads.length !== 1 ? 's' : ''} &middot; ${r.adTot.variations} variation${r.adTot.variations !== 1 ? 's' : ''}</span></h3>`;
+  if (!r.ads.length) h += `<div class="rep-empty">No ads approved this month${r.adsOpen ? `. ${r.adsOpen} request${r.adsOpen !== 1 ? 's' : ''} in progress.` : '.'}</div>`;
+  else {
+    h += `<table class="rep-table"><thead><tr><th>Campaign</th><th>Formats &amp; sizes</th><th class="num">Formats</th><th class="num">Languages</th><th class="num">Variations</th><th class="num">Concepts shown</th><th class="num">Final files</th><th>Approved</th></tr></thead><tbody>`;
+    r.ads.forEach(a => { const groups = {}; a.rows.forEach(x => { (groups[x.grp] = groups[x.grp] || []).push(x.label); });
+      h += `<tr><td><strong>${esc(a.b.campaignName || 'Ad')}</strong>${a.b.carModel ? `<br><span style="color:var(--muted)">${esc(a.b.carModel)}</span>` : ''}</td><td>${Object.entries(groups).map(([g, ls]) => `<div><b>${esc(FMT_SHORT[g] || g)}:</b> ${ls.map(esc).join(', ')}</div>`).join('')}</td><td class="num">${a.rows.length}</td><td class="num">${[a.b.langs?.ar ? 'AR' : '', a.b.langs?.en ? 'EN' : ''].filter(Boolean).join(' + ') || 'AR'}</td><td class="num">${a.variations}</td><td class="num">${a.concepts || a.conceptsBriefed}</td><td class="num">${a.finals}</td><td>${fmtTime(a.b.finalApprovedAt)}</td></tr>`; });
+    h += `<tr class="tot"><td>Total</td><td></td><td class="num">${r.adTot.formats}</td><td></td><td class="num">${r.adTot.variations}</td><td class="num">${r.adTot.concepts}</td><td class="num">${r.adTot.finals}</td><td></td></tr></tbody></table>
+      <div class="rep-note">Variations = formats x languages briefed. Final files = files uploaded to the brief${r.adsOpen ? `. ${r.adsOpen} further request${r.adsOpen !== 1 ? 's' : ''} from this month still in progress` : ''}.</div>`;
+  }
+  h += '</div>';
+  // Internal only: in production
+  if (!client) {
+    h += `<div class="rep-sec"><h3>Not yet counted <span class="tot">${r.pending.length} post${r.pending.length !== 1 ? 's' : ''} in production</span></h3>`;
+    h += r.pending.length ? `<div class="rep-status">${Object.entries(r.byStatus).map(([st, n]) => `<span class="badge ${STATUS_CLASS[st] || 'draft'}">${esc(st)}: ${n}</span>`).join('')}</div><table class="rep-table" style="margin-top:10px"><tbody>${r.pending.map(p => `<tr><td><a href="#" onclick="event.preventDefault();${opts.onPost.replace('PID', p.id)}">${esc(p.topic || 'Untitled')}</a></td><td>${postDates(p).map(shortD).join(', ')}</td><td>${platIcons(p.platforms)}</td><td><span class="badge ${STATUS_CLASS[p.status] || 'draft'}">${esc(p.status || 'Draft')}</span></td><td class="num">${countCreatives(p)} file${countCreatives(p) !== 1 ? 's' : ''}</td></tr>`).join('')}</tbody></table><div class="rep-note">Move these to Approved, Scheduled or Published (or get the client's approval) and they join the report automatically.</div>` : '<div class="rep-empty">Everything dated this month has been delivered.</div>';
+    h += '</div>';
+  }
+  // Gallery grouped by platform
+  h += `<div class="rep-sec"><h3>Delivered this month <span class="tot">Grouped by platform</span></h3>`;
+  if (!r.delivered.length) h += '<div class="rep-empty">Nothing delivered yet.</div>';
+  else platOrder.forEach(([pl, n]) => {
+    const ps = r.delivered.filter(p => postPlats(p).includes(pl) && platDate(p, pl).startsWith(r.mk)).sort((a, b) => platDate(a, pl).localeCompare(platDate(b, pl)));
+    h += `<div class="rep-plat"><h4>${platIcon(pl)}${esc(pl.replace('X (Twitter)', 'X'))} <span class="c">${n} post${n !== 1 ? 's' : ''}</span></h4><div class="rep-gallery">`;
+    ps.forEach(p => { ['EN', 'AR'].forEach(lang => { const arr = p['carousel' + lang] || []; const first = arr[0]; if (!first && !p['hasCreative' + lang]) return; const key = first ? slideKey(first, 0) : undefined; const src = creativeUrl(opts.calId, p.id, lang, key, p.cv, opts.pin); const isVid = first ? first.type === 'video' : p['creative' + lang + 'Type'] === 'video'; const nfiles = arr.length || 1; h += `<div class="rg-thumb" title="${esc(p.topic || '')} (${lang}) · ${shortD(platDate(p, pl))}" onclick="${opts.onPost.replace('PID', p.id)}">${isVid ? `<video src="${src}" muted preload="metadata"></video>` : `<img src="${src}" alt="" loading="lazy">`}<span class="lg ${lang === 'AR' ? 'ar' : ''}">${lang}</span>${nfiles > 1 ? `<span class="cnt">${nfiles}</span>` : ''}</div>`; }); });
+    h += '</div></div>';
+  });
+  h += `</div><div class="rep-note" style="text-align:center">Prepared by RICH Marketing &middot; ${esc(opts.name)} &middot; ${monthLabel}</div></div>`;
+  return h;
+}
+
+/* ================================================================
    DAY GALLERY (shared): one slide per post per platform
 ================================================================ */
 function openDayView(items, dateLabel, opts = {}) {
@@ -1812,12 +1943,15 @@ function renderClient() {
     <div class="steps"><div><span class="n">1</span>Review each post</div><div><span class="n">2</span>Approve or request changes</div><div><span class="n">3</span>Leave specific feedback</div><div><span class="n">4</span>Need an ad? Send us a brief</div></div><div class="cta">${awaitingAll.length ? `<button class="btn" style="background:#fbbf24;color:#111;margin-right:8px" onclick="clientTab='todo';renderClient()">&#10003; ${awaitingAll.length} post${awaitingAll.length !== 1 ? 's' : ''} waiting for your approval</button>` : ''}<button class="btn" onclick="clNewBrief()">&#128227; Request an ad</button>${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill" style="margin-left:8px;background:#fff;color:var(--client)">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length} ad${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length !== 1 ? 's' : ''} awaiting your approval</span>` : ''}</div>
     <div class="stats"><div><strong>${allMonth.length}</strong><span>Posts this month</span></div><div><strong>${creatives}</strong><span>Creatives</span></div><div><strong style="color:#4ade80">${approved}</strong><span>Approved</span></div><div style="cursor:pointer" onclick="clientTab='todo';renderClient()"><strong style="color:#fbbf24">${awaitingAll.length}</strong><span>Waiting for you</span></div>${changes ? `<div><strong style="color:#fca5a5">${changes}</strong><span>Changes</span></div>` : ''}<div><strong>${(c.briefs || []).filter(briefIsActive).length}</strong><span>Ad requests</span></div></div></div>`;
   h += ganttHTML(c.briefs || [], 'clOpenBrief', { client: true, showDone: false, cta: ' <a href="#" onclick="event.preventDefault();clNewBrief()">Request an ad</a>' });
-  h += `<div class="cl-toolbar"><div class="left">${clientTab === 'todo' ? `<h2 style="color:var(--client)">Waiting for you</h2>` : `${prevM ? `<button class="month-nav" onclick="clientGo('${prevM}')">&lsaquo;</button>` : '<span style="width:34px"></span>'}<h2>${MONTHS[m]} ${y}</h2>${nextM ? `<button class="month-nav" onclick="clientGo('${nextM}')">&rsaquo;</button>` : '<span style="width:34px"></span>'}`}<div class="view-tabs"><button class="${clientTab === 'todo' ? 'active' : ''} ${awaitingAll.length ? 'todo-hot' : ''}" onclick="clientTab='todo';renderClient()">To review${awaitingAll.length ? ` <span class="ad-pill">${awaitingAll.length}</span>` : ''}</button><button class="${clientTab === 'review' ? 'active' : ''}" onclick="clientTab='review';renderClient()">All content</button><button class="${clientTab === 'calendar' ? 'active' : ''}" onclick="clientTab='calendar';renderClient()">Calendar</button><button class="${clientTab === 'briefs' ? 'active' : ''}" onclick="clientTab='briefs';renderClient()">Ad requests${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length}</span>` : ''}</button></div></div>
+  h += `<div class="cl-toolbar"><div class="left">${clientTab === 'todo' ? `<h2 style="color:var(--client)">Waiting for you</h2>` : `${prevM ? `<button class="month-nav" onclick="clientGo('${prevM}')">&lsaquo;</button>` : '<span style="width:34px"></span>'}<h2>${MONTHS[m]} ${y}</h2>${nextM ? `<button class="month-nav" onclick="clientGo('${nextM}')">&rsaquo;</button>` : '<span style="width:34px"></span>'}`}<div class="view-tabs"><button class="${clientTab === 'todo' ? 'active' : ''} ${awaitingAll.length ? 'todo-hot' : ''}" onclick="clientTab='todo';renderClient()">To review${awaitingAll.length ? ` <span class="ad-pill">${awaitingAll.length}</span>` : ''}</button><button class="${clientTab === 'review' ? 'active' : ''}" onclick="clientTab='review';renderClient()">All content</button><button class="${clientTab === 'calendar' ? 'active' : ''}" onclick="clientTab='calendar';renderClient()">Calendar</button><button class="${clientTab === 'report' ? 'active' : ''}" onclick="clientTab='report';renderClient()">Report</button><button class="${clientTab === 'briefs' ? 'active' : ''}" onclick="clientTab='briefs';renderClient()">Ad requests${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length}</span>` : ''}</button></div></div>
     <div class="right">${clientTab === 'briefs' ? `<button class="btn sm primary" onclick="clNewBrief()">+ Request an ad</button>` + briefTabs('client') : ''}<div class="filter-pills" style="${clientTab !== 'review' ? 'display:none' : ''}">${[['all', 'All'], ['nodecision', 'No decision yet'], ['approved', 'Approved'], ['changes', 'Changes requested']].map(([k, l]) => `<button class="filter-pill ${clientFilter === k ? 'active' : ''}" onclick="clientFilter='${k}';renderClient()">${l}</button>`).join('')}</div>
-    <div class="sizer">${[['l', 'Large', '<rect x="5" y="5" width="14" height="14" rx="2"/>'], ['m', 'Medium', '<rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/>'], ['s', 'Small', '<rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/>']].map(([k, t, svg]) => `<button class="${clientSize === k ? 'on' : ''}" title="${t}" onclick="clientSize='${k}';localStorage.setItem('rich_cl_sz','${k}');renderClient()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></button>`).join('')}</div></div></div>`;
+    <div class="sizer" style="${clientTab === 'report' || clientTab === 'briefs' ? 'display:none' : ''}">${[['l', 'Large', '<rect x="5" y="5" width="14" height="14" rx="2"/>'], ['m', 'Medium', '<rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/>'], ['s', 'Small', '<rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/>']].map(([k, t, svg]) => `<button class="${clientSize === k ? 'on' : ''}" title="${t}" onclick="clientSize='${k}';localStorage.setItem('rich_cl_sz','${k}');renderClient()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></button>`).join('')}</div></div></div>`;
 
   if (clientTab === 'briefs') {
     h += briefsListHTML(clientCalId, c.briefs || [], 'client', clientPin, clBriefTab);
+  } else if (clientTab === 'report') {
+    const [py, pm] = prevMonth(y, m); const fbOf = p => p.feedback || {};
+    h += reportHTML(reportData(posts, c.briefs || [], fbOf, y, m), reportData(posts, c.briefs || [], fbOf, py, pm), { role: 'client', calId: clientCalId, pin: clientPin, name: c.name, onPost: "clOpenPost('PID')" });
   } else if (clientTab === 'calendar') {
     const dim = new Date(y, m + 1, 0).getDate(), fd = (new Date(y, m, 1).getDay() + 6) % 7, today = new Date();
     h += '<div class="cal-scroll"><div class="cal-grid">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-head">${d}</div>`).join('');
@@ -1867,6 +2001,7 @@ function renderClient() {
   $('app').innerHTML = h;
   syncUrlClient();
 }
+function clOpenPost(pid) { const p = (clientData.posts || []).find(x => x.id === pid); if (p && p.date) { clientMonth = new Date(p.date + 'T00:00:00'); clientMonth.setDate(1); } clientTab = 'review'; clientFilter = 'all'; renderClient(); setTimeout(() => { const el = $('cp-' + pid); if (el) { el.classList.add('open'); el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }); } }, 120); }
 function clientGo(k) { const [y, m] = k.split('-').map(Number); clientMonth = new Date(y, m - 1, 1); renderClient(); }
 async function clDecide(pid, s) { const p = clientData.posts.find(x => x.id === pid); p.feedback = p.feedback || { status: '', comments: [] }; p.feedback.status = p.feedback.status === s ? '' : s; renderClient(); await clientSend(pid, { status: p.feedback.status }); }
 async function clComment(pid) { const name = $('nm-' + pid).value.trim() || 'Client', t = $('msg-' + pid).value.trim(); if (!t) return; localStorage.setItem('rich_cl_name', name); const p = clientData.posts.find(x => x.id === pid); p.feedback = p.feedback || { status: '', comments: [] }; p.feedback.comments.push({ t, by: name, d: new Date().toISOString() }); renderClient(); await clientSend(pid, { comment: t, by: name }); }
