@@ -101,7 +101,7 @@ export async function onRequest(context) {
           carouselEN:p.carouselEN||[], carouselAR:p.carouselAR||[], platformDates:p.platformDates||undefined, markedUpdated:!!p.markedUpdated, cv:p.cv||0, revisedAt:p.revisedAt||null, dimensions:p.dimensions||'',
           ref: r?{platform:r.platform,embedId:r.embedId,shortcode:r.shortcode,url:r.url,short:r.short,mtype:r.mtype,cover:r.cover||''}:null,
           feedback:(c.feedback&&c.feedback[p.id])||{status:'',comments:[]} }; });
-      return json({ name:c.name, intro:c.intro||'', calId:id, posts, briefs:c.briefs||[], carModels:c.carModels||[] });
+      return json({ name:c.name, intro:c.intro||'', calId:id, posts, briefs:c.briefs||[], carModels:c.carModels||[], ads:c.ads||[], briefsOn:!!c.briefsOn });
     }
     if (path === 'calendar-feedback' && request.method === 'POST') {
       const b = await request.json(); const cals=(await kv.get('calendars','json'))||[]; const c=cals.find(x=>x.id===b.id);

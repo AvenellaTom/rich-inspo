@@ -707,6 +707,28 @@ input,textarea,select{font-family:inherit}
 .rep-status{display:flex;flex-wrap:wrap;gap:8px}
 .rep-status .badge{font-size:11px}
 .rep-note{font-size:12px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-2)}
+/* Ads tally */
+.ads-wrap{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:20px 22px;margin-top:16px}
+.ads-sum{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.ads-sum .k{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;line-height:1}
+.ads-sum .l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-top:3px}
+.ads-sum .brands{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.ads-sum .brands span{background:var(--bg);border-radius:14px;padding:5px 10px;font-size:12px;font-weight:600}
+.ads-table{width:100%;border-collapse:collapse;font-size:13px}
+.ads-table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 8px;border-bottom:2px solid var(--border-2);white-space:nowrap}
+.ads-table td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.ads-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.ads-table input[type=text],.ads-table input[type=number],.ads-table input[type=month],.ads-table select{width:100%;padding:6px 8px;border:1px solid var(--border-2);border-radius:6px;font-size:13px;background:var(--card)}
+.ads-table input[type=number]{width:64px;text-align:right}
+.ads-table input[type=month]{width:140px}
+.ads-table select{min-width:120px}
+.ads-table .cr{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700}
+.ads-table tr.tot td{font-weight:700;border-top:2px solid var(--border-2);border-bottom:none;background:var(--bg)}
+.ads-table .lg label{display:inline-flex;align-items:center;gap:3px;font-size:12px;margin-right:8px;cursor:pointer}
+.ads-table .lg input{accent-color:var(--blue)}
+.ads-table .x{background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:2px 6px}
+.ads-help{font-size:12px;color:var(--muted);margin-top:12px}
+@media(max-width:900px){.ads-table{display:block;overflow-x:auto}}
 
 /* Responsive tweaks */
 @media(max-width:600px){
@@ -989,14 +1011,14 @@ const copyShare = (kind, id) => shareHere();
 async function applyInternalRoute(q) {
   const cal = q.get('cal'); if (!cal || !calendars.find(c => c.id === cal)) { currentCalId = null; renderDashboard(); return; }
   suppressUrl = true; openCalendar(cal); suppressUrl = false;
-  const v = q.get('view'); if (['board', 'month', 'year', 'briefs', 'report'].includes(v)) viewMode = v;
+  const v = q.get('view'); if (['board', 'month', 'year', 'briefs', 'report', 'ads'].includes(v)) viewMode = v;
   const m = parseMonth(q.get('m')); if (m) viewMonth = m;
   renderCalView();
   if (q.get('post') && getPost(getCal(), q.get('post'))) { const p = getPost(getCal(), q.get('post')); if (p.date && !q.get('m')) { viewMonth = new Date(p.date + 'T00:00:00'); viewMonth.setDate(1); renderCalView(); } editPost(q.get('post')); }
   else if (q.get('brief') && getBriefs(getCal()).find(b => b.id === q.get('brief'))) { viewMode = 'briefs'; renderCalView(); openBrief(q.get('brief')); }
 }
 function applyClientRoute(q) {
-  const t = q.get('tab'); clientTab = ['review', 'calendar', 'briefs', 'todo', 'report'].includes(t) ? t : ((clientData.posts || []).some(awaitingClient) && !q.get('post') && !q.get('brief') ? 'todo' : 'review');
+  const t = q.get('tab'); clientTab = ['review', 'calendar', 'briefs', 'todo', 'report', 'ads'].includes(t) ? t : ((clientData.posts || []).some(awaitingClient) && !q.get('post') && !q.get('brief') ? 'todo' : 'review');
   const m = parseMonth(q.get('m')); if (m) clientMonth = m;
   if (q.get('brief')) { const b = (clientData.briefs || []).find(x => x.id === q.get('brief')); if (b) { clientTab = 'briefs'; clBriefTab = briefIsActive(b) ? 'active' : 'done'; } }
   if (q.get('post')) { const p = (clientData.posts || []).find(x => x.id === q.get('post')); if (p && p.date) { clientMonth = new Date(p.date + 'T00:00:00'); clientMonth.setDate(1); clientTab = 'review'; clientFilter = 'all'; } }
@@ -1028,10 +1050,11 @@ function intHeader(title, actions) {
 ================================================================ */
 function renderDashboard() {
   currentCalId = null; syncUrlInternal();
-  let totalPosts = 0, review = 0, changes = 0, approved = 0, unres = 0, openBriefs = 0, newBriefs = 0;
+  let totalPosts = 0, review = 0, changes = 0, approved = 0, unres = 0, openBriefs = 0, newBriefs = 0, adsThisMonth = 0;
   const activity = [];
   calendars.forEach(c => {
-    getBriefs(c).forEach(b => { if (briefIsActive(b)) openBriefs++; if (b.status === 'Submitted') newBriefs++; unres += briefUnresolved(b); activity.push({ type: 'brief', calId: c.id, calName: c.name, bid: b.id, pn: b.campaignName || 'Ad brief', d: b.createdAt, by: b.submittedBy || 'Client', text: b.status }); ['concept', 'final'].forEach(k => { const fb = briefFb(b, k); (fb.comments || []).forEach(cm => activity.push({ type: 'comment', calId: c.id, calName: c.name, bid: b.id, pn: (b.campaignName || 'Ad brief') + ' (' + k + ')', d: cm.d, by: cm.by || 'Client', text: cm.t || '', resolved: cm.resolved })); if (fb.status) activity.push({ type: fb.status === 'approved' ? 'approved' : 'changes', calId: c.id, calName: c.name, bid: b.id, pn: (b.campaignName || 'Ad brief') + ' ' + k, d: (fb.comments || []).slice(-1)[0]?.d || b.conceptApprovedAt || b.finalApprovedAt }); }); });
+    adsThisMonth += adsInMonth(allAds(getAds(c), getBriefs(c)), monthKey(new Date().getFullYear(), new Date().getMonth())).filter(a => (a.status || 'Delivered') === 'Delivered').length;
+    if (briefsOn(c)) getBriefs(c).forEach(b => { if (briefIsActive(b)) openBriefs++; if (b.status === 'Submitted') newBriefs++; unres += briefUnresolved(b); activity.push({ type: 'brief', calId: c.id, calName: c.name, bid: b.id, pn: b.campaignName || 'Ad brief', d: b.createdAt, by: b.submittedBy || 'Client', text: b.status }); ['concept', 'final'].forEach(k => { const fb = briefFb(b, k); (fb.comments || []).forEach(cm => activity.push({ type: 'comment', calId: c.id, calName: c.name, bid: b.id, pn: (b.campaignName || 'Ad brief') + ' (' + k + ')', d: cm.d, by: cm.by || 'Client', text: cm.t || '', resolved: cm.resolved })); if (fb.status) activity.push({ type: fb.status === 'approved' ? 'approved' : 'changes', calId: c.id, calName: c.name, bid: b.id, pn: (b.campaignName || 'Ad brief') + ' ' + k, d: (fb.comments || []).slice(-1)[0]?.d || b.conceptApprovedAt || b.finalApprovedAt }); }); });
     (c.posts || []).forEach(p => { totalPosts++; if (p.status === 'Ready for Review' || p.status === 'Revised') review++; });
     Object.entries(c.feedback || {}).forEach(([pid, f]) => {
       const post = getPost(c, pid); const pn = post ? (post.topic || 'Untitled') : 'Deleted post';
@@ -1052,7 +1075,7 @@ function renderDashboard() {
     <div class="int-stat s-changes"><div class="n">${changes}</div><div class="l">Changes requested</div></div>
     <div class="int-stat s-unresolved"><div class="n">${unres}</div><div class="l">Unresolved notes</div></div>
     <div class="int-stat s-approved"><div class="n">${approved}</div><div class="l">Approved</div></div>
-    <div class="int-stat s-changes" style="border-left-color:#fbbf24"><div class="n">${openBriefs}${newBriefs ? ` <span class="ad-pill">${newBriefs} new</span>` : ''}</div><div class="l">Ad briefs</div></div>
+    <div class="int-stat s-changes" style="border-left-color:#fbbf24"><div class="n">${adsThisMonth}${newBriefs ? ` <span class="ad-pill">${newBriefs} new</span>` : ''}</div><div class="l">Ads this month</div></div>
   </div>`;
   h += `<div class="int-layout"><div>`;
   h += `<div class="int-toolbar"><input type="search" id="dashSearch" placeholder="Search calendars..." oninput="filterDash()"><div class="filter-pills"><button class="filter-pill ${dashFilter === 'all' ? 'active' : ''}" onclick="dashFilter='all';filterDash(true)">All</button><button class="filter-pill ${dashFilter === 'attention' ? 'active' : ''}" onclick="dashFilter='attention';filterDash(true)">Needs attention</button></div><button class="btn primary" onclick="createCalendar()">+ New calendar</button></div>`;
@@ -1072,7 +1095,7 @@ function renderDashboard() {
         <div class="banner" onclick="openCalendar('${c.id}')">${c.banner ? `<img src="${c.banner}" alt="">` : ''}<button class="banner-btn" onclick="event.stopPropagation();$('bn-${c.id}').click()">Change image</button></div>
         <input type="file" id="bn-${c.id}" accept="image/*" style="display:none" onchange="setBanner('${c.id}',this)">
         <div class="body"><h3>${esc(c.name)}</h3><div class="meta">PIN ${esc(c.pin || '')} &middot; ${n} posts &middot; ${cr} creatives</div>
-          <div class="pills">${ap ? `<span class="badge approved">${ap} approved</span>` : ''}${ch ? `<span class="badge changes">${ch} changes</span>` : ''}${un ? `<span class="badge" style="background:var(--red-light);color:var(--red)">${un} unresolved</span>` : ''}${getBriefs(c).filter(b => b.status === 'Submitted').length ? `<span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted').length} new ad brief${getBriefs(c).filter(b => b.status === 'Submitted').length !== 1 ? 's' : ''}</span>` : ''}${!ap && !ch && !un ? '<span class="badge draft">No feedback yet</span>' : ''}</div>
+          <div class="pills">${ap ? `<span class="badge approved">${ap} approved</span>` : ''}${ch ? `<span class="badge changes">${ch} changes</span>` : ''}${un ? `<span class="badge" style="background:var(--red-light);color:var(--red)">${un} unresolved</span>` : ''}${briefsOn(c) && getBriefs(c).filter(b => b.status === 'Submitted').length ? `<span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted').length} new ad brief${getBriefs(c).filter(b => b.status === 'Submitted').length !== 1 ? 's' : ''}</span>` : ''}${!ap && !ch && !un ? '<span class="badge draft">No feedback yet</span>' : ''}</div>
           <div class="progress"><div style="width:${pct}%"></div></div>
           <div class="actions"><button class="btn primary" onclick="openCalendar('${c.id}')">Open</button><button class="btn" onclick="copyPin('${c.id}')" title="Copy the client link and PIN together">Copy PIN</button><button class="btn ghost" onclick="window.open(location.pathname+'?calendar=${c.id}','_blank')" title="Preview as the client">Preview</button><button class="btn ghost" onclick="calSettings('${c.id}')">&#9881;</button></div>
         </div></div>`;
@@ -1103,11 +1126,11 @@ const copyLink = id => copyPin(id);
 function setBanner(id, input) { const f = input.files[0]; if (!f) return; if (f.size > 3e6) { alert('Keep banner under 3MB'); return; } const r = new FileReader(); r.onload = e => { const c = calendars.find(x => x.id === id); if (c) { c.banner = e.target.result; saveCalendars(); renderDashboard(); } }; r.readAsDataURL(f); }
 function calSettings(id) {
   const c = calendars.find(x => x.id === id); if (!c) return;
-  $('smBody').innerHTML = `<div class="field"><label>Calendar name</label><input id="sName" value="${esc(c.name)}"></div><div class="field"><label>Client PIN</label><input id="sPin" value="${esc(c.pin || '')}"></div><div class="field"><label>Message to client (shown at top of their view)</label><textarea id="sIntro" rows="3" placeholder="e.g. Please review and approve by Friday.">${esc(c.intro || '')}</textarea></div><div class="field"><label>Products / car models for ad briefs <span style="font-weight:400;text-transform:none;color:var(--muted-2)">(one per line, shown as a dropdown)</span></label><textarea id="sModels" rows="4" placeholder="BJ30 Hybrid\nBJ40 Honor\nBJ40 Pro\nX55\nArcFox T1">${esc((c.carModels || []).join('\n'))}</textarea></div>`;
+  $('smBody').innerHTML = `<div class="field"><label>Calendar name</label><input id="sName" value="${esc(c.name)}"></div><div class="field"><label>Client PIN</label><input id="sPin" value="${esc(c.pin || '')}"></div><div class="field"><label>Message to client (shown at top of their view)</label><textarea id="sIntro" rows="3" placeholder="e.g. Please review and approve by Friday.">${esc(c.intro || '')}</textarea></div><div class="field"><label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px"><input type="checkbox" id="sBriefs" ${c.briefsOn ? 'checked' : ''} style="width:15px;height:15px">Client ad request workflow (brief form, timeline, concept and final approvals)</label><div style="font-size:11px;color:var(--muted-2);margin-top:4px">Off by default. Ads are tracked in the Ads tab either way.</div></div><div class="field"><label>Products / car models for ad briefs <span style="font-weight:400;text-transform:none;color:var(--muted-2)">(one per line, shown as a dropdown)</span></label><textarea id="sModels" rows="4" placeholder="BJ30 Hybrid\nBJ40 Honor\nBJ40 Pro\nX55\nArcFox T1">${esc((c.carModels || []).join('\n'))}</textarea></div>`;
   $('smFoot').innerHTML = `<div class="left"><button class="btn danger sm" onclick="deleteCalendar('${id}')">Delete calendar</button></div><div class="right"><button class="btn" onclick="$('settingsModal').classList.remove('show')">Cancel</button><button class="btn primary" onclick="saveSettings('${id}')">Save</button></div>`;
   $('settingsModal').classList.add('show'); $('smClose').onclick = () => $('settingsModal').classList.remove('show');
 }
-function saveSettings(id) { const c = calendars.find(x => x.id === id); if (!c) return; c.name = $('sName').value.trim() || c.name; c.pin = $('sPin').value.trim() || c.pin; c.intro = $('sIntro').value.trim(); c.carModels = $('sModels').value.split('\n').map(x => x.trim()).filter(Boolean); saveCalendars(); $('settingsModal').classList.remove('show'); currentCalId === id ? renderCalView() : renderDashboard(); }
+function saveSettings(id) { const c = calendars.find(x => x.id === id); if (!c) return; c.name = $('sName').value.trim() || c.name; c.pin = $('sPin').value.trim() || c.pin; c.intro = $('sIntro').value.trim(); c.briefsOn = !!$('sBriefs')?.checked; c.carModels = $('sModels').value.split('\n').map(x => x.trim()).filter(Boolean); saveCalendars(); $('settingsModal').classList.remove('show'); currentCalId === id ? renderCalView() : renderDashboard(); }
 function deleteCalendar(id) { if (!confirm('Delete this calendar and all its posts permanently?')) return; calendars = calendars.filter(x => x.id !== id); saveCalendars(); $('settingsModal').classList.remove('show'); renderDashboard(); }
 function openCalendarToPost(calId, pid) { openCalendar(calId); viewMode = 'board'; renderCalView(); setTimeout(() => editPost(pid), 200); }
 
@@ -1128,16 +1151,16 @@ function renderCalView() {
   h += '<div class="int-wrap">';
   h += `<div class="int-hero"><h2>${esc(c.name)}</h2><p>Internal workspace. Upload content, send for client review, action their feedback, and re-submit revisions. PIN ${esc(c.pin || '')}.</p>
     <div class="steps"><div><span class="n">1</span>Build &amp; upload</div><div><span class="n">2</span>Send for review</div><div><span class="n">3</span>Action feedback</div><div><span class="n">4</span>Re-submit</div></div>
-    <div class="stats"><div><strong>${mp.length}</strong><span>Posts</span></div><div><strong>${cr}</strong><span>Creatives</span></div><div><strong style="color:#60a5fa">${withClient}</strong><span>With client</span></div><div><strong style="color:#4ade80">${ap}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${ch}</strong><span>Changes</span></div><div><strong style="color:#f87171">${un}</strong><span>Unresolved</span></div><div><strong style="color:#fbbf24">${getBriefs(c).filter(briefIsActive).length}</strong><span>Ad briefs</span></div></div></div>`;
-  h += ganttHTML(getBriefs(c), 'openBrief', { showDone: false });
-  if (viewMode === 'year') h += yearView(c); else if (viewMode === 'board') h += boardView(c); else if (viewMode === 'briefs') h += briefsView(c); else if (viewMode === 'report') h += reportView(c); else h += monthView(c);
+    <div class="stats"><div><strong>${mp.length}</strong><span>Posts</span></div><div><strong>${cr}</strong><span>Creatives</span></div><div><strong style="color:#60a5fa">${withClient}</strong><span>With client</span></div><div><strong style="color:#4ade80">${ap}</strong><span>Approved</span></div><div><strong style="color:#fbbf24">${ch}</strong><span>Changes</span></div><div><strong style="color:#f87171">${un}</strong><span>Unresolved</span></div><div style="cursor:pointer" onclick="viewMode='ads';renderCalView()"><strong style="color:#fbbf24">${adsInMonth(allAds(getAds(c), getBriefs(c)), monthKey(y, m)).filter(a => (a.status || 'Delivered') === 'Delivered').length}</strong><span>Ads this month</span></div></div></div>`;
+  if (briefsOn(c)) h += ganttHTML(getBriefs(c), 'openBrief', { showDone: false });
+  if (viewMode === 'year') h += yearView(c); else if (viewMode === 'board') h += boardView(c); else if (viewMode === 'briefs') h += briefsView(c); else if (viewMode === 'report') h += reportView(c); else if (viewMode === 'ads') h += adsView(c); else h += monthView(c);
   h += '</div>';
   $('app').innerHTML = h;
   if (!$('postModal').classList.contains('show')) syncUrlInternal();
 }
 function calToolbar(c, extra) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
-  return `<div class="int-cal-toolbar"><div class="left"><button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button><h2>${MONTHS[m]} ${y}</h2><button class="month-nav" onclick="monthNav(1)">&rsaquo;</button><div class="view-tabs"><button class="${viewMode === 'board' ? 'active' : ''}" onclick="viewMode='board';renderCalView()">Review board</button><button class="${viewMode === 'month' ? 'active' : ''}" onclick="viewMode='month';renderCalView()">Calendar</button><button class="${viewMode === 'year' ? 'active' : ''}" onclick="viewMode='year';renderCalView()">Year</button><button class="${viewMode === 'report' ? 'active' : ''}" onclick="viewMode='report';renderCalView()">Report</button><button class="${viewMode === 'briefs' ? 'active' : ''}" onclick="viewMode='briefs';renderCalView()">Ad requests${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length ? ` <span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length}</span>` : ''}</button></div></div><div class="right">${extra || ''}<button class="btn sm primary" onclick="addPost()">+ Add post</button></div></div>`;
+  return `<div class="int-cal-toolbar"><div class="left"><button class="month-nav" onclick="monthNav(-1)">&lsaquo;</button><h2>${MONTHS[m]} ${y}</h2><button class="month-nav" onclick="monthNav(1)">&rsaquo;</button><div class="view-tabs"><button class="${viewMode === 'board' ? 'active' : ''}" onclick="viewMode='board';renderCalView()">Review board</button><button class="${viewMode === 'month' ? 'active' : ''}" onclick="viewMode='month';renderCalView()">Calendar</button><button class="${viewMode === 'year' ? 'active' : ''}" onclick="viewMode='year';renderCalView()">Year</button><button class="${viewMode === 'ads' ? 'active' : ''}" onclick="viewMode='ads';renderCalView()">Ads</button><button class="${viewMode === 'report' ? 'active' : ''}" onclick="viewMode='report';renderCalView()">Report</button>${briefsOn(c) ? `<button class="${viewMode === 'briefs' ? 'active' : ''}" onclick="viewMode='briefs';renderCalView()">Ad requests${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length ? ` <span class="ad-pill">${getBriefs(c).filter(b => b.status === 'Submitted' || briefUnresolved(b)).length}</span>` : ''}</button>` : ''}</div></div><div class="right">${extra || ''}<button class="btn sm primary" onclick="addPost()">+ Add post</button></div></div>`;
 }
 function monthNav(d) { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + d, 1); renderCalView(); }
 
@@ -1174,7 +1197,7 @@ function monthView(c) {
     h += `<div class="cal-day int-cal-day" ondragover="event.preventDefault()" ondrop="dropPost(event,'${ds}')" ${dp.length ? `onclick="intDayView('${ds}')"` : ''}>
       <div class="dn ${isT ? 'today' : ''}">${d}</div>
       ${dp.length ? `<div class="big">${dp.reduce((s, p) => s + platsOnDate(p, ds).length, 0)}</div><div class="dots">${dp.flatMap(p => platsOnDate(p, ds).map(pl => `<div class="dot" draggable="true" ondragstart="event.stopPropagation();dragPostStart(event,'${p.id}')" onclick="event.stopPropagation();editPost('${p.id}')" style="background:${PLAT_COLORS[pl] || '#8b5cf6'}" title="${esc(p.topic || 'Untitled')} · ${esc(pl)}${hasSplitDates(p) ? ' (this platform only)' : ''}"></div>`)).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div><div class="fbs">${ap ? `<span class="ok">${ap}&#10003;</span>` : ''}${ch ? `<span class="ch">${ch}!</span>` : ''}${un ? `<span class="un">${un}</span>` : ''}</div>` : ''}
-      ${adBarsHTML(getBriefs(c), ds, 'openBrief')}<div class="add" onclick="event.stopPropagation();addPost('${ds}')">+ Add</div></div>`;
+      ${briefsOn(c) ? adBarsHTML(getBriefs(c), ds, 'openBrief') : ''}<div class="add" onclick="event.stopPropagation();addPost('${ds}')">+ Add</div></div>`;
   }
   const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
   return h + '</div></div>';
@@ -1671,10 +1694,37 @@ function clOpenBrief(id) { clientTab = 'briefs'; const b = clientData.briefs.fin
 /* ================================================================
    AD BRIEFS: INTERNAL
 ================================================================ */
+function adsTableHTML(ads, mode) {
+  // mode: 'edit' (internal, inline editing) | 'report' | 'client' (read-only)
+  const edit = mode === 'edit';
+  const done = ads.filter(a => (a.status || 'Delivered') === 'Delivered'); const tot = done.reduce((t, a) => ({ d: t.d + (+a.digital || 0), p: t.p + (+a.print || 0), c: t.c + adCreatives(a) }), { d: 0, p: 0, c: 0 });
+  const f = (a, k, type, extra) => edit && !a.fromBrief ? `<input type="${type}" value="${esc(String(a[k] ?? ''))}" ${extra || ''} onchange="setAd('${a.id}','${k}',this.value)">` : esc(String(a[k] ?? '')) || '<span style="color:var(--muted-2)">&mdash;</span>';
+  let h = `<table class="ads-table"><thead><tr>${edit ? '<th>Month</th>' : ''}<th>Brand</th><th>Car / campaign</th><th class="num">Digital sizes</th><th class="num">Print sizes</th><th>Languages</th><th class="num">Creatives</th>${mode !== 'report' ? '<th>Status</th>' : ''}${edit ? '<th>ClickUp</th><th></th>' : ''}</tr></thead><tbody>`;
+  ads.forEach(a => {
+    const st = a.status || 'Delivered';
+    h += `<tr>${edit ? `<td>${a.fromBrief ? esc(a.month) : `<input type="month" value="${esc(a.month || '')}" onchange="setAd('${a.id}','month',this.value)">`}</td>` : ''}<td>${f(a, 'brand', 'text', 'placeholder="BAIC"')}</td><td>${f(a, 'name', 'text', 'placeholder="BJ40 November offer"')}${a.model ? ` <span style="color:var(--muted)">${esc(a.model)}</span>` : ''}${a.fromBrief ? ' <span class="badge draft" style="font-size:9px">from brief</span>' : ''}</td><td class="num">${f(a, 'digital', 'number', 'min="0"')}</td><td class="num">${f(a, 'print', 'number', 'min="0"')}</td><td class="lg">${edit && !a.fromBrief ? `<label><input type="checkbox" ${(a.langs || {}).en ? 'checked' : ''} onchange="setAdLang('${a.id}','en',this.checked)">EN</label><label><input type="checkbox" ${(a.langs || {}).ar ? 'checked' : ''} onchange="setAdLang('${a.id}','ar',this.checked)">AR</label>` : adLangLabel(a)}</td><td class="num"><span class="cr">${adCreatives(a)}</span></td>${mode !== 'report' ? `<td>${edit && !a.fromBrief ? `<select onchange="setAd('${a.id}','status',this.value)"><option ${st === 'Delivered' ? 'selected' : ''}>Delivered</option><option ${st === 'In progress' ? 'selected' : ''}>In progress</option></select>` : `<span class="badge ${st === 'Delivered' ? 'approved' : 'draft'}">${esc(st)}</span>`}</td>` : ''}${edit ? `<td>${a.fromBrief ? '' : `<input type="text" value="${esc(a.link || '')}" placeholder="https://app.clickup.com/..." onchange="setAd('${a.id}','link',this.value)">`}</td><td>${a.fromBrief ? '' : `<button class="x" title="Delete" onclick="deleteAd('${a.id}')">&times;</button>`}</td>` : ''}</tr>`;
+  });
+  h += `<tr class="tot">${edit ? '<td></td>' : ''}<td>Delivered</td><td>${done.length} ad${done.length !== 1 ? 's' : ''}${done.length !== ads.length ? ` <span style="font-weight:400;color:var(--muted)">(${ads.length - done.length} in progress not counted)</span>` : ''}</td><td class="num">${tot.d}</td><td class="num">${tot.p}</td><td></td><td class="num"><span class="cr">${tot.c}</span></td>${mode !== 'report' ? '<td></td>' : ''}${edit ? '<td></td><td></td>' : ''}</tr></tbody></table>`;
+  return h;
+}
+function adsView(c) {
+  const y = viewMonth.getFullYear(), m = viewMonth.getMonth(); const mk = monthKey(y, m);
+  const ads = adsInMonth(allAds(getAds(c), getBriefs(c)), mk).sort((a, b) => (a.brand || '').localeCompare(b.brand || '') || (a.name || '').localeCompare(b.name || ''));
+  const done = ads.filter(a => (a.status || 'Delivered') === 'Delivered'); const cr = done.reduce((t, a) => t + adCreatives(a), 0);
+  let h = calToolbar(c, `<button class="btn sm primary" onclick="addAd()">+ Add ad</button>`);
+  h += `<div class="ads-wrap"><div class="ads-sum"><div><div class="k">${done.length}</div><div class="l">Ads delivered</div></div><div><div class="k">${cr}</div><div class="l">Ad creatives</div></div>${ads.length - done.length ? `<div><div class="k" style="color:var(--muted)">${ads.length - done.length}</div><div class="l">In progress</div></div>` : ''}<div class="brands">${adsByBrand(done).map(([b, n]) => `<span>${esc(b)} <b>${n}</b></span>`).join('')}</div></div>`;
+  h += ads.length ? adsTableHTML(ads, 'edit') : `<div class="rep-empty">No ads logged for ${MONTHS[m]} ${y}. Add one per car or campaign.</div>`;
+  h += `<div class="ads-help">One row per ad (per car). Defaults follow the RICH process: 5 digital sizes + 3 print sizes, English and Arabic = 16 creatives. Change the numbers if an ad was different. Delivered ads feed the Report; In progress ones are listed but not counted.</div></div>`;
+  return h;
+}
+function addAd() { const c = getCal(); if (!c) return; c.ads = c.ads || []; c.ads.push({ id: 'ad_' + uid(), month: monthKey(viewMonth.getFullYear(), viewMonth.getMonth()), brand: (c.ads.slice(-1)[0] || {}).brand || '', name: '', digital: 5, print: 3, langs: { en: true, ar: true }, status: 'Delivered', link: '', createdAt: new Date().toISOString() }); saveCalendars(); renderCalView(); setTimeout(() => { const rows = document.querySelectorAll('.ads-table tbody tr'); const last = rows[rows.length - 2]; last?.querySelector('input[type=text]')?.focus(); }, 50); }
+function setAd(id, k, v) { const c = getCal(); const a = getAds(c).find(x => x.id === id); if (!a) return; a[k] = (k === 'digital' || k === 'print') ? Math.max(0, +v || 0) : v; saveCalendars(); if (k !== 'name' && k !== 'brand' && k !== 'link') renderCalView(); else { const el = document.querySelector('.ads-sum'); if (el) el.outerHTML = adsView(c).match(/<div class="ads-sum">.*?<\/div><\/div>/s)?.[0] || el.outerHTML; } }
+function setAdLang(id, l, on) { const c = getCal(); const a = getAds(c).find(x => x.id === id); if (!a) return; a.langs = a.langs || {}; a.langs[l] = on; saveCalendars(); renderCalView(); }
+function deleteAd(id) { if (!confirm('Remove this ad from the tally?')) return; const c = getCal(); c.ads = getAds(c).filter(x => x.id !== id); saveCalendars(); renderCalView(); }
 function reportView(c) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth(); const [py, pm] = prevMonth(y, m);
   const fbOf = p => getFb(c, p.id);
-  const r = reportData(c.posts, getBriefs(c), fbOf, y, m), prev = reportData(c.posts, getBriefs(c), fbOf, py, pm);
+  const r = reportData(c.posts, getBriefs(c), fbOf, y, m, getAds(c)), prev = reportData(c.posts, getBriefs(c), fbOf, py, pm, getAds(c));
   return calToolbar(c) + reportHTML(r, prev, { role: 'internal', calId: c.id, pin: null, name: c.name, onPost: "editPost('PID')" });
 }
 function briefsView(c) {
@@ -1775,10 +1825,22 @@ function openCalendarToBrief(calId, bid) { openCalendar(calId); viewMode = 'brie
    Ads count in the month the client approved the final.
 ================================================================ */
 const DELIVERED_STATUSES = ['Approved', 'Scheduled', 'Published'];
+/* Ads tally: one row per ad (per car / campaign). Creatives = (digital sizes + print sizes) x languages.
+   Default per RICH process: 5 digital + 3 print, English + Arabic = 16 creatives. */
+const briefsOn = c => !!(c && c.briefsOn);
+const getAds = c => (c && c.ads) || [];
+const adLangs = a => (((a.langs || {}).en ? 1 : 0) + ((a.langs || {}).ar ? 1 : 0)) || 1;
+const adCreatives = a => ((+a.digital || 0) + (+a.print || 0)) * adLangs(a);
+const adLangLabel = a => [(a.langs || {}).ar ? 'AR' : '', (a.langs || {}).en ? 'EN' : ''].filter(Boolean).join(' + ') || 'AR';
+// Briefs that reached final approval also count, so the two systems never disagree
+const briefAsAd = b => { const rows = briefFormatRows(b); return { id: b.id, fromBrief: true, month: (b.finalApprovedAt || '').slice(0, 7), brand: '', name: b.campaignName || 'Ad', model: b.carModel || '', digital: rows.filter(r => r.grp !== 'GDN Newspaper').length, print: rows.filter(r => r.grp === 'GDN Newspaper').length, langs: b.langs || { ar: true }, status: 'Delivered', link: b.clickupLink || '' }; };
+const allAds = (ads, briefs) => [...(ads || []), ...(briefs || []).filter(b => b.finalApprovedAt).map(briefAsAd)];
+const adsInMonth = (ads, mk) => ads.filter(a => (a.month || '') === mk);
+const adsByBrand = ads => { const o = {}; ads.forEach(a => { const k = (a.brand || '').trim() || 'Other'; o[k] = (o[k] || 0) + 1; }); return Object.entries(o).sort((x, y) => y[1] - x[1]); };
 const isDelivered = (p, fb) => DELIVERED_STATUSES.includes(p.status) || ((fb || {}).status === 'approved');
 const slideCounts = p => { const r = { enImg: 0, enVid: 0, arImg: 0, arVid: 0 }; const cnt = (arr, legacy, legacyType, k) => { if ((arr || []).length) arr.forEach(x => r[k + (x.type === 'video' ? 'Vid' : 'Img')]++); else if (legacy) r[k + (legacyType === 'video' ? 'Vid' : 'Img')]++; }; cnt(p.carouselEN, p.hasCreativeEN, p.creativeENType, 'en'); cnt(p.carouselAR, p.hasCreativeAR, p.creativeARType, 'ar'); return r; };
 const briefFormatRows = b => [...(b.formats || []).map(k => { const f = AD_FORMATS.find(x => x.key === k); return f ? { grp: f.grp, label: f.print ? f.label + ' ' + f.size : f.size } : { grp: 'Other', label: k }; }), ...(b.customFormats || []).map(x => ({ grp: 'Custom', label: typeof x === 'string' ? x : (x.label || x.size || 'custom') }))];
-function reportData(posts, briefs, fbOf, y, m) {
+function reportData(posts, briefs, fbOf, y, m, adsList) {
   const mk = monthKey(y, m);
   const monthPosts = (posts || []).filter(p => inMonth(p, y, m));
   const delivered = monthPosts.filter(p => isDelivered(p, fbOf(p)));
@@ -1788,10 +1850,11 @@ function reportData(posts, briefs, fbOf, y, m) {
   delivered.forEach(p => postPlats(p).forEach(pl => { if (platDate(p, pl).startsWith(mk)) { platforms[pl] = (platforms[pl] || 0) + 1; placements++; } }));
   const cr = { enImg: 0, enVid: 0, arImg: 0, arVid: 0 }; delivered.forEach(p => { const c = slideCounts(p); Object.keys(cr).forEach(k => cr[k] += c[k]); });
   const social = cr.enImg + cr.enVid + cr.arImg + cr.arVid;
-  const ads = (briefs || []).filter(b => (b.finalApprovedAt || '').startsWith(mk)).map(b => { const rows = briefFormatRows(b); const langs = (b.langs?.ar ? 1 : 0) + (b.langs?.en ? 1 : 0) || 1; return { b, rows, langs, variations: rows.length * langs, finals: (b.finalMedia || []).length, concepts: (b.conceptMedia || []).length, conceptsBriefed: b.concepts || 2 }; });
-  const adTot = ads.reduce((t, a) => ({ variations: t.variations + a.variations, finals: t.finals + a.finals, concepts: t.concepts + a.concepts, formats: t.formats + a.rows.length }), { variations: 0, finals: 0, concepts: 0, formats: 0 });
-  const adsOpen = (briefs || []).filter(b => briefIsActive(b) && (b.createdAt || '').startsWith(mk)).length;
-  return { y, m, mk, monthPosts, delivered, pending, byStatus, platforms, placements, cr, social, ads, adTot, adsOpen, total: social + adTot.variations };
+  const monthAds = adsInMonth(allAds(adsList, briefs), mk);
+  const ads = monthAds.filter(a => (a.status || 'Delivered') === 'Delivered');
+  const adsOpen = monthAds.length - ads.length;
+  const adTot = ads.reduce((t, a) => ({ digital: t.digital + (+a.digital || 0), print: t.print + (+a.print || 0), creatives: t.creatives + adCreatives(a) }), { digital: 0, print: 0, creatives: 0 });
+  return { y, m, mk, monthPosts, delivered, pending, byStatus, platforms, placements, cr, social, ads, adTot, adsOpen, brands: adsByBrand(ads), total: social + adTot.creatives };
 }
 const prevMonth = (y, m) => m === 0 ? [y - 1, 11] : [y, m - 1];
 function deltaHTML(cur, prev, label) { if (prev === undefined || prev === null) return ''; const d = cur - prev; const cls = d > 0 ? 'up' : d < 0 ? 'down' : ''; const arrow = d > 0 ? '&#9650;' : d < 0 ? '&#9660;' : '&#9644;'; return `<div class="d ${cls}">${arrow} ${d === 0 ? 'Same as' : (d > 0 ? '+' : '') + d + ' vs'} ${label}</div>`; }
@@ -1808,7 +1871,7 @@ function reportHTML(r, prev, opts) {
       ${stat(r.placements, 'Platform placements', '', prev && prev.placements)}
       ${stat(r.social, 'Social creatives', 'ok', prev && prev.social)}
       ${stat(r.ads.length, 'Ads delivered', 'amber', prev && prev.ads.length)}
-      ${stat(r.adTot.variations, 'Ad variations', 'amber', prev && prev.adTot.variations)}
+      ${stat(r.adTot.creatives, 'Ad creatives', 'amber', prev && prev.adTot.creatives)}
       ${stat(r.total, 'Total creatives', 'hi', prev && prev.total)}
     </div>
     <div class="rep-grid">
@@ -1824,16 +1887,10 @@ function reportHTML(r, prev, opts) {
       </tbody></table>
       <div class="rep-note">Every file counts: a 5-slide carousel in English and Arabic is 10 creatives. ${r.delivered.length} post${r.delivered.length !== 1 ? 's' : ''} delivered, ${r.delivered.length ? (r.social / r.delivered.length).toFixed(1) : 0} creatives per post on average.</div>
     </div></div>`;
-  // Ads
-  h += `<div class="rep-sec"><h3>Ads delivered <span class="tot">${r.ads.length} ad${r.ads.length !== 1 ? 's' : ''} &middot; ${r.adTot.variations} variation${r.adTot.variations !== 1 ? 's' : ''}</span></h3>`;
-  if (!r.ads.length) h += `<div class="rep-empty">No ads approved this month${r.adsOpen ? `. ${r.adsOpen} request${r.adsOpen !== 1 ? 's' : ''} in progress.` : '.'}</div>`;
-  else {
-    h += `<table class="rep-table"><thead><tr><th>Campaign</th><th>Formats &amp; sizes</th><th class="num">Formats</th><th class="num">Languages</th><th class="num">Variations</th><th class="num">Concepts shown</th><th class="num">Final files</th><th>Approved</th></tr></thead><tbody>`;
-    r.ads.forEach(a => { const groups = {}; a.rows.forEach(x => { (groups[x.grp] = groups[x.grp] || []).push(x.label); });
-      h += `<tr><td><strong>${esc(a.b.campaignName || 'Ad')}</strong>${a.b.carModel ? `<br><span style="color:var(--muted)">${esc(a.b.carModel)}</span>` : ''}</td><td>${Object.entries(groups).map(([g, ls]) => `<div><b>${esc(FMT_SHORT[g] || g)}:</b> ${ls.map(esc).join(', ')}</div>`).join('')}</td><td class="num">${a.rows.length}</td><td class="num">${[a.b.langs?.ar ? 'AR' : '', a.b.langs?.en ? 'EN' : ''].filter(Boolean).join(' + ') || 'AR'}</td><td class="num">${a.variations}</td><td class="num">${a.concepts || a.conceptsBriefed}</td><td class="num">${a.finals}</td><td>${fmtTime(a.b.finalApprovedAt)}</td></tr>`; });
-    h += `<tr class="tot"><td>Total</td><td></td><td class="num">${r.adTot.formats}</td><td></td><td class="num">${r.adTot.variations}</td><td class="num">${r.adTot.concepts}</td><td class="num">${r.adTot.finals}</td><td></td></tr></tbody></table>
-      <div class="rep-note">Variations = formats x languages briefed. Final files = files uploaded to the brief${r.adsOpen ? `. ${r.adsOpen} further request${r.adsOpen !== 1 ? 's' : ''} from this month still in progress` : ''}.</div>`;
-  }
+  // Ads (tally)
+  h += `<div class="rep-sec"><h3>Ads delivered <span class="tot">${r.ads.length} ad${r.ads.length !== 1 ? 's' : ''} &middot; ${r.adTot.creatives} creative${r.adTot.creatives !== 1 ? 's' : ''}${r.brands.length ? ' &middot; ' + r.brands.map(([b, n]) => esc(b) + ' ' + n).join(', ') : ''}</span></h3>`;
+  if (!r.ads.length) h += `<div class="rep-empty">No ads delivered this month${r.adsOpen ? `. ${r.adsOpen} in progress.` : '.'}${client ? '' : ' Add them in the Ads tab.'}</div>`;
+  else h += adsTableHTML(r.ads, 'report') + `<div class="rep-note">Each ad is produced in every digital and print size, in each language. Creatives = (digital sizes + print sizes) x languages${r.adsOpen ? `. ${r.adsOpen} more ad${r.adsOpen !== 1 ? 's' : ''} from this month still in progress` : ''}.</div>`;
   h += '</div>';
   // Internal only: in production
   if (!client) {
@@ -1939,19 +1996,22 @@ function renderClient() {
   let savedName = ''; try { savedName = localStorage.getItem('rich_cl_name') || ''; } catch (e) { }
 
   let h = `<div class="cl-header"><img src="${LOGO}" alt="RICH"><span class="cl-badge">Client review</span><h1>${esc(c.name)}</h1><button class="btn sm" onclick="shareHere()" title="Copy a link to exactly this page">&#128279; Share</button></div><div class="cl-wrap">`;
-  h += `<div class="cl-hero"><h2>${esc(c.name)}</h2><p>${esc(c.intro || 'Please review the content below. Approve what works, or request changes and tell us what to adjust. Need an ad? Send a brief: two concepts, then the final, in around 29 working hours when your feedback is quick.')}</p>
-    <div class="steps"><div><span class="n">1</span>Review each post</div><div><span class="n">2</span>Approve or request changes</div><div><span class="n">3</span>Leave specific feedback</div><div><span class="n">4</span>Need an ad? Send us a brief</div></div><div class="cta">${awaitingAll.length ? `<button class="btn" style="background:#fbbf24;color:#111;margin-right:8px" onclick="clientTab='todo';renderClient()">&#10003; ${awaitingAll.length} post${awaitingAll.length !== 1 ? 's' : ''} waiting for your approval</button>` : ''}<button class="btn" onclick="clNewBrief()">&#128227; Request an ad</button>${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill" style="margin-left:8px;background:#fff;color:var(--client)">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length} ad${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length !== 1 ? 's' : ''} awaiting your approval</span>` : ''}</div>
-    <div class="stats"><div><strong>${allMonth.length}</strong><span>Posts this month</span></div><div><strong>${creatives}</strong><span>Creatives</span></div><div><strong style="color:#4ade80">${approved}</strong><span>Approved</span></div><div style="cursor:pointer" onclick="clientTab='todo';renderClient()"><strong style="color:#fbbf24">${awaitingAll.length}</strong><span>Waiting for you</span></div>${changes ? `<div><strong style="color:#fca5a5">${changes}</strong><span>Changes</span></div>` : ''}<div><strong>${(c.briefs || []).filter(briefIsActive).length}</strong><span>Ad requests</span></div></div></div>`;
-  h += ganttHTML(c.briefs || [], 'clOpenBrief', { client: true, showDone: false, cta: ' <a href="#" onclick="event.preventDefault();clNewBrief()">Request an ad</a>' });
-  h += `<div class="cl-toolbar"><div class="left">${clientTab === 'todo' ? `<h2 style="color:var(--client)">Waiting for you</h2>` : `${prevM ? `<button class="month-nav" onclick="clientGo('${prevM}')">&lsaquo;</button>` : '<span style="width:34px"></span>'}<h2>${MONTHS[m]} ${y}</h2>${nextM ? `<button class="month-nav" onclick="clientGo('${nextM}')">&rsaquo;</button>` : '<span style="width:34px"></span>'}`}<div class="view-tabs"><button class="${clientTab === 'todo' ? 'active' : ''} ${awaitingAll.length ? 'todo-hot' : ''}" onclick="clientTab='todo';renderClient()">To review${awaitingAll.length ? ` <span class="ad-pill">${awaitingAll.length}</span>` : ''}</button><button class="${clientTab === 'review' ? 'active' : ''}" onclick="clientTab='review';renderClient()">All content</button><button class="${clientTab === 'calendar' ? 'active' : ''}" onclick="clientTab='calendar';renderClient()">Calendar</button><button class="${clientTab === 'report' ? 'active' : ''}" onclick="clientTab='report';renderClient()">Report</button><button class="${clientTab === 'briefs' ? 'active' : ''}" onclick="clientTab='briefs';renderClient()">Ad requests${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length}</span>` : ''}</button></div></div>
+  h += `<div class="cl-hero"><h2>${esc(c.name)}</h2><p>${esc(c.intro || 'Please review the content below. Approve what works, or request changes and tell us what to adjust.' + (c.briefsOn ? ' Need an ad? Send a brief: two concepts, then the final, in around 29 working hours when your feedback is quick.' : ''))}</p>
+    <div class="steps"><div><span class="n">1</span>Review each post</div><div><span class="n">2</span>Approve or request changes</div><div><span class="n">3</span>Leave specific feedback</div><div><span class="n">4</span>${c.briefsOn ? 'Need an ad? Send us a brief' : 'See the monthly report'}</div></div><div class="cta">${awaitingAll.length ? `<button class="btn" style="background:#fbbf24;color:#111;margin-right:8px" onclick="clientTab='todo';renderClient()">&#10003; ${awaitingAll.length} post${awaitingAll.length !== 1 ? 's' : ''} waiting for your approval</button>` : ''}${c.briefsOn ? `<button class="btn" onclick="clNewBrief()">&#128227; Request an ad</button>${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill" style="margin-left:8px;background:#fff;color:var(--client)">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length} ad${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length !== 1 ? 's' : ''} awaiting your approval</span>` : ''}` : `<button class="btn" onclick="clientTab='report';renderClient()">&#128202; This month's report</button>`}</div>
+    <div class="stats"><div><strong>${allMonth.length}</strong><span>Posts this month</span></div><div><strong>${creatives}</strong><span>Creatives</span></div><div><strong style="color:#4ade80">${approved}</strong><span>Approved</span></div><div style="cursor:pointer" onclick="clientTab='todo';renderClient()"><strong style="color:#fbbf24">${awaitingAll.length}</strong><span>Waiting for you</span></div>${changes ? `<div><strong style="color:#fca5a5">${changes}</strong><span>Changes</span></div>` : ''}<div style="cursor:pointer" onclick="clientTab='ads';renderClient()"><strong>${adsInMonth(allAds(c.ads || [], c.briefs || []), mk).filter(a => (a.status || 'Delivered') === 'Delivered').length}</strong><span>Ads this month</span></div></div></div>`;
+  if (c.briefsOn) h += ganttHTML(c.briefs || [], 'clOpenBrief', { client: true, showDone: false, cta: ' <a href="#" onclick="event.preventDefault();clNewBrief()">Request an ad</a>' });
+  h += `<div class="cl-toolbar"><div class="left">${clientTab === 'todo' ? `<h2 style="color:var(--client)">Waiting for you</h2>` : `${prevM ? `<button class="month-nav" onclick="clientGo('${prevM}')">&lsaquo;</button>` : '<span style="width:34px"></span>'}<h2>${MONTHS[m]} ${y}</h2>${nextM ? `<button class="month-nav" onclick="clientGo('${nextM}')">&rsaquo;</button>` : '<span style="width:34px"></span>'}`}<div class="view-tabs"><button class="${clientTab === 'todo' ? 'active' : ''} ${awaitingAll.length ? 'todo-hot' : ''}" onclick="clientTab='todo';renderClient()">To review${awaitingAll.length ? ` <span class="ad-pill">${awaitingAll.length}</span>` : ''}</button><button class="${clientTab === 'review' ? 'active' : ''}" onclick="clientTab='review';renderClient()">All content</button><button class="${clientTab === 'calendar' ? 'active' : ''}" onclick="clientTab='calendar';renderClient()">Calendar</button><button class="${clientTab === 'ads' ? 'active' : ''}" onclick="clientTab='ads';renderClient()">Ads</button><button class="${clientTab === 'report' ? 'active' : ''}" onclick="clientTab='report';renderClient()">Report</button>${c.briefsOn ? `<button class="${clientTab === 'briefs' ? 'active' : ''}" onclick="clientTab='briefs';renderClient()">Ad requests${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length ? ` <span class="ad-pill">${(c.briefs || []).filter(b => b.status === 'Concepts ready' || b.status === 'Final ready').length}</span>` : ''}</button>` : ''}</div></div>
     <div class="right">${clientTab === 'briefs' ? `<button class="btn sm primary" onclick="clNewBrief()">+ Request an ad</button>` + briefTabs('client') : ''}<div class="filter-pills" style="${clientTab !== 'review' ? 'display:none' : ''}">${[['all', 'All'], ['nodecision', 'No decision yet'], ['approved', 'Approved'], ['changes', 'Changes requested']].map(([k, l]) => `<button class="filter-pill ${clientFilter === k ? 'active' : ''}" onclick="clientFilter='${k}';renderClient()">${l}</button>`).join('')}</div>
-    <div class="sizer" style="${clientTab === 'report' || clientTab === 'briefs' ? 'display:none' : ''}">${[['l', 'Large', '<rect x="5" y="5" width="14" height="14" rx="2"/>'], ['m', 'Medium', '<rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/>'], ['s', 'Small', '<rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/>']].map(([k, t, svg]) => `<button class="${clientSize === k ? 'on' : ''}" title="${t}" onclick="clientSize='${k}';localStorage.setItem('rich_cl_sz','${k}');renderClient()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></button>`).join('')}</div></div></div>`;
+    <div class="sizer" style="${clientTab === 'report' || clientTab === 'briefs' || clientTab === 'ads' ? 'display:none' : ''}">${[['l', 'Large', '<rect x="5" y="5" width="14" height="14" rx="2"/>'], ['m', 'Medium', '<rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/>'], ['s', 'Small', '<rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/>']].map(([k, t, svg]) => `<button class="${clientSize === k ? 'on' : ''}" title="${t}" onclick="clientSize='${k}';localStorage.setItem('rich_cl_sz','${k}');renderClient()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></button>`).join('')}</div></div></div>`;
 
   if (clientTab === 'briefs') {
     h += briefsListHTML(clientCalId, c.briefs || [], 'client', clientPin, clBriefTab);
+  } else if (clientTab === 'ads') {
+    const ads = adsInMonth(allAds(c.ads || [], c.briefs || []), mk); const done = ads.filter(a => (a.status || 'Delivered') === 'Delivered');
+    h += `<div class="ads-wrap"><div class="ads-sum"><div><div class="k">${done.length}</div><div class="l">Ads this month</div></div><div><div class="k">${done.reduce((t, a) => t + adCreatives(a), 0)}</div><div class="l">Ad creatives</div></div><div class="brands">${adsByBrand(done).map(([b, n]) => `<span>${esc(b)} <b>${n}</b></span>`).join('')}</div></div>${ads.length ? adsTableHTML(ads, 'client') : `<div class="rep-empty">No ads for ${MONTHS[m]} ${y} yet.</div>`}<div class="ads-help">Each ad is produced in every digital and print size, in each language. Creatives = (digital sizes + print sizes) x languages.</div></div>`;
   } else if (clientTab === 'report') {
     const [py, pm] = prevMonth(y, m); const fbOf = p => p.feedback || {};
-    h += reportHTML(reportData(posts, c.briefs || [], fbOf, y, m), reportData(posts, c.briefs || [], fbOf, py, pm), { role: 'client', calId: clientCalId, pin: clientPin, name: c.name, onPost: "clOpenPost('PID')" });
+    h += reportHTML(reportData(posts, c.briefs || [], fbOf, y, m, c.ads || []), reportData(posts, c.briefs || [], fbOf, py, pm, c.ads || []), { role: 'client', calId: clientCalId, pin: clientPin, name: c.name, onPost: "clOpenPost('PID')" });
   } else if (clientTab === 'calendar') {
     const dim = new Date(y, m + 1, 0).getDate(), fd = (new Date(y, m, 1).getDay() + 6) % 7, today = new Date();
     h += '<div class="cal-scroll"><div class="cal-grid">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-head">${d}</div>`).join('');
@@ -1959,7 +2019,7 @@ function renderClient() {
     for (let d = 1; d <= dim; d++) {
       const ds = mk + '-' + String(d).padStart(2, '0'); const dp = allMonth.filter(p => platsOnDate(p, ds).length); const cr = dp.reduce((s, p) => s + countCreatives(p), 0);
       const isT = d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
-      h += `<div class="cal-day cl-cal-day" ${dp.length ? `onclick="clDayView('${ds}')"` : ''}><div class="dn ${isT ? 'today' : ''}">${d}</div>${dp.length ? `<div class="big">${dp.reduce((s, p) => s + platsOnDate(p, ds).length, 0)}</div><div class="dots">${dp.flatMap(p => platsOnDate(p, ds).map(pl => `<div class="dot" style="background:${PLAT_COLORS[pl] || '#8b5cf6'}" title="${esc(p.topic || '')} · ${esc(pl)}"></div>`)).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div>` : ''}${adBarsHTML(c.briefs || [], ds, 'clOpenBrief')}</div>`;
+      h += `<div class="cal-day cl-cal-day" ${dp.length ? `onclick="clDayView('${ds}')"` : ''}><div class="dn ${isT ? 'today' : ''}">${d}</div>${dp.length ? `<div class="big">${dp.reduce((s, p) => s + platsOnDate(p, ds).length, 0)}</div><div class="dots">${dp.flatMap(p => platsOnDate(p, ds).map(pl => `<div class="dot" style="background:${PLAT_COLORS[pl] || '#8b5cf6'}" title="${esc(p.topic || '')} · ${esc(pl)}"></div>`)).join('')}</div><div class="sub">${cr} creative${cr !== 1 ? 's' : ''}</div>` : ''}${c.briefsOn ? adBarsHTML(c.briefs || [], ds, 'clOpenBrief') : ''}</div>`;
     }
     const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
     h += '</div></div>';
