@@ -666,7 +666,7 @@ input,textarea,select{font-family:inherit}
 .fv-expand:hover{background:var(--client)}
 .media video,.bc-media video{cursor:zoom-in}
 /* Print */
-@media print{.int-header,.cl-header,.int-cal-toolbar,.cl-toolbar,.month-nav,.btn,.int-hero,.cl-hero,.gantt-wrap,.cl-footer,.save-state,.rep-nav,.rep-head{display:none!important}body{background:#fff}.int-wrap,.cl-wrap{padding:0;max-width:none}.report{box-shadow:none;padding:0;margin:0}.rep-stats{grid-template-columns:repeat(3,1fr)!important}.rep-grid{grid-template-columns:1fr 1fr!important}.rep-print-head{display:flex!important}.rep-sec{break-inside:avoid}.rep-gallery .rg-thumb{break-inside:avoid}}
+@media print{.int-header,.cl-header,.int-cal-toolbar,.cl-toolbar,.month-nav,.btn,.int-hero,.cl-hero,.gantt-wrap,.cl-footer,.save-state,.rep-nav,.rep-head{display:none!important}body{background:#fff}.int-wrap,.cl-wrap{padding:0;max-width:none}.report{box-shadow:none;padding:0;margin:0}.rep-stats{grid-template-columns:repeat(3,1fr)!important}.rep-grid{grid-template-columns:1fr 1fr 1fr!important}.rep-print-head{display:flex!important}.rep-sec{break-inside:avoid}.rep-gallery .rg-thumb{break-inside:avoid}}
 /* Monthly report */
 .report{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:24px;margin-top:16px}
 .rep-print-head{display:none;align-items:center;gap:14px;border-bottom:3px solid #111;padding-bottom:12px;margin-bottom:18px}
@@ -681,8 +681,22 @@ input,textarea,select{font-family:inherit}
 .rep-stat .d{font-size:11px;margin-top:6px;color:var(--muted-2)}
 .rep-stat .d.up{color:#166534}.rep-stat .d.down{color:#b91c1c}
 .rep-stat.hi{border-left-color:var(--client)}.rep-stat.ok{border-left-color:#16a34a}.rep-stat.amber{border-left-color:#f59e0b}
-.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.rep-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+@media(max-width:1100px){.rep-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:800px){.rep-grid{grid-template-columns:1fr}}
+.rep-summary{background:#111;color:#fff;border-radius:10px;padding:18px 20px;margin-bottom:18px;position:relative}
+.rep-summary h3{font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fbbf24;margin:0 0 8px}
+.rep-summary p{margin:0;font-size:14.5px;line-height:1.6}
+.rep-summary p b{color:#fbbf24}
+.rep-summary .cp{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:11px;padding:4px 9px;cursor:pointer}
+.rep-summary .cp:hover{background:rgba(255,255,255,.22)}
+.rep-xtab{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+.rep-xtab th,.rep-xtab td{padding:4px 6px;text-align:right;border-bottom:1px solid var(--border)}
+.rep-xtab th:first-child,.rep-xtab td:first-child{text-align:left}
+.rep-xtab th{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.rep-xtab td:first-child{display:flex;align-items:center;gap:5px}
+.rep-xtab tr.tot td{font-weight:700;border-top:2px solid var(--border-2)}
+@media print{.rep-summary{background:#111!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.rep-summary .cp{display:none}.rep-grid{grid-template-columns:1fr 1fr 1fr!important}}
 .rep-sec{background:var(--bg);border-radius:10px;padding:16px 18px;margin-bottom:18px}
 .rep-sec h3{font-family:'Barlow Condensed',sans-serif;font-size:18px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 12px;display:flex;align-items:center;gap:8px}
 .rep-sec h3 .tot{margin-left:auto;font-size:13px;color:var(--muted);font-family:inherit;text-transform:none;letter-spacing:0;font-weight:500}
@@ -1838,6 +1852,24 @@ const allAds = (ads, briefs) => [...(ads || []), ...(briefs || []).filter(b => b
 const adsInMonth = (ads, mk) => ads.filter(a => (a.month || '') === mk);
 const adsByBrand = ads => { const o = {}; ads.forEach(a => { const k = (a.brand || '').trim() || 'Other'; o[k] = (o[k] || 0) + 1; }); return Object.entries(o).sort((x, y) => y[1] - x[1]); };
 const isDelivered = (p, fb) => DELIVERED_STATUSES.includes(p.status) || ((fb || {}).status === 'approved');
+// Post type: what was set on the post, else inferred from the files (any video = Reel / Video, several images = Carousel, one = Static)
+const POST_TYPES = ['Reel / Video', 'Carousel', 'Static', 'Story', 'Other'];
+const TYPE_COLORS = { 'Reel / Video': '#ef4444', 'Carousel': '#8b5cf6', 'Static': '#0ea5e9', 'Story': '#f59e0b', 'Other': '#9ca3af' };
+function postType(p) {
+  const t = p.creativeType || '';
+  if (t === 'Video' || t === 'Reel') return 'Reel / Video';
+  if (t === 'Carousel') return 'Carousel';
+  if (t === 'Static Image' || t === 'Infographic') return 'Static';
+  if (t === 'Story') return 'Story';
+  if (t === 'Other') return 'Other';
+  const en = p.carouselEN || [], ar = p.carouselAR || [];
+  if (en.some(x => x.type === 'video') || ar.some(x => x.type === 'video') || p.creativeENType === 'video' || p.creativeARType === 'video') return 'Reel / Video';
+  if (Math.max(en.length, ar.length) > 1) return 'Carousel';
+  if (en.length || ar.length || p.hasCreativeEN || p.hasCreativeAR) return 'Static';
+  return 'Other';
+}
+const plural = (n, w, pl) => n + ' ' + (n === 1 ? w : (pl || w + 's'));
+const listJoin = arr => arr.length <= 1 ? arr.join('') : arr.slice(0, -1).join(', ') + ' and ' + arr.slice(-1)[0];
 const slideCounts = p => { const r = { enImg: 0, enVid: 0, arImg: 0, arVid: 0 }; const cnt = (arr, legacy, legacyType, k) => { if ((arr || []).length) arr.forEach(x => r[k + (x.type === 'video' ? 'Vid' : 'Img')]++); else if (legacy) r[k + (legacyType === 'video' ? 'Vid' : 'Img')]++; }; cnt(p.carouselEN, p.hasCreativeEN, p.creativeENType, 'en'); cnt(p.carouselAR, p.hasCreativeAR, p.creativeARType, 'ar'); return r; };
 const briefFormatRows = b => [...(b.formats || []).map(k => { const f = AD_FORMATS.find(x => x.key === k); return f ? { grp: f.grp, label: f.print ? f.label + ' ' + f.size : f.size } : { grp: 'Other', label: k }; }), ...(b.customFormats || []).map(x => ({ grp: 'Custom', label: typeof x === 'string' ? x : (x.label || x.size || 'custom') }))];
 function reportData(posts, briefs, fbOf, y, m, adsList) {
@@ -1849,23 +1881,53 @@ function reportData(posts, briefs, fbOf, y, m, adsList) {
   const platforms = {}; let placements = 0;
   delivered.forEach(p => postPlats(p).forEach(pl => { if (platDate(p, pl).startsWith(mk)) { platforms[pl] = (platforms[pl] || 0) + 1; placements++; } }));
   const cr = { enImg: 0, enVid: 0, arImg: 0, arVid: 0 }; delivered.forEach(p => { const c = slideCounts(p); Object.keys(cr).forEach(k => cr[k] += c[k]); });
+  const types = {}; const typeByPlat = {}; let clientApproved = 0;
+  delivered.forEach(p => { const t = postType(p); types[t] = (types[t] || 0) + 1; if ((fbOf(p) || {}).status === 'approved') clientApproved++; postPlats(p).forEach(pl => { if (platDate(p, pl).startsWith(mk)) { typeByPlat[pl] = typeByPlat[pl] || {}; typeByPlat[pl][t] = (typeByPlat[pl][t] || 0) + 1; } }); });
   const social = cr.enImg + cr.enVid + cr.arImg + cr.arVid;
   const monthAds = adsInMonth(allAds(adsList, briefs), mk);
   const ads = monthAds.filter(a => (a.status || 'Delivered') === 'Delivered');
   const adsOpen = monthAds.length - ads.length;
   const adTot = ads.reduce((t, a) => ({ digital: t.digital + (+a.digital || 0), print: t.print + (+a.print || 0), creatives: t.creatives + adCreatives(a) }), { digital: 0, print: 0, creatives: 0 });
-  return { y, m, mk, monthPosts, delivered, pending, byStatus, platforms, placements, cr, social, ads, adTot, adsOpen, brands: adsByBrand(ads), total: social + adTot.creatives };
+  return { y, m, mk, monthPosts, delivered, pending, byStatus, platforms, placements, cr, social, types, typeByPlat, clientApproved, ads, adTot, adsOpen, brands: adsByBrand(ads), total: social + adTot.creatives };
 }
 const prevMonth = (y, m) => m === 0 ? [y - 1, 11] : [y, m - 1];
 function deltaHTML(cur, prev, label) { if (prev === undefined || prev === null) return ''; const d = cur - prev; const cls = d > 0 ? 'up' : d < 0 ? 'down' : ''; const arrow = d > 0 ? '&#9650;' : d < 0 ? '&#9660;' : '&#9644;'; return `<div class="d ${cls}">${arrow} ${d === 0 ? 'Same as' : (d > 0 ? '+' : '') + d + ' vs'} ${label}</div>`; }
+function reportSummary(r, prev, opts) {
+  // Plain-English summary of the month, written from the numbers. Returned as HTML (with highlights) and plain text (for copying).
+  const client = opts.role === 'client'; const monthLabel = MONTHS[r.m] + ' ' + r.y; const prevLabel = prev ? MONTHS[prev.m] : '';
+  const B = (t) => ({ h: `<b>${t}</b>`, t: String(t) }); const parts = [];
+  const push = (h, t) => parts.push({ h, t: t === undefined ? h.replace(/<[^>]+>/g, '') : t });
+  const plats = Object.entries(r.platforms).sort((a, b) => b[1] - a[1]);
+  if (!r.delivered.length && !r.ads.length) { push(`Nothing has been delivered for ${monthLabel} yet.${!client && r.pending.length ? ' ' + plural(r.pending.length, 'post') + ' in production.' : ''}`); return { html: parts.map(x => x.h).join(' '), text: parts.map(x => x.t).join(' ') }; }
+  if (r.delivered.length) {
+    const platStr = listJoin(plats.map(([pl, n]) => pl.replace('X (Twitter)', 'X') + ' (' + n + ')'));
+    push(`In ${monthLabel}, RICH delivered <b>${plural(r.delivered.length, 'post')}</b> for ${esc(opts.name)} across ${platStr}, <b>${plural(r.placements, 'placement')}</b> in total.`);
+    const typeOrder = POST_TYPES.filter(t => r.types[t]);
+    const typeStr = listJoin(typeOrder.map(t => { const n = r.types[t]; const w = t === 'Reel / Video' ? (n === 1 ? 'reel or video' : 'reels and videos') : t === 'Carousel' ? (n === 1 ? 'carousel' : 'carousels') : t === 'Static' ? (n === 1 ? 'static post' : 'static posts') : t === 'Story' ? (n === 1 ? 'story' : 'stories') : (n === 1 ? 'other' : 'others'); return n + ' ' + w; }));
+    push(`That breaks down as ${typeStr}, produced as <b>${plural(r.social, 'social creative')}</b> (${r.cr.enImg + r.cr.enVid} English, ${r.cr.arImg + r.cr.arVid} Arabic; ${plural(r.cr.enImg + r.cr.arImg, 'image')}, ${plural(r.cr.enVid + r.cr.arVid, 'video')}).`);
+    if (r.clientApproved) push(`${r.clientApproved === r.delivered.length ? 'Every post' : r.clientApproved + ' of these'} ${r.clientApproved === 1 && r.delivered.length !== 1 ? 'was' : 'were'} approved by ${client ? 'you' : 'the client'} in the portal.`);
+  }
+  if (r.ads.length) {
+    const sizes = [...new Set(r.ads.map(a => (+a.digital || 0) + ' digital and ' + (+a.print || 0) + ' print'))];
+    const langs = [...new Set(r.ads.map(adLangLabel))];
+    push(`On the ads side, <b>${plural(r.ads.length, 'ad')}</b> ${r.ads.length === 1 ? 'was' : 'were'} delivered${r.brands.length > 1 || (r.brands[0] && r.brands[0][0] !== 'Other') ? ' (' + r.brands.map(([b, n]) => b + ' ' + n).join(', ') + ')' : ''}, each in ${sizes.length === 1 ? sizes[0] + ' sizes' : 'up to ' + Math.max(...r.ads.map(a => (+a.digital || 0) + (+a.print || 0))) + ' sizes'}${langs.length === 1 ? ' in ' + langs[0].replace('AR + EN', 'Arabic and English').replace('AR', 'Arabic').replace('EN', 'English') : ''}, totalling <b>${plural(r.adTot.creatives, 'ad creative')}</b>.`);
+  } else if (r.adsOpen) push(`${plural(r.adsOpen, 'ad')} ${r.adsOpen === 1 ? 'is' : 'are'} in progress and not yet counted.`);
+  let allIn = `All in, <b>${plural(r.total, 'creative')}</b> ${r.total === 1 ? 'was' : 'were'} produced this month`;
+  if (prev && prev.total) { const d = r.total - prev.total; allIn += d === 0 ? `, level with ${prevLabel}` : `, ${d > 0 ? 'up ' + d : 'down ' + Math.abs(d)} on ${prevLabel} (${prev.total})`; }
+  push(allIn + '.');
+  if (!client && r.pending.length) push(`${plural(r.pending.length, 'post')} dated ${monthLabel} ${r.pending.length === 1 ? 'is' : 'are'} still in production and not counted above.`);
+  return { html: parts.map(x => x.h).join(' '), text: parts.map(x => x.t).join(' ') };
+}
 function reportHTML(r, prev, opts) {
   // opts: { role:'internal'|'client', calId, pin, name, onPost(pid) js string }
   const client = opts.role === 'client'; const prevLabel = MONTHS[prevMonth(r.y, r.m)[1]].slice(0, 3);
   const monthLabel = MONTHS[r.m] + ' ' + r.y;
   const stat = (n, l, cls, pv) => `<div class="rep-stat ${cls || ''}"><div class="n">${n}</div><div class="l">${l}</div>${deltaHTML(n, pv, prevLabel)}</div>`;
+  const sumText = reportSummary(r, prev, opts);
   let h = `<div class="report" id="report">
     <div class="rep-print-head"><img src="${LOGO}" alt="RICH"><div><h2>${esc(opts.name)}: ${monthLabel}</h2><div class="sub">Monthly production report, prepared by RICH Marketing. Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.</div></div></div>
     <div class="rep-head"><div><h2>${monthLabel} report</h2><p>${client ? 'Everything RICH produced for you this month. Finished work only; anything still in progress is not counted yet.' : 'What has been delivered this month. Delivered means Approved, Scheduled or Published, or client-approved. Posts still in production are listed below and are not counted in the headline numbers.'}</p></div><div class="rep-nav"><button class="btn sm" onclick="window.print()" title="Print or save as PDF">&#128438; Print / PDF</button></div></div>
+    <div class="rep-summary"><h3>Month at a glance</h3><p>${sumText.html}</p><button class="cp" onclick="navigator.clipboard.writeText(${JSON.stringify(sumText.text).replace(/"/g, '&quot;')}).then(()=>toast('Summary copied'))">Copy text</button></div>
     <div class="rep-stats">
       ${stat(r.delivered.length, 'Posts delivered', 'hi', prev && prev.delivered.length)}
       ${stat(r.placements, 'Platform placements', '', prev && prev.placements)}
@@ -1879,6 +1941,11 @@ function reportHTML(r, prev, opts) {
   const maxP = Math.max(1, ...Object.values(r.platforms));
   const platOrder = Object.entries(r.platforms).sort((a, b) => b[1] - a[1]);
   h += platOrder.length ? platOrder.map(([pl, n]) => `<div class="rep-bar"><div class="nm">${platIcon(pl)}${esc(pl.replace('X (Twitter)', 'X'))}</div><div class="tr"><div style="width:${Math.round(n / maxP * 100)}%;background:${PLAT_COLORS[pl] || '#8b5cf6'}"></div></div><div class="v">${n}</div></div>`).join('') : '<div class="rep-empty">No posts delivered yet this month.</div>';
+  // Post types
+  const typeOrder = POST_TYPES.filter(t => r.types[t]); const maxT = Math.max(1, ...typeOrder.map(t => r.types[t]));
+  h += `</div><div class="rep-sec"><h3>Post types <span class="tot">${r.delivered.length} post${r.delivered.length !== 1 ? 's' : ''}</span></h3>`;
+  h += typeOrder.length ? typeOrder.map(t => `<div class="rep-bar"><div class="nm">${esc(t)}</div><div class="tr"><div style="width:${Math.round(r.types[t] / maxT * 100)}%;background:${TYPE_COLORS[t]}"></div></div><div class="v">${r.types[t]}</div></div>`).join('') : '<div class="rep-empty">No posts delivered yet this month.</div>';
+  if (typeOrder.length && platOrder.length > 1) h += `<table class="rep-xtab"><thead><tr><th>By platform</th>${typeOrder.map(t => `<th>${esc(t.replace(' / Video', 's'))}</th>`).join('')}<th>All</th></tr></thead><tbody>${platOrder.map(([pl]) => `<tr><td>${platIcon(pl)}${esc(pl.replace('X (Twitter)', 'X'))}</td>${typeOrder.map(t => `<td>${(r.typeByPlat[pl] || {})[t] || ''}</td>`).join('')}<td><b>${r.platforms[pl]}</b></td></tr>`).join('')}</tbody></table>`;
   h += `</div><div class="rep-sec"><h3>Social creatives <span class="tot">${r.social} file${r.social !== 1 ? 's' : ''}</span></h3>
       <table class="rep-table"><thead><tr><th></th><th class="num">Images</th><th class="num">Videos</th><th class="num">Total</th></tr></thead><tbody>
         <tr><td>English</td><td class="num">${r.cr.enImg}</td><td class="num">${r.cr.enVid}</td><td class="num">${r.cr.enImg + r.cr.enVid}</td></tr>
