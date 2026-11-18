@@ -721,6 +721,21 @@ input,textarea,select{font-family:inherit}
 .rep-status{display:flex;flex-wrap:wrap;gap:8px}
 .rep-status .badge{font-size:11px}
 .rep-note{font-size:12px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-2)}
+/* Pending overview (client To review) and unsent prompt (internal) */
+.pend-strip{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.pend-strip .lbl{font-size:12px;color:var(--muted);margin-right:4px}
+.pend-strip button{border:1px solid var(--border-2);background:var(--card);border-radius:20px;padding:6px 12px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.pend-strip button b{background:var(--client);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px}
+.pend-strip button.on{border-color:var(--client);box-shadow:0 0 0 2px #ede9fe}
+.pend-strip button.none b{background:#d1d5db}
+.cl-month-h{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:8px 0 -4px;font-family:'Barlow Condensed',sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:.03em}
+.cl-month-h span{font-family:'Inter',sans-serif;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500}
+.cl-month-h::after{content:'';flex:1;height:1px;background:var(--border-2)}
+.unsent{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-top:12px;font-size:13px}
+.unsent b{color:#92400e}
+.unsent .sp{flex:1}
+.other-pending{display:flex;align-items:center;gap:10px;background:#ede9fe;border:1px solid #ddd6fe;color:#4c1d95;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.other-pending a{color:#4c1d95;font-weight:700}
 /* Ads tally */
 .ads-wrap{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:20px 22px;margin-top:16px}
 .ads-sum{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
@@ -814,8 +829,11 @@ let dashFilter = 'all';
 let uploadQueue = Promise.resolve();
 let dragSlide = null;
 // Client
-let clientCalId = null, clientPin = '', clientData = null, clientTab = 'review', clientFilter = 'all', clientSize = 'm', clientMonth = null;
+let clientCalId = null, clientPin = '', clientData = null, clientTab = 'review', clientFilter = 'all', clientSize = 'm', clientMonth = null, todoMonth = 'all', clientSig = '';
 const awaitingClient = p => (p.status === 'Ready for Review' || p.status === 'Revised') && !((p.feedback || {}).status);
+// Internal: has creatives but was never sent to the client (status still Draft / In Production). The client cannot act on these.
+const unsentToClient = p => (p.status === 'Draft' || p.status === 'In Production' || !p.status) && countCreatives(p) > 0;
+const monthLabelK = k => { const [y, m] = k.split('-').map(Number); return MONTHS[m - 1] + ' ' + y; };
 
 /* ================================================================
    HELPERS
@@ -903,6 +921,17 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('focus', () => refreshFromServer(true));
 setInterval(() => { if (document.visibilityState === 'visible') refreshFromServer(true); }, 60000);
 window.addEventListener('beforeunload', e => { if (saveState === 'saving' || saveState === 'error') { e.preventDefault(); e.returnValue = ''; } });
+// Client page stays live: re-fetch on focus and every 45s, re-render only if something changed and nothing is being typed or viewed fullscreen
+async function clientRefresh() {
+  if (!clientCalId || !clientPin || !clientData) return;
+  if (document.visibilityState !== 'visible' || clientBusy) return;
+  const ae = document.activeElement; if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+  if ($('postModal')?.classList.contains('show') || document.querySelector('.fullview, .dayview')) return;
+  try { const d = await clientLoad(clientCalId, clientPin); if (!d || d.error) return; const sig = JSON.stringify(d); if (sig === clientSig) return; clientSig = sig; const open = [...document.querySelectorAll('.cl-card.open')].map(x => x.id); clientData = d; renderClient(); open.forEach(id => $(id)?.classList.add('open')); } catch (e) { }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') clientRefresh(); });
+window.addEventListener('focus', () => clientRefresh());
+setInterval(clientRefresh, 45000);
 async function clientLoad(id, pin) {
   try { const r = await fetch('/api/calendar?id=' + encodeURIComponent(id) + '&pin=' + encodeURIComponent(pin)); if (r.status === 403) return { error: 'pin' }; if (!r.ok) return { error: 'notfound' }; return await r.json(); } catch (e) { return { error: 'network' }; }
 }
@@ -912,8 +941,11 @@ async function internalOp(data) {
   try { const r = await fetch('/api/internal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) }); if (!r.ok) throw new Error('HTTP ' + r.status); const d = await r.json(); if (d.rev) dataRev = d.rev; setSaveState('saved'); return d; }
   catch (e) { console.error('op failed', e); setSaveState('error'); return { ok: false }; }
 }
+let clientBusy = 0;
 async function clientSend(postId, data) {
+  clientBusy++;
   try { await fetch('/api/calendar-feedback', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: clientCalId, pin: clientPin, postId, ...data }) }); } catch (e) { }
+  clientBusy--; clientSig = '';
 }
 
 /* ================================================================
@@ -1196,8 +1228,9 @@ function yearView(c) {
 
 function monthView(c) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth(), today = new Date();
+  const unsentBar = unsentBarHTML(c);
   const dim = new Date(y, m + 1, 0).getDate(), fd = (new Date(y, m, 1).getDay() + 6) % 7;
-  let h = calToolbar(c);
+  let h = calToolbar(c) + unsentBar;
   h += '<div class="cal-scroll"><div class="cal-grid">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-head">${d}</div>`).join('');
   for (let i = 0; i < fd; i++) h += '<div class="cal-day empty"></div>';
   for (let d = 1; d <= dim; d++) {
@@ -1227,7 +1260,7 @@ function boardView(c) {
   if (boardFilter !== 'all') mp = mp.filter(p => { const fb = getFb(c, p.id); if (boardFilter === 'unresolved') return unresolved(fb) > 0; if (boardFilter === 'changes') return fb.status === 'declined'; if (boardFilter === 'approved') return fb.status === 'approved'; if (boardFilter === 'pending') return !fb.status; return true; });
   const pills = `<div class="filter-pills">${['all', 'unresolved', 'changes', 'approved', 'pending'].map(f => `<button class="filter-pill ${boardFilter === f ? 'active' : ''}" onclick="boardFilter='${f}';renderCalView()">${f[0].toUpperCase() + f.slice(1)}</button>`).join('')}</div>`;
   const sizer = `<div class="sizer">${[['l', '<rect x="5" y="5" width="14" height="14" rx="2"/>'], ['m', '<rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/>'], ['s', '<rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/>']].map(([k, svg]) => `<button class="${boardSize === k ? 'on' : ''}" onclick="boardSize='${k}';renderCalView()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></button>`).join('')}</div>`;
-  let h = calToolbar(c, pills + sizer);
+  let h = calToolbar(c, pills + sizer) + unsentBarHTML(c);
   if (!mp.length) return h + `<div style="text-align:center;padding:40px;color:var(--muted)">${boardFilter !== 'all' ? 'No posts match this filter.' : 'No posts this month.'}</div>`;
   h += `<div class="board-grid sz-${boardSize}">`;
   mp.forEach(p => {
@@ -1385,6 +1418,8 @@ function uploadFile(pid, lang, file, done) {
         if (p[key].length === 1) { fetch(`/api/creative-upload?calId=${encodeURIComponent(c.id)}&postId=${encodeURIComponent(pid)}&lang=${lang}&mime=${encodeURIComponent(mime)}`, { method: 'POST', body: file, headers: { 'content-type': mime } }).catch(() => { }); p['hasCreative' + lang] = true; p['creative' + lang + 'Type'] = isVid ? 'video' : 'image'; }
         p.cv = (p.cv || 0) + 1;
         if ($('postModal').classList.contains('show')) readForm(p);
+        // A creative on a draft is almost always ready for the client. Move it so it shows in their To review list; the status dropdown can put it back.
+        if (p.status === 'Draft' || p.status === 'In Production' || !p.status) { p.status = 'Ready for Review'; const sel = $('peStatus'); if (sel) sel.value = 'Ready for Review'; toast('Set to Ready for Review so the client can see it. Change the status if it is not ready yet.'); }
         await saveCalendars();
       }
     } catch (e) { console.error(e); }
@@ -1735,6 +1770,17 @@ function addAd() { const c = getCal(); if (!c) return; c.ads = c.ads || []; c.ad
 function setAd(id, k, v) { const c = getCal(); const a = getAds(c).find(x => x.id === id); if (!a) return; a[k] = (k === 'digital' || k === 'print') ? Math.max(0, +v || 0) : v; saveCalendars(); if (k !== 'name' && k !== 'brand' && k !== 'link') renderCalView(); else { const el = document.querySelector('.ads-sum'); if (el) el.outerHTML = adsView(c).match(/<div class="ads-sum">.*?<\/div><\/div>/s)?.[0] || el.outerHTML; } }
 function setAdLang(id, l, on) { const c = getCal(); const a = getAds(c).find(x => x.id === id); if (!a) return; a.langs = a.langs || {}; a.langs[l] = on; saveCalendars(); renderCalView(); }
 function deleteAd(id) { if (!confirm('Remove this ad from the tally?')) return; const c = getCal(); c.ads = getAds(c).filter(x => x.id !== id); saveCalendars(); renderCalView(); }
+function unsentBarHTML(c) {
+  const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
+  const un = (c.posts || []).filter(p => inMonth(p, y, m) && unsentToClient(p));
+  const noCreative = (c.posts || []).filter(p => inMonth(p, y, m) && (p.status === 'Ready for Review' || p.status === 'Revised') && countCreatives(p) === 0).length;
+  if (!un.length && !noCreative) return '';
+  let h = '';
+  if (un.length) h += `<div class="unsent"><b>${un.length} post${un.length !== 1 ? 's' : ''} ${un.length !== 1 ? 'have' : 'has'} creatives but ${un.length !== 1 ? 'are' : 'is'} not visible to the client for review</b><span>${un.slice(0, 4).map(p => esc(p.topic || 'Untitled')).join(', ')}${un.length > 4 ? ` and ${un.length - 4} more` : ''}. Still marked ${[...new Set(un.map(p => p.status || 'Draft'))].join(' / ')}.</span><span class="sp"></span><button class="btn sm primary" onclick="sendMonthForReview()">Send ${un.length !== 1 ? 'all ' + un.length : 'it'} for review</button></div>`;
+  if (noCreative) h += `<div class="unsent" style="background:#fef2f2;border-color:#fecaca"><b>${noCreative} post${noCreative !== 1 ? 's are' : ' is'} marked Ready for Review with no creative uploaded.</b><span>The client will see an empty card.</span></div>`;
+  return h;
+}
+function sendMonthForReview() { const c = getCal(); const y = viewMonth.getFullYear(), m = viewMonth.getMonth(); let n = 0; (c.posts || []).forEach(p => { if (inMonth(p, y, m) && unsentToClient(p)) { p.status = 'Ready for Review'; n++; } }); if (n) { saveCalendars(); renderCalView(); toast(n + ' post' + (n !== 1 ? 's' : '') + ' sent to the client for review.'); } }
 function reportView(c) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth(); const [py, pm] = prevMonth(y, m);
   const fbOf = p => getFb(c, p.id);
@@ -2023,7 +2069,7 @@ function clDayView(ds) { const posts = (clientData.posts || []).filter(p => plat
 function clientGate(id) {
   clientCalId = id;
   let saved = ''; try { saved = sessionStorage.getItem('rich_pin_' + id) || localStorage.getItem('rich_pin_' + id) || ''; } catch (e) { }
-  if (saved) { clientLoad(id, saved).then(d => { if (!d.error) { clientPin = saved; clientData = d; try { clientSize = localStorage.getItem('rich_cl_sz') || 'm'; } catch (e) { } applyClientRoute(new URLSearchParams(location.search)); } else renderGate(); }); return; }
+  if (saved) { clientLoad(id, saved).then(d => { if (!d.error) { clientPin = saved; clientData = d; clientSig = JSON.stringify(d); try { clientSize = localStorage.getItem('rich_cl_sz') || 'm'; } catch (e) { } applyClientRoute(new URLSearchParams(location.search)); } else renderGate(); }); return; }
   renderGate();
 }
 function renderGate() {
@@ -2037,7 +2083,7 @@ async function clientEnter() {
   const d = await clientLoad(clientCalId, pin);
   if (d.error === 'pin') { $('pinErr').textContent = 'That PIN is not correct. Please try again.'; return; }
   if (d.error) { $('pinErr').textContent = 'Calendar not found.'; return; }
-  clientPin = pin; clientData = d; try { localStorage.setItem('rich_pin_' + clientCalId, pin); clientSize = localStorage.getItem('rich_cl_sz') || 'm'; } catch (e) { }
+  clientPin = pin; clientData = d; clientSig = JSON.stringify(d); try { localStorage.setItem('rich_pin_' + clientCalId, pin); clientSize = localStorage.getItem('rich_cl_sz') || 'm'; } catch (e) { }
   applyClientRoute(new URLSearchParams(location.search));
 }
 
@@ -2047,12 +2093,22 @@ async function clientEnter() {
 function renderClient() {
   const c = clientData; const posts = (c.posts || []).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   const dates = posts.map(p => p.date).filter(Boolean).sort();
-  if (!clientMonth) { const now = new Date(); const nk = monthKey(now.getFullYear(), now.getMonth()); clientMonth = dates.some(d => d.startsWith(nk)) ? new Date(now.getFullYear(), now.getMonth(), 1) : dates.length ? new Date(dates[0] + 'T00:00:00') : new Date(); }
+  if (!clientMonth) {
+    // Open on the month that needs attention: newest month with posts awaiting a decision, else this month if it has posts, else the latest month that does
+    const now = new Date(); const nk = monthKey(now.getFullYear(), now.getMonth());
+    const waitDates = posts.filter(awaitingClient).flatMap(postDates).sort();
+    const pick = waitDates.length ? waitDates[waitDates.length - 1] : dates.some(d => d.startsWith(nk)) ? nk + '-01' : dates.length ? dates[dates.length - 1] : null;
+    clientMonth = pick ? new Date(pick.slice(0, 7) + '-01T00:00:00') : new Date();
+  }
   const y = clientMonth.getFullYear(), m = clientMonth.getMonth();
   const allMonth = posts.filter(p => inMonth(p, y, m));
   const awaitingAll = posts.filter(awaitingClient);
+  // Pending by month (newest first). todoMonth = 'all' or a YYYY-MM key chosen on the strip
+  const pendByMonth = {}; awaitingAll.forEach(p => { const k = (p.date || '').slice(0, 7); pendByMonth[k] = (pendByMonth[k] || 0) + 1; });
+  const pendMonths = Object.keys(pendByMonth).sort().reverse();
+  if (todoMonth !== 'all' && !pendByMonth[todoMonth]) todoMonth = 'all';
   let mp = allMonth;
-  if (clientTab === 'todo') mp = awaitingAll;
+  if (clientTab === 'todo') mp = (todoMonth === 'all' ? awaitingAll : awaitingAll.filter(p => (p.date || '').startsWith(todoMonth))).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   else if (clientFilter !== 'all') mp = mp.filter(p => { const fb = p.feedback || {}; if (clientFilter === 'approved') return fb.status === 'approved'; if (clientFilter === 'changes') return fb.status === 'declined'; if (clientFilter === 'nodecision') return !fb.status; return true; });
   const months = [...new Set(dates.map(d => d.slice(0, 7)))].sort(); const mk = monthKey(y, m); const mi = months.indexOf(mk);
   const prevM = mi > 0 ? months[mi - 1] : null, nextM = mi < months.length - 1 ? months[mi + 1] : null;
@@ -2091,11 +2147,19 @@ function renderClient() {
     const rem = (7 - ((fd + dim) % 7)) % 7; for (let i = 0; i < rem; i++) h += '<div class="cal-day empty"></div>';
     h += '</div></div>';
   } else {
-    if (clientTab === 'todo') h += `<div style="background:var(--amber-light);border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px">${mp.length ? `<b>${mp.length} post${mp.length !== 1 ? 's' : ''}</b> ${mp.length !== 1 ? 'are' : 'is'} ready for your decision. Approve, or request changes and tell us what to adjust. Each one disappears from this list once you decide.` : 'Nothing is waiting for you right now. Anything RICH sends for approval will appear here.'}</div>`;
+    if (clientTab === 'todo') {
+      h += `<div style="background:var(--amber-light);border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px">${awaitingAll.length ? `<b>${awaitingAll.length} post${awaitingAll.length !== 1 ? 's' : ''}</b> ${awaitingAll.length !== 1 ? 'are' : 'is'} ready for your decision across ${pendMonths.length === 1 ? monthLabelK(pendMonths[0]) : pendMonths.length + ' months'}. Approve, or request changes and tell us what to adjust. Each one disappears from this list once you decide.` : 'Nothing is waiting for you right now. Anything RICH sends for approval will appear here, whichever month it is for.'}</div>`;
+      if (pendMonths.length > 1) h += `<div class="pend-strip"><span class="lbl">Show:</span><button class="${todoMonth === 'all' ? 'on' : ''}" onclick="todoMonth='all';renderClient()">All pending <b>${awaitingAll.length}</b></button>${pendMonths.map(k => `<button class="${todoMonth === k ? 'on' : ''}" onclick="todoMonth='${k}';renderClient()">${monthLabelK(k)} <b>${pendByMonth[k]}</b></button>`).join('')}</div>`;
+    } else if (clientTab === 'review' && awaitingAll.length) {
+      const here = awaitingAll.filter(p => inMonth(p, y, m)).length, elsewhere = awaitingAll.length - here;
+      if (elsewhere) h += `<div class="other-pending">&#9679; ${plural(elsewhere, 'post')} waiting for your decision in ${listJoin(pendMonths.filter(k => k !== mk).map(monthLabelK))}. <a href="#" onclick="event.preventDefault();clientTab='todo';todoMonth='all';renderClient()">Open To review &rarr;</a></div>`;
+    }
     if (!mp.length) h += `<div style="text-align:center;padding:50px;color:var(--muted)">${clientTab === 'todo' ? '&#10003; All caught up.' : clientFilter !== 'all' ? 'Nothing matches this filter.' : 'No content planned for this month yet.'}</div>`;
     else {
       h += `<div class="cl-grid sz-${clientSize}">`;
+      let lastK = null;
       mp.forEach(p => {
+        if (clientTab === 'todo') { const k = (p.date || '').slice(0, 7); if (k !== lastK) { lastK = k; h += `<div class="cl-month-h">${monthLabelK(k)} <span>${plural(pendByMonth[k] || 0, 'post')} waiting</span></div>`; } }
         const fb = p.feedback || { status: '', comments: [] }; const d = new Date(p.date + 'T00:00:00');
         const media = mediaHTML(clientCalId, p, 'EN', p.cv, clientPin, { prefix: 'cl' }) || mediaHTML(clientCalId, p, 'AR', p.cv, clientPin, { prefix: 'cl' });
         const arMedia = (p.carouselEN || []).length && (p.carouselAR || []).length ? mediaHTML(clientCalId, p, 'AR', p.cv, clientPin, { prefix: 'clar' }) : '';
