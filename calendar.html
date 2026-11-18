@@ -830,7 +830,13 @@ let uploadQueue = Promise.resolve();
 let dragSlide = null;
 // Client
 let clientCalId = null, clientPin = '', clientData = null, clientTab = 'review', clientFilter = 'all', clientSize = 'm', clientMonth = null, todoMonth = 'all', clientSig = '';
-const awaitingClient = p => (p.status === 'Ready for Review' || p.status === 'Revised') && !((p.feedback || {}).status);
+// What the client has decided on the CURRENT version. One rule for both sides:
+// - Changes Requested (agency status) always reads as changes requested
+// - a decision made before the post was revised (or with no timestamp on a revised post) no longer applies
+const decisionOf = (p, fb) => { fb = fb || {}; if (p.status === 'Changes Requested') return 'declined'; if (p.status === 'Revised' && fb.status && (!fb.decidedAt || !p.revisedAt || fb.decidedAt <= p.revisedAt)) return ''; return fb.status || ''; };
+// Post status follows the client's decision (server applies the same rule)
+const syncedPostStatus = (st, decision) => { if (decision === 'declined' && ['Ready for Review', 'Revised', 'Approved'].includes(st)) return 'Changes Requested'; if (decision === 'approved' && ['Ready for Review', 'Revised', 'Changes Requested'].includes(st)) return 'Approved'; if (decision === '' && ['Approved', 'Changes Requested'].includes(st)) return 'Ready for Review'; return st; };
+const awaitingClient = p => (p.status === 'Ready for Review' || p.status === 'Revised') && !decisionOf(p, p.feedback);
 // Internal: has creatives but was never sent to the client (status still Draft / In Production). The client cannot act on these.
 const unsentToClient = p => (p.status === 'Draft' || p.status === 'In Production' || !p.status) && countCreatives(p) > 0;
 const monthLabelK = k => { const [y, m] = k.split('-').map(Number); return MONTHS[m - 1] + ' ' + y; };
@@ -1257,7 +1263,7 @@ function dropPost(e, ds) { e.preventDefault(); if (!dragPid) return; const c = g
 function boardView(c) {
   const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
   let mp = (c.posts || []).filter(p => inMonth(p, y, m)).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-  if (boardFilter !== 'all') mp = mp.filter(p => { const fb = getFb(c, p.id); if (boardFilter === 'unresolved') return unresolved(fb) > 0; if (boardFilter === 'changes') return fb.status === 'declined'; if (boardFilter === 'approved') return fb.status === 'approved'; if (boardFilter === 'pending') return !fb.status; return true; });
+  if (boardFilter !== 'all') mp = mp.filter(p => { const fb = getFb(c, p.id); if (boardFilter === 'unresolved') return unresolved(fb) > 0; const ds = decisionOf(p, fb); if (boardFilter === 'changes') return ds === 'declined'; if (boardFilter === 'approved') return ds === 'approved'; if (boardFilter === 'pending') return !ds; return true; });
   const pills = `<div class="filter-pills">${['all', 'unresolved', 'changes', 'approved', 'pending'].map(f => `<button class="filter-pill ${boardFilter === f ? 'active' : ''}" onclick="boardFilter='${f}';renderCalView()">${f[0].toUpperCase() + f.slice(1)}</button>`).join('')}</div>`;
   const sizer = `<div class="sizer">${[['l', '<rect x="5" y="5" width="14" height="14" rx="2"/>'], ['m', '<rect x="4" y="5" width="7" height="14" rx="1.5"/><rect x="13" y="5" width="7" height="14" rx="1.5"/>'], ['s', '<rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/>']].map(([k, svg]) => `<button class="${boardSize === k ? 'on' : ''}" onclick="boardSize='${k}';renderCalView()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></button>`).join('')}</div>`;
   let h = calToolbar(c, pills + sizer) + unsentBarHTML(c);
@@ -1266,7 +1272,7 @@ function boardView(c) {
   mp.forEach(p => {
     const fb = getFb(c, p.id); const un = unresolved(fb); const last = (fb.comments || []).slice(-1)[0];
     const media = mediaHTML(c.id, p, 'EN', p.cv, null, { prefix: 'b' }) || mediaHTML(c.id, p, 'AR', p.cv, null, { prefix: 'b' });
-    const fbBadge = fb.status === 'approved' ? '<div class="fb-badge ok">&#10003; Client approved</div>' : fb.status === 'declined' ? '<div class="fb-badge ch">! Changes requested</div>' : un ? `<div class="fb-badge un">${un} unresolved</div>` : '';
+    const ds = decisionOf(p, fb); const fbBadge = ds === 'approved' ? '<div class="fb-badge ok">&#10003; Client approved</div>' : ds === 'declined' ? '<div class="fb-badge ch">! Changes requested</div>' : un ? `<div class="fb-badge un">${un} unresolved</div>` : '';
     h += `<div class="board-card" data-pid="${p.id}">
       <div class="media" data-fv-label="${esc(p.topic || '')}" onclick="${media ? `openFullView(this,'${esc(p.topic || '')}')` : `$('bf-${p.id}').click()`}">${media || '<div class="empty"><span class="plus">+</span>Upload creative</div>'}${media ? `<button class="fv-expand" title="View full screen" onclick="event.stopPropagation();openFullView(this.parentElement,'${esc(p.topic || '')}')">&#x26F6;</button>` : ''}<div class="plat-icons">${platIcons(p.platforms)}</div><span class="badge status-badge ${STATUS_CLASS[p.status] || 'draft'}">${esc(p.status || 'Draft')}</span>${fbBadge}${media ? `<div class="upload-overlay"><button class="btn" onclick="event.stopPropagation();$('bf-${p.id}').click()">+ Add</button></div>` : ''}</div>
       <input type="file" id="bf-${p.id}" accept="image/*,video/*" multiple style="display:none" onchange="boardUpload('${p.id}',this)">
@@ -1295,8 +1301,8 @@ function editPost(pid) {
   $('pmTitle').textContent = (p.topic || 'New post') + ' — ' + (hasSplitDates(p) ? postDates(p).map(shortD).join(' / ') : fmtDate(p.date));
 
   // Client feedback panel
-  const fbClass = fb.status === 'approved' ? 'st-approved' : fb.status === 'declined' ? 'st-changes' : p.status === 'Revised' ? 'st-revised' : 'st-pending';
-  const fbTag = fb.status === 'approved' ? '<span class="badge approved">Client approved</span>' : fb.status === 'declined' ? '<span class="badge changes">Client requested changes</span>' : p.status === 'Revised' ? '<span class="badge revised">Sent for re-approval</span>' : '<span class="badge draft">Awaiting client</span>';
+  const ds = decisionOf(p, fb); const fbClass = ds === 'approved' ? 'st-approved' : ds === 'declined' ? 'st-changes' : p.status === 'Revised' ? 'st-revised' : 'st-pending';
+  const fbTag = ds === 'approved' ? `<span class="badge approved">Client approved${fb.decidedAt ? ' ' + fmtTime(fb.decidedAt) : ''}</span>${fb.status === 'approved' && p.status === 'Changes Requested' ? '' : ''}` : ds === 'declined' ? '<span class="badge changes">Client requested changes</span>' : p.status === 'Revised' ? '<span class="badge revised">Sent for re-approval</span>' : '<span class="badge draft">Awaiting client</span>';
   let fbHTML = `<div class="fb-panel ${fbClass}"><div class="fb-head"><h3>Client feedback</h3>${fbTag}${un ? `<span class="badge" style="background:var(--red);color:#fff">${un} to action</span>` : ''}</div>`;
   if ((fb.comments || []).length) {
     const plink = shareLink('post', pid);
@@ -1307,7 +1313,7 @@ function editPost(pid) {
 
   // Revision bar
   let revHTML = '';
-  if (fb.status === 'declined' && p.status !== 'Revised') revHTML = `<div class="revision-bar needs"><div class="rb-text"><strong>Client requested changes</strong>Upload the revised creative below, then send it back for re-approval.</div><button class="btn success" onclick="sendForReapproval('${pid}')">Send for re-approval</button></div>`;
+  if (ds === 'declined' && p.status !== 'Revised') revHTML = `<div class="revision-bar needs"><div class="rb-text"><strong>Client requested changes</strong>Upload the revised creative below, then send it back for re-approval.</div><button class="btn success" onclick="sendForReapproval('${pid}')">Send for re-approval</button></div>`;
   else if (p.status === 'Revised') revHTML = `<div class="revision-bar sent"><div class="rb-text"><strong>Sent for re-approval ${p.revisedAt ? fmtTime(p.revisedAt) : ''}</strong>The client will see a "Revised" tag and can approve the new version.</div><button class="btn sm" onclick="undoReapproval('${pid}')">Undo</button></div>`;
 
   const thumbs = lang => { const arr = p['carousel' + lang] || []; return arr.map((s, i) => `<div class="creative-thumb" draggable="true" ondragstart="dragStart(event,'${lang}',${i})" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="dropSlide(event,'${lang}',${i})">${s.type === 'video' ? `<video src="${creativeUrl(c.id, p.id, lang, slideKey(s, i), p.cv)}"></video>` : `<img src="${creativeUrl(c.id, p.id, lang, slideKey(s, i), p.cv)}" alt="">`}<input class="num" type="number" min="1" max="${arr.length}" value="${i + 1}" onchange="reorderNum('${lang}',${i},+this.value-1)" onclick="event.stopPropagation()"><button class="rm" onclick="event.stopPropagation();removeSlide('${lang}',${i})">&times;</button></div>`).join(''); };
@@ -1367,12 +1373,13 @@ function readForm(p) {
   p.assets = []; document.querySelectorAll('[data-au]').forEach(inp => { const i = inp.dataset.au; const lbl = document.querySelector(`[data-al="${i}"]`); if (inp.value.trim()) p.assets.push({ label: lbl ? lbl.value.trim() : '', url: inp.value.trim() }); });
   p.videoScript = []; const rows = {}; document.querySelectorAll('[data-st]').forEach(inp => { const r = inp.dataset.st; rows[r] = rows[r] || {}; rows[r][inp.dataset.sf] = inp.value; }); Object.keys(rows).sort((a, b) => a - b).forEach(k => { const r = rows[k]; if (r.timecode || r.voiceEN || r.voiceAR || r.visuals) p.videoScript.push(r); });
 }
-function savePost(pid) { const c = getCal(); const p = getPost(c, pid); if (!p) return; readForm(p); saveCalendars(); closeEditor(); }
+function savePost(pid) { const c = getCal(); const p = getPost(c, pid); if (!p) return; const before = p.status; readForm(p); const fb = getFb(c, pid); let dec = null; if (p.status !== before) { if (p.status === 'Changes Requested' && fb.status !== 'declined') dec = 'declined'; else if ((p.status === 'Ready for Review' || p.status === 'Revised') && fb.status) dec = ''; } saveCalendars(); closeEditor(); if (dec !== null) setDecision(pid, dec, p.status, p.status === 'Revised' ? new Date().toISOString() : undefined); }
 function deletePost(pid) { if (!confirm('Delete this post?')) return; const c = getCal(); c.posts = (c.posts || []).filter(p => p.id !== pid); saveCalendars(); closeEditor(); }
 function addAssetRow() { const l = $('assetList'); const i = l.children.length; const r = document.createElement('div'); r.className = 'asset-row'; r.innerHTML = `<input class="lbl" placeholder="Label" data-al="${i}"><input placeholder="https://..." data-au="${i}"><button class="btn xs danger" onclick="this.parentElement.remove()">&times;</button>`; l.appendChild(r); }
 function addScriptRow() { const b = $('scriptBody'); const i = b.children.length; const tr = document.createElement('tr'); tr.innerHTML = `<td><input data-st="${i}" data-sf="timecode" placeholder="0:00"></td><td><input data-st="${i}" data-sf="voiceEN"></td><td><input data-st="${i}" data-sf="voiceAR"></td><td><input data-st="${i}" data-sf="visuals"></td><td><button class="btn xs danger" onclick="this.closest('tr').remove()">&times;</button></td>`; b.appendChild(tr); }
-function sendForReapproval(pid) { const c = getCal(); const p = getPost(c, pid); if (!p) return; readForm(p); p.status = 'Revised'; p.revisedAt = new Date().toISOString(); c.feedback = c.feedback || {}; c.feedback[pid] = c.feedback[pid] || { status: '', comments: [] }; c.feedback[pid].status = ''; saveCalendars(); editPost(pid); }
-function undoReapproval(pid) { const c = getCal(); const p = getPost(c, pid); if (!p) return; readForm(p); p.status = 'Changes Requested'; p.revisedAt = null; c.feedback[pid].status = 'declined'; saveCalendars(); editPost(pid); }
+async function setDecision(pid, status, postStatus, revisedAt) { const c = getCal(); const p = getPost(c, pid); if (!p) return; c.feedback = c.feedback || {}; c.feedback[pid] = c.feedback[pid] || { status: '', comments: [] }; const fb = c.feedback[pid]; fb.status = status; fb.decidedAt = new Date().toISOString(); fb.decidedBy = 'RICH'; if (postStatus) p.status = postStatus; if (revisedAt !== undefined) p.revisedAt = revisedAt; await saveCalendars(); const r = await internalOp({ op: 'decision', calId: c.id, postId: pid, status, postStatus: postStatus || undefined, revisedAt }); if (r && r.ok === false) alert('Change not saved. Check your connection and try again.'); }
+async function sendForReapproval(pid) { const c = getCal(); const p = getPost(c, pid); if (!p) return; readForm(p); const at = new Date().toISOString(); p.status = 'Revised'; p.revisedAt = at; editPost(pid); await setDecision(pid, '', 'Revised', at); editPost(pid); }
+async function undoReapproval(pid) { const c = getCal(); const p = getPost(c, pid); if (!p) return; readForm(p); p.status = 'Changes Requested'; p.revisedAt = null; editPost(pid); await setDecision(pid, 'declined', 'Changes Requested', null); editPost(pid); }
 function toggleReplyForm(id) { const f = $(id); if (!f) return; f.style.display = f.style.display === 'none' ? 'flex' : 'none'; if (f.style.display === 'flex') f.querySelector('input').focus(); }
 async function sendReply(pid, i, text) {
   text = (text || '').trim(); if (!text) return;
@@ -1897,7 +1904,7 @@ const briefAsAd = b => { const rows = briefFormatRows(b); return { id: b.id, fro
 const allAds = (ads, briefs) => [...(ads || []), ...(briefs || []).filter(b => b.finalApprovedAt).map(briefAsAd)];
 const adsInMonth = (ads, mk) => ads.filter(a => (a.month || '') === mk);
 const adsByBrand = ads => { const o = {}; ads.forEach(a => { const k = (a.brand || '').trim() || 'Other'; o[k] = (o[k] || 0) + 1; }); return Object.entries(o).sort((x, y) => y[1] - x[1]); };
-const isDelivered = (p, fb) => DELIVERED_STATUSES.includes(p.status) || ((fb || {}).status === 'approved');
+const isDelivered = (p, fb) => DELIVERED_STATUSES.includes(p.status) || decisionOf(p, fb) === 'approved';
 // Post type: what was set on the post, else inferred from the files (any video = Reel / Video, several images = Carousel, one = Static)
 const POST_TYPES = ['Reel / Video', 'Carousel', 'Static', 'Story', 'Other'];
 const TYPE_COLORS = { 'Reel / Video': '#ef4444', 'Carousel': '#8b5cf6', 'Static': '#0ea5e9', 'Story': '#f59e0b', 'Other': '#9ca3af' };
@@ -1928,7 +1935,7 @@ function reportData(posts, briefs, fbOf, y, m, adsList) {
   delivered.forEach(p => postPlats(p).forEach(pl => { if (platDate(p, pl).startsWith(mk)) { platforms[pl] = (platforms[pl] || 0) + 1; placements++; } }));
   const cr = { enImg: 0, enVid: 0, arImg: 0, arVid: 0 }; delivered.forEach(p => { const c = slideCounts(p); Object.keys(cr).forEach(k => cr[k] += c[k]); });
   const types = {}; const typeByPlat = {}; let clientApproved = 0;
-  delivered.forEach(p => { const t = postType(p); types[t] = (types[t] || 0) + 1; if ((fbOf(p) || {}).status === 'approved') clientApproved++; postPlats(p).forEach(pl => { if (platDate(p, pl).startsWith(mk)) { typeByPlat[pl] = typeByPlat[pl] || {}; typeByPlat[pl][t] = (typeByPlat[pl][t] || 0) + 1; } }); });
+  delivered.forEach(p => { const t = postType(p); types[t] = (types[t] || 0) + 1; if (decisionOf(p, fbOf(p)) === 'approved') clientApproved++; postPlats(p).forEach(pl => { if (platDate(p, pl).startsWith(mk)) { typeByPlat[pl] = typeByPlat[pl] || {}; typeByPlat[pl][t] = (typeByPlat[pl][t] || 0) + 1; } }); });
   const social = cr.enImg + cr.enVid + cr.arImg + cr.arVid;
   const monthAds = adsInMonth(allAds(adsList, briefs), mk);
   const ads = monthAds.filter(a => (a.status || 'Delivered') === 'Delivered');
@@ -2109,11 +2116,11 @@ function renderClient() {
   if (todoMonth !== 'all' && !pendByMonth[todoMonth]) todoMonth = 'all';
   let mp = allMonth;
   if (clientTab === 'todo') mp = (todoMonth === 'all' ? awaitingAll : awaitingAll.filter(p => (p.date || '').startsWith(todoMonth))).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  else if (clientFilter !== 'all') mp = mp.filter(p => { const fb = p.feedback || {}; if (clientFilter === 'approved') return fb.status === 'approved'; if (clientFilter === 'changes') return fb.status === 'declined'; if (clientFilter === 'nodecision') return !fb.status; return true; });
+  else if (clientFilter !== 'all') mp = mp.filter(p => { const fb = p.feedback || {}; const ds = decisionOf(p, fb); if (clientFilter === 'approved') return ds === 'approved'; if (clientFilter === 'changes') return fb.status === 'declined'; if (clientFilter === 'nodecision') return !fb.status; return true; });
   const months = [...new Set(dates.map(d => d.slice(0, 7)))].sort(); const mk = monthKey(y, m); const mi = months.indexOf(mk);
   const prevM = mi > 0 ? months[mi - 1] : null, nextM = mi < months.length - 1 ? months[mi + 1] : null;
-  const approved = allMonth.filter(p => (p.feedback || {}).status === 'approved').length;
-  const changes = allMonth.filter(p => (p.feedback || {}).status === 'declined').length;
+  const approved = allMonth.filter(p => decisionOf(p, p.feedback) === 'approved').length;
+  const changes = allMonth.filter(p => decisionOf(p, p.feedback) === 'declined').length;
   const pending = allMonth.length - approved - changes;
   const creatives = allMonth.reduce((s, p) => s + countCreatives(p), 0);
   let savedName = ''; try { savedName = localStorage.getItem('rich_cl_name') || ''; } catch (e) { }
@@ -2163,8 +2170,9 @@ function renderClient() {
         const fb = p.feedback || { status: '', comments: [] }; const d = new Date(p.date + 'T00:00:00');
         const media = mediaHTML(clientCalId, p, 'EN', p.cv, clientPin, { prefix: 'cl' }) || mediaHTML(clientCalId, p, 'AR', p.cv, clientPin, { prefix: 'cl' });
         const arMedia = (p.carouselEN || []).length && (p.carouselAR || []).length ? mediaHTML(clientCalId, p, 'AR', p.cv, clientPin, { prefix: 'clar' }) : '';
-        const statusLabel = fb.status === 'approved' ? 'You approved this' : fb.status === 'declined' ? 'You requested changes' : CLIENT_STATUS_LABEL[p.status] || 'Awaiting your review';
-        const statusCls = fb.status === 'approved' ? 'approved' : fb.status === 'declined' ? 'changes' : p.status === 'Revised' ? 'revised' : 'review';
+        const ds = decisionOf(p, fb);
+        const statusLabel = ds === 'approved' ? 'You approved this' : ds === 'declined' ? (fb.status === 'declined' ? 'You requested changes' : 'Changes requested') : CLIENT_STATUS_LABEL[p.status] || 'Awaiting your review';
+        const statusCls = ds === 'approved' ? 'approved' : ds === 'declined' ? 'changes' : p.status === 'Revised' ? 'revised' : 'review';
         const plink = shareLink('post', p.id);
         const comments = (fb.comments || []).map((cm, i) => `<div class="comment ${cm.resolved ? 'resolved' : ''}"><div class="comment-avatar client">${(cm.by || '?')[0].toUpperCase()}</div><div class="comment-body"><div class="comment-head"><strong>${esc(cm.by || 'You')}</strong>${cm.resolved ? '<span class="badge approved" style="font-size:9px">&#10003; Actioned by RICH</span>' : ''}${(cm.replies || []).length ? '<span class="badge replied" style="font-size:9px">RICH replied</span>' : ''}<time>${fmtTime(cm.d)}</time><div class="comment-actions">${waBtn(cm, p.topic, plink)}<button onclick="clEditComment('${p.id}',${i})">Edit</button><button class="del" onclick="clDeleteComment('${p.id}',${i})">Delete</button></div></div><div class="comment-text">${esc(cm.t)}</div>${repliesHTML(cm)}</div></div>`).join('');
         const nReplied = (fb.comments || []).filter(cm => (cm.replies || []).length).length; const nActioned = (fb.comments || []).filter(cm => cm.resolved).length;
@@ -2173,7 +2181,7 @@ function renderClient() {
           <div class="media" data-fv-label="${esc(p.topic || '')}" onclick="openFullView(this,'${esc(p.topic || '')}')">${media || '<div class="no-media">Creative coming soon</div>'}<div class="plat-icons">${platIcons(p.platforms)}</div>${p.status === 'Revised' ? '<div class="revised-tag">Revised</div>' : ''}${media ? `<button class="fv-expand" title="View full screen" onclick="event.stopPropagation();openFullView(this.parentElement,'${esc(p.topic || '')}')">&#x26F6;</button>` : ''}</div>
           <div class="info"><div class="date-row"><div class="date-chip"><b>${d.getDate()}</b><span>${d.toLocaleDateString('en-GB', { month: 'short' })}</span></div><div style="min-width:0"><h4>${esc(p.topic || 'Untitled')}</h4><div class="sub">${d.toLocaleDateString('en-GB', clientTab === 'todo' ? { weekday: 'short', day: 'numeric', month: 'long' } : { weekday: 'long' })}${p.creativeType ? ' · ' + esc(p.creativeType) : ''} · ${countCreatives(p)} creative${countCreatives(p) !== 1 ? 's' : ''}</div>${schedHTML(p)}</div></div></div>
           ${replyBanner}<div class="status-row"><span class="badge ${statusCls}">${statusLabel}</span></div>
-          <div class="decide"><button class="btn outline-green ${fb.status === 'approved' ? 'active' : ''}" onclick="clDecide('${p.id}','approved')">&#10003; Approve</button><button class="btn outline-amber ${fb.status === 'declined' ? 'active' : ''}" onclick="clDecide('${p.id}','declined')">Request changes</button></div>
+          <div class="decide"><button class="btn outline-green ${ds === 'approved' ? 'active' : ''}" onclick="clDecide('${p.id}','approved')">&#10003; Approve</button><button class="btn outline-amber ${ds === 'declined' ? 'active' : ''}" onclick="clDecide('${p.id}','declined')">Request changes</button></div>
           <div class="feedback"><div class="fb-row"><input class="nm" id="nm-${p.id}" value="${esc(savedName)}" placeholder="Name" onchange="localStorage.setItem('rich_cl_name',this.value)"><input class="msg" id="msg-${p.id}" placeholder="What should we change?" onkeydown="if(event.key==='Enter')clComment('${p.id}')"><button class="btn primary" onclick="clComment('${p.id}')">Send</button></div></div>
           <div class="expand" onclick="this.closest('.cl-card').classList.toggle('open')"><span class="arrow">&#9660;</span>${(fb.comments || []).length ? `${fb.comments.length} comment${fb.comments.length !== 1 ? 's' : ''} &amp; details` : 'Captions &amp; details'}</div>
           <div class="detail"><div class="detail-inner">
@@ -2194,7 +2202,7 @@ function renderClient() {
 }
 function clOpenPost(pid) { const p = (clientData.posts || []).find(x => x.id === pid); if (p && p.date) { clientMonth = new Date(p.date + 'T00:00:00'); clientMonth.setDate(1); } clientTab = 'review'; clientFilter = 'all'; renderClient(); setTimeout(() => { const el = $('cp-' + pid); if (el) { el.classList.add('open'); el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }); } }, 120); }
 function clientGo(k) { const [y, m] = k.split('-').map(Number); clientMonth = new Date(y, m - 1, 1); renderClient(); }
-async function clDecide(pid, s) { const p = clientData.posts.find(x => x.id === pid); p.feedback = p.feedback || { status: '', comments: [] }; p.feedback.status = p.feedback.status === s ? '' : s; renderClient(); await clientSend(pid, { status: p.feedback.status }); }
+async function clDecide(pid, s) { const p = clientData.posts.find(x => x.id === pid); p.feedback = p.feedback || { status: '', comments: [] }; const cur = decisionOf(p, p.feedback); p.feedback.status = cur === s ? '' : s; p.feedback.decidedAt = new Date().toISOString(); p.feedback.decidedBy = 'Client'; p.status = syncedPostStatus(p.status, p.feedback.status); renderClient(); await clientSend(pid, { status: p.feedback.status }); }
 async function clComment(pid) { const name = $('nm-' + pid).value.trim() || 'Client', t = $('msg-' + pid).value.trim(); if (!t) return; localStorage.setItem('rich_cl_name', name); const p = clientData.posts.find(x => x.id === pid); p.feedback = p.feedback || { status: '', comments: [] }; p.feedback.comments.push({ t, by: name, d: new Date().toISOString() }); renderClient(); await clientSend(pid, { comment: t, by: name }); }
 async function clEditComment(pid, i) { const p = clientData.posts.find(x => x.id === pid); const cm = p.feedback.comments[i]; const t = prompt('Edit your comment:', cm.t); if (t === null) return; if (t.trim()) cm.t = t.trim(); else p.feedback.comments.splice(i, 1); renderClient(); await clientSend(pid, { replaceComments: p.feedback.comments }); }
 async function clDeleteComment(pid, i) { if (!confirm('Delete this comment?')) return; const p = clientData.posts.find(x => x.id === pid); p.feedback.comments.splice(i, 1); renderClient(); await clientSend(pid, { replaceComments: p.feedback.comments }); }

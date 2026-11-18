@@ -2,6 +2,7 @@
 const JH = { 'content-type': 'application/json', 'cache-control': 'no-store' };
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
+const syncStatus = (st, d) => { if (d==='declined' && ['Ready for Review','Revised','Approved'].includes(st)) return 'Changes Requested'; if (d==='approved' && ['Ready for Review','Revised','Changes Requested'].includes(st)) return 'Approved'; if (d==='' && ['Approved','Changes Requested'].includes(st)) return 'Ready for Review'; return st; };
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -58,7 +59,7 @@ export async function onRequest(context) {
           const inc = out.feedback[pid]||{status:'',comments:[]};
           const incById = {}; (inc.comments||[]).forEach(cm=>{ incById[(cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||'')]=cm; });
           const comments = (sf.comments||[]).map(cm=>{ const k=(cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||''); const i=incById[k]; return i && i.resolved!==undefined ? { ...cm, resolved:i.resolved } : cm; });
-          out.feedback[pid] = { status: sf.status!==undefined ? sf.status : inc.status, comments };
+          out.feedback[pid] = { status: sf.status!==undefined ? sf.status : inc.status, decidedAt: sf.decidedAt, decidedBy: sf.decidedBy, comments };
         });
         // Briefs: client creates/edits/deletes while Submitted; client fb/status transitions are client-owned
         const sBriefs = s.briefs||[]; const iBriefs = c.briefs||[]; const iById={}; iBriefs.forEach(b=>iById[b.id]=b);
@@ -108,7 +109,7 @@ export async function onRequest(context) {
       if (!c) return json({ error:'notfound' }, 404);
       if ((c.pin||'') !== (b.pin||'')) return json({ error:'pin' }, 403);
       c.feedback=c.feedback||{}; c.feedback[b.postId]=c.feedback[b.postId]||{status:'',comments:[]};
-      if (b.status!==undefined) c.feedback[b.postId].status=b.status;
+      if (b.status!==undefined) { const fb=c.feedback[b.postId]; fb.status=b.status; fb.decidedAt=new Date().toISOString(); fb.decidedBy='Client'; const p=(c.posts||[]).find(x=>x.id===b.postId); if (p) p.status=syncStatus(p.status, b.status); }
       if (b.replaceComments) c.feedback[b.postId].comments = b.replaceComments;
       else if (b.comment) c.feedback[b.postId].comments.push({ t:b.comment, by:b.by||'Client', d:new Date().toISOString(), replyTo:b.replyTo!==undefined?b.replyTo:undefined });
       await kv.put('calendars', JSON.stringify(cals)); await kv.put('calendars:rev', String(Date.now())); return json({ ok:true });
@@ -139,7 +140,8 @@ export async function onRequest(context) {
       const b = await request.json(); const cals=(await kv.get('calendars','json'))||[]; const c=cals.find(x=>x.id===b.calId);
       if (!c) return json({ error:'notfound' }, 404);
       const ckey = cm => (cm.d||'')+'|'+(cm.by||'')+'|'+(cm.t||'');
-      if (b.op === 'brief-delete') { c.briefs=(c.briefs||[]).filter(x=>x.id!==b.briefId); c.deletedBriefIds=[...(c.deletedBriefIds||[]), b.briefId].slice(-300); }
+      if (b.op === 'decision') { c.feedback=c.feedback||{}; const fb=c.feedback[b.postId]=c.feedback[b.postId]||{status:'',comments:[]}; fb.status=b.status||''; fb.decidedAt=new Date().toISOString(); fb.decidedBy='RICH'; const p=(c.posts||[]).find(x=>x.id===b.postId); if (p) { if (b.postStatus) p.status=b.postStatus; if (b.revisedAt!==undefined) p.revisedAt=b.revisedAt; } }
+      else if (b.op === 'brief-delete') { c.briefs=(c.briefs||[]).filter(x=>x.id!==b.briefId); c.deletedBriefIds=[...(c.deletedBriefIds||[]), b.briefId].slice(-300); }
       else if (b.op === 'reply' && b.reply && b.key) {
         let list;
         if (b.postId) { c.feedback=c.feedback||{}; list=(c.feedback[b.postId]||{}).comments||[]; }
